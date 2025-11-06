@@ -1626,7 +1626,7 @@ docker-compose exec django python manage.py createsuperuser
 
 # Import initial data
 docker-compose exec django python manage.py import_quran_text --source data/quran.xml
-docker-compose exec django python manage.py import_surah_metadata --source docs/Original/Suras-Order.csv
+docker-compose exec django python manage.py import_surah_metadata --source docs/Data/Suras-Order.csv
 docker-compose exec django python manage.py import_translations --language en
 
 # Index Quran text in Elasticsearch
@@ -2060,7 +2060,7 @@ pytest apps/quran/tests/test_models.py::TestSurahModel::test_surah_creation
 - Added database index for revelation_order for chronological navigation
 - Updated all API endpoint examples to include revelation_order in Surah responses
 - Supports historical context feature from PRD "Product Magic" section
-- **Data Source:** `docs/Original/Suras-Order.csv` (authoritative revelation order data)
+- **Data Source:** `docs/Data/Suras-Order.csv` (authoritative revelation order data)
 - Added `import_surah_metadata` management command for CSV import
 
 **Example:** Surah Al-Fatiha (Mushaf order: 1, Revelation order: 5)
@@ -2124,7 +2124,7 @@ pytest apps/quran/tests/test_models.py::TestSurahModel::test_surah_creation
 ### Authoritative Data Sources
 
 **Quran Text & Metadata:**
-- **Revelation Order:** `docs/Original/Suras-Order.csv` (authoritative source)
+- **Revelation Order:** `docs/Data/Suras-Order.csv` (authoritative source)
   - Contains chronological revelation order (1-114)
   - Includes revelation type (Meccan/Medinan)
   - Documents exceptions where Surahs have verses from both locations
