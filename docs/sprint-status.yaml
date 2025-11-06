@@ -38,7 +38,7 @@ story_location: "{project-root}/docs/stories"
 development_status:
   # EPIC 1: Cross-Cutting / Infrastructure Stories
   epic-1: contexted
-  us-api-000-initialize-django-project-with-cookiecutter-django: in-progress
+  us-api-000-initialize-django-project-with-cookiecutter-django: review
   us-api-001-implement-user-authentication-and-authorization: backlog
   us-api-002-implement-error-handling-and-user-feedback: backlog
   us-api-003-implement-data-caching-strategy: backlog

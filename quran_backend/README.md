@@ -7,6 +7,94 @@ Quran Backend API for Islamic Spiritual Companion App
 
 License: MIT
 
+## Getting Started
+
+### Prerequisites
+
+- **Python 3.14** (latest stable)
+- **Docker** and **Docker Compose**
+- **Git**
+
+### Local Development Setup
+
+1. **Clone the repository:**
+   ```bash
+   git clone <repository-url>
+   cd django-muslim-companion/quran_backend
+   ```
+
+2. **Build Docker containers:**
+   ```bash
+   docker compose -f docker-compose.local.yml build
+   ```
+
+3. **Start all services:**
+   ```bash
+   docker compose -f docker-compose.local.yml up -d
+   ```
+
+   This starts:
+   - Django web server (localhost:8000)
+   - PostgreSQL 16 database
+   - Redis (caching and Celery broker)
+   - Celery worker
+   - Celery beat scheduler
+   - Flower (Celery monitoring at localhost:5555)
+
+4. **Run database migrations:**
+   ```bash
+   docker compose -f docker-compose.local.yml exec django python manage.py migrate
+   ```
+
+5. **Create a superuser:**
+   ```bash
+   docker compose -f docker-compose.local.yml exec django python manage.py createsuperuser
+   ```
+
+6. **Access the application:**
+   - Django Admin: http://localhost:8000/admin
+   - DRF Browsable API: http://localhost:8000/api/
+   - Flower (Celery monitoring): http://localhost:5555
+
+### Environment Configuration
+
+Environment variables are configured in `.envs/.local/`:
+- `.django` - Django and Celery settings
+- `.postgres` - PostgreSQL database credentials
+
+The `DATABASE_URL` is automatically configured for Docker Compose services.
+
+### Arabic Localization
+
+This project is configured with **Arabic as the default language** with bilingual support (Arabic/English).
+
+**i18n Configuration:**
+- Default language: Arabic (`ar`)
+- Supported languages: Arabic, English
+- Django admin displays in Arabic by default
+- Language switching available via middleware
+
+**Managing translations:**
+```bash
+# Generate translation files
+docker compose -f docker-compose.local.yml exec django python manage.py makemessages -l ar
+
+# Compile translations
+docker compose -f docker-compose.local.yml exec django python manage.py compilemessages
+```
+
+### Running Tests
+
+```bash
+docker compose -f docker-compose.local.yml exec django pytest
+```
+
+### Stopping Services
+
+```bash
+docker compose -f docker-compose.local.yml down
+```
+
 ## Settings
 
 Moved to [settings](https://cookiecutter-django.readthedocs.io/en/latest/1-getting-started/settings.html).
