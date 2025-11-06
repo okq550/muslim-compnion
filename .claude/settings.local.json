@@ -3,7 +3,18 @@
     "allow": [
       "SlashCommand(/bmad:bmm:workflows:workflow-status)",
       "SlashCommand(/bmad:bmm:workflows:workflow-init)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(pip install:*)",
+      "Bash(python3 run_cookiecutter.py:*)",
+      "Bash(open -a Docker)",
+      "Bash(docker info:*)",
+      "Bash(/dev/null)",
+      "Bash(docker compose:*)",
+      "Bash(curl:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(pre-commit install:*)",
+      "Bash(pre-commit run:*)"
     ],
     "deny": [],
     "ask": []

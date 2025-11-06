@@ -1,6 +1,6 @@
 ---
 description: BMAD CORE Tool: Shard Document
-globs: 
+globs:
 alwaysApply: false
 ---
 

@@ -1,6 +1,6 @@
 ---
 description: BMAD BMM Workflow: correct-course
-globs: 
+globs:
 alwaysApply: false
 ---
 

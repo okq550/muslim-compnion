@@ -1,6 +1,6 @@
 ---
 description: BMAD BMM Workflow: workflow-init
-globs: 
+globs:
 alwaysApply: false
 ---
 

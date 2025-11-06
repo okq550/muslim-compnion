@@ -1,6 +1,6 @@
 ---
 description: BMAD BMM Agent: Developer Agent
-globs: 
+globs:
 alwaysApply: false
 ---
 

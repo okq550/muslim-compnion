@@ -1,6 +1,6 @@
 ---
 description: BMAD BMM Workflow: code-review
-globs: 
+globs:
 alwaysApply: false
 ---
 

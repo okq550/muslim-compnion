@@ -29,7 +29,8 @@ CACHES = {
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#email-backend
 EMAIL_BACKEND = env(
-    "DJANGO_EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend",
+    "DJANGO_EMAIL_BACKEND",
+    default="django.core.mail.backends.console.EmailBackend",
 )
 
 # django-debug-toolbar
@@ -60,10 +61,21 @@ if env("USE_DOCKER") == "yes":
 # ------------------------------------------------------------------------------
 # https://django-extensions.readthedocs.io/en/latest/installation_instructions.html#configuration
 INSTALLED_APPS += ["django_extensions"]
+
+# Middleware - Force Arabic
+# ------------------------------------------------------------------------------
+MIDDLEWARE += ["quran_backend.middleware.ForceArabicMiddleware"]
+
 # Celery
 # ------------------------------------------------------------------------------
 
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#task-eager-propagates
 CELERY_TASK_EAGER_PROPAGATES = True
+
+# Internationalization - Force Arabic
+# ------------------------------------------------------------------------------
+# Override to ensure Arabic is always used in local development
+LANGUAGE_CODE = "ar"
+
 # Your stuff...
 # ------------------------------------------------------------------------------

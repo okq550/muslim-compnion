@@ -1,6 +1,6 @@
 ---
 description: BMAD BMM Workflow: dev-story
-globs: 
+globs:
 alwaysApply: false
 ---
 

@@ -1,6 +1,6 @@
 ---
 description: BMAD BMM Workflow: create-epics-and-stories
-globs: 
+globs:
 alwaysApply: false
 ---
 
