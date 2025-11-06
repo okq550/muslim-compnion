@@ -1,0 +1,7 @@
+# PostgreSQL
+# ------------------------------------------------------------------------------
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=quran_backend
+POSTGRES_USER=tbYORmaRVvngHnVgkvmPSmLBdqHyuRtb
+POSTGRES_PASSWORD=IjS8SoVLmUwUrBb0f7nqZTYRo59az47gcdEjvWn7MDzViXEJ7IwlgCNeT7FvTboD

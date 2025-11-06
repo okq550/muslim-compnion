@@ -1,0 +1,19 @@
+# General
+# ------------------------------------------------------------------------------
+USE_DOCKER=yes
+IPYTHONDIR=/app/.ipython
+
+# Database
+# ------------------------------------------------------------------------------
+DATABASE_URL=postgres://tbYORmaRVvngHnVgkvmPSmLBdqHyuRtb:IjS8SoVLmUwUrBb0f7nqZTYRo59az47gcdEjvWn7MDzViXEJ7IwlgCNeT7FvTboD@postgres:5432/quran_backend
+
+# Redis
+# ------------------------------------------------------------------------------
+REDIS_URL=redis://redis:6379/0
+
+# Celery
+# ------------------------------------------------------------------------------
+
+# Flower
+CELERY_FLOWER_USER=yxkPUmjyMtiFxgEgPySfhehMhlCfJlhL
+CELERY_FLOWER_PASSWORD=H5dnyVMI3Up9sv6zvNs8q4a6yxqkQYx9WjPdXWxeyi8Grjp3QpasAyLbV6QuVNqn

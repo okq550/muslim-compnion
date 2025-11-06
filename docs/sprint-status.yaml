@@ -1,0 +1,109 @@
+# generated: 2025-11-06
+# project: django-muslim-companion
+# project_key: django-muslim-companion
+# tracking_system: file-system
+# story_location: {project-root}/docs/stories
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic exists in epic file but not contexted
+#   - contexted: Epic tech context created (required before drafting stories)
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - drafted: Story file created in stories folder
+#   - ready-for-dev: Draft approved and story context created
+#   - in-progress: Developer actively working on implementation
+#   - review: Under SM review (via code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - completed: Retrospective has been done
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epics should be 'contexted' before stories can be 'drafted'
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically drafts next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', SM reviews, then Dev moves to 'done'
+
+generated: 2025-11-06
+project: django-muslim-companion
+project_key: django-muslim-companion
+tracking_system: file-system
+story_location: "{project-root}/docs/stories"
+
+development_status:
+  # EPIC 1: Cross-Cutting / Infrastructure Stories
+  epic-1: contexted
+  us-api-000-initialize-django-project-with-cookiecutter-django: in-progress
+  us-api-001-implement-user-authentication-and-authorization: backlog
+  us-api-002-implement-error-handling-and-user-feedback: backlog
+  us-api-003-implement-data-caching-strategy: backlog
+  us-api-004-implement-analytics-and-usage-tracking: backlog
+  us-api-005-implement-rate-limiting-and-throttling: backlog
+  us-api-006-implement-data-backup-and-recovery: backlog
+  us-api-007-implement-logging-and-monitoring: backlog
+  epic-1-retrospective: optional
+
+  # EPIC 2: Quran Text & Content Management
+  epic-2: backlog
+  us-qt-001-retrieve-quran-text-by-surah: backlog
+  us-qt-002-retrieve-quran-text-by-verse-range: backlog
+  us-qt-003-retrieve-quran-text-by-page-mushaf-page: backlog
+  us-qt-004-retrieve-quran-text-by-juz: backlog
+  us-qt-005-search-quran-text: backlog
+  epic-2-retrospective: optional
+
+  # EPIC 3: Recitation Management
+  epic-3: backlog
+  us-rc-001-store-and-manage-reciter-profiles: backlog
+  us-rc-002-import-reciter-data-from-external-source: backlog
+  us-rc-003-view-available-reciters-with-their-information: backlog
+  us-rc-004-play-verse-audio-for-selected-reciter: backlog
+  us-rc-005-play-continuous-audio-for-surah: backlog
+  us-rc-006-download-recitation-for-offline-access: backlog
+  us-rc-007-stream-recitation-with-adaptive-quality: backlog
+  epic-3-retrospective: optional
+
+  # EPIC 4: Translation Management
+  epic-4: backlog
+  us-tr-001-store-translation-data-for-multiple-languages: backlog
+  us-tr-002-import-translation-data-from-sources: backlog
+  us-tr-003-view-available-translations-list: backlog
+  us-tr-004-display-translation-alongside-arabic-text: backlog
+  us-tr-005-switch-between-translations: backlog
+  us-tr-006-download-translations-for-offline-access: backlog
+  epic-4-retrospective: optional
+
+  # EPIC 5: Tafseer (Interpretation) Management
+  epic-5: backlog
+  us-tf-001-store-tafseer-content-from-multiple-scholars: backlog
+  us-tf-002-import-tafseer-data-from-verified-sources: backlog
+  us-tf-003-view-available-tafseer-sources: backlog
+  us-tf-004-view-tafseer-for-specific-verse: backlog
+  us-tf-005-switch-between-different-tafseer-sources: backlog
+  us-tf-006-download-tafseer-for-offline-access: backlog
+  epic-5-retrospective: optional
+
+  # EPIC 6: Bookmark Management
+  epic-6: backlog
+  us-bm-001-create-verse-level-bookmark: backlog
+  us-bm-002-create-page-level-bookmark: backlog
+  us-bm-003-organize-bookmarks-into-categories: backlog
+  us-bm-004-view-and-manage-bookmarks-list: backlog
+  us-bm-005-delete-bookmarks: backlog
+  us-bm-006-search-and-filter-bookmarks: backlog
+  epic-6-retrospective: optional
+
+  # EPIC 7: Offline Content Management
+  epic-7: backlog
+  us-of-001-download-quran-text-for-offline-reading: backlog
+  us-of-002-download-recitations-by-surah-for-offline-listening: backlog
+  us-of-003-download-complete-recitation-for-offline-access: backlog
+  us-of-004-manage-downloaded-content-storage: backlog
+  us-of-005-sync-downloaded-content-version-updates: backlog
+  us-of-006-enable-offline-mode-toggle: backlog
+  epic-7-retrospective: optional
