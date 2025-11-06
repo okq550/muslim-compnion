@@ -1,0 +1,2214 @@
+# Architecture Document
+## Quran Backend API - Islamic Spiritual Companion App
+
+**Version:** 1.2
+**Date:** 2025-11-06 (Updated)
+**Project:** django-muslim-companion
+**Author:** Architecture Team
+
+---
+
+## Executive Summary
+
+The Quran Backend is a Django REST Framework API platform designed to deliver authentic Quran content (text, audio, translations, and Tafseer) to mobile applications serving the global Muslim community. The architecture leverages Cookiecutter Django as the foundation, combined with AWS infrastructure (S3, CloudFront, OpenSearch), to provide a scalable, high-performance, offline-first API with zero tolerance for content errors.
+
+This architecture supports 7 core epics: Infrastructure, Quran Text Management, Recitation Management, Translation Management, Tafseer Management, Bookmark Management, and Offline Content Management. The system is designed for consistency across AI agent implementations through explicit architectural decisions and implementation patterns.
+
+---
+
+## Project Initialization
+
+**First implementation story must execute:**
+
+```bash
+cookiecutter https://github.com/cookiecutter/cookiecutter-django
+```
+
+**Cookiecutter Django prompts - Select these options:**
+- `project_name`: django-muslim-companion
+- `project_slug`: django_muslim_companion
+- `description`: Quran Backend API for Islamic Spiritual Companion App
+- `author_name`: Your Team Name
+- `domain_name`: api.yourapp.com
+- `email`: team@yourapp.com
+- `version`: 0.1.0
+- `timezone`: UTC
+- `use_whitenoise`: n (using S3)
+- `use_celery`: y
+- `use_drf`: y
+- `use_docker`: y
+- `postgresql_version`: 16
+- `cloud_provider`: AWS
+- `use_compressor`: n
+- `use_mailpit`: y
+- `use_sentry`: y
+- `use_pycharm`: n
+- `keep_local_envs_in_vcs`: n
+- `debug`: n
+
+**Post-initialization customization:**
+1. Replace `config/settings/` (base.py, local.py, production.py) with single `config/settings.py`
+2. Install `django-environ` for .env management
+3. Add Django apps per epic structure (see Project Structure section)
+4. Configure AWS S3, CloudFront, and OpenSearch integrations
+
+This establishes the base architecture with these decisions:
+- Django 5.2.8 LTS + Python 3.14
+- Django REST Framework 3.16.1+
+- PostgreSQL 16 for relational data
+- Redis for caching and Celery broker
+- Docker + Docker Compose for containerization
+- Celery + Celery Beat for background jobs
+- pytest for testing framework
+- Pre-commit hooks for code quality
+
+---
+
+## Decision Summary
+
+| Category | Decision | Version | Affects Epics | Rationale |
+| -------- | -------- | ------- | ------------- | --------- |
+| **Backend Framework** | Django | 5.2.8 LTS | All | Long-term support until 2028, production-ready, extensive ecosystem |
+| **API Framework** | Django REST Framework | 3.16.1+ | All | Industry standard for Django APIs, excellent serialization, browsable API |
+| **Database** | PostgreSQL | 16 | All | ACID compliance, robust indexing, full-text search capabilities |
+| **Cache Layer** | Redis | Latest | All | High-performance in-memory cache, Celery broker support |
+| **Search Engine** | Elasticsearch (AWS OpenSearch) | Latest | Epic 2 | Superior Arabic text search, fuzzy matching, relevance scoring |
+| **Object Storage** | AWS S3 | N/A | Epic 3, 7 | Scalable audio storage, 99.999999999% durability |
+| **CDN** | AWS CloudFront | N/A | Epic 3, 7 | Global edge caching, <2s audio startup time worldwide |
+| **Audio Format** | MP3 | N/A | Epic 3, 7 | Universal compatibility across mobile platforms |
+| **Background Jobs** | Celery + Redis | Latest | All | Async task processing, scheduled jobs, import pipelines |
+| **Authentication** | JWT (simplejwt) | Latest | All | Stateless auth, mobile-friendly, industry standard for REST APIs |
+| **Environment Config** | django-environ | 0.11.2 | All | Secure .env file management, 12-factor app principles |
+| **Containerization** | Docker + Docker Compose | Latest | All | Consistent dev/prod environments, easy deployment |
+| **Cloud Provider** | AWS | N/A | All | Comprehensive services (S3, CloudFront, OpenSearch, RDS, ECS) |
+
+---
+
+## Technology Stack Details
+
+### Core Technologies
+
+**Backend:**
+- **Django 5.2.8 LTS**: Web framework with ORM, admin, authentication
+- **Django REST Framework 3.16.1+**: API framework with serialization, viewsets, permissions
+- **Python 3.14**: Latest stable Python version with performance improvements
+
+**Database:**
+- **PostgreSQL 16**: Primary relational database for all structured data
+- **Redis**: In-memory cache and Celery message broker
+- **Elasticsearch (AWS OpenSearch)**: Full-text search engine for Arabic Quran text
+
+**Infrastructure:**
+- **AWS S3**: Object storage for 600K+ audio files (~100-200MB per reciter)
+- **AWS CloudFront**: CDN for global audio delivery with edge caching
+- **AWS RDS PostgreSQL**: Managed database with Multi-AZ for high availability
+- **AWS ElastiCache Redis**: Managed Redis cluster
+- **AWS OpenSearch Service**: Managed Elasticsearch cluster
+
+**Background Processing:**
+- **Celery 5.x**: Distributed task queue for imports, indexing, notifications
+- **Celery Beat**: Periodic task scheduler for analytics, cache warming
+- **Redis**: Message broker and result backend for Celery
+
+**Authentication:**
+- **djangorestframework-simplejwt**: JWT token authentication
+- **Access tokens**: 30-minute lifetime
+- **Refresh tokens**: 14-day lifetime
+
+**Python Libraries:**
+```
+# Core Framework
+Django==5.2.8
+djangorestframework==3.16.1
+djangorestframework-simplejwt==5.3.1
+
+# Configuration & Environment
+django-environ==0.11.2
+python-dotenv==1.0.0
+
+# Database
+psycopg2-binary==2.9.9
+
+# Caching & Background Jobs
+django-redis==5.4.0
+celery==5.3.6
+
+# AWS Integration
+django-storages[s3]==1.14.2
+boto3==1.34.0
+
+# Search
+elasticsearch-dsl==8.11.0
+
+# Data Processing & Analysis
+numpy==1.26.2
+morfessor==2.0.6
+
+# Country Data
+pycountry==23.12.11
+
+# Documentation
+sphinx==7.2.6
+sphinx-rtd-theme==2.0.0
+
+# Server
+gunicorn==21.2.0
+
+# Testing
+pytest-django==4.7.0
+pytest-cov==4.1.0
+
+# Development Tools
+debugpy==1.8.0
+```
+
+**Library Usage:**
+- **python-dotenv**: Fallback for loading .env files (django-environ primary)
+- **numpy**: Audio processing, statistical analysis for recitation metadata
+- **morfessor**: Arabic morphological segmentation for advanced search (Phase 2)
+- **pycountry**: Standardized country names/codes for reciter profiles
+- **sphinx**: API documentation generation
+- **debugpy**: VS Code debugging support for Django development
+
+### Integration Points
+
+**External Services:**
+```
+S3 (Audio Storage)
+  ↓
+CloudFront (CDN) → Mobile Apps
+
+PostgreSQL RDS ← Django ORM → All Apps
+
+Redis ElastiCache ← Celery → Background Jobs
+                   ← Django Cache → All Apps
+
+OpenSearch ← Django Models → Quran Search
+```
+
+**Internal App Dependencies:**
+```
+quran.Verse (Core Model)
+  ↑
+  ├── reciters.Audio (FK to Verse)
+  ├── translations.Translation (FK to Verse)
+  ├── tafseer.Tafseer (FK to Verse)
+  ├── bookmarks.Bookmark (FK to Verse)
+  └── offline.DownloadManifest (references Verses)
+
+core (Authentication, Permissions)
+  ↓
+All Apps (use JWT auth, rate limiting, error handling)
+```
+
+---
+
+## Project Structure
+
+```
+django-muslim-companion/
+│
+├── config/                           # Project configuration
+│   ├── settings.py                  # Single settings file (reads .env)
+│   ├── urls.py                      # Root URL configuration
+│   ├── wsgi.py                      # WSGI application
+│   └── celery_app.py                # Celery configuration
+│
+├── apps/                             # Django applications
+│   │
+│   ├── core/                        # EPIC 1: Infrastructure
+│   │   ├── models.py                # Base models, timestamps
+│   │   ├── authentication.py        # JWT auth logic
+│   │   ├── permissions.py           # Custom permissions
+│   │   ├── throttling.py            # Rate limiting
+│   │   ├── exceptions.py            # Custom exceptions
+│   │   ├── middleware.py            # Error handling middleware
+│   │   └── tasks.py                 # Core Celery tasks
+│   │
+│   ├── quran/                       # EPIC 2: Quran Text & Content
+│   │   ├── models.py                # Surah, Verse, Juz, Page models
+│   │   ├── serializers.py           # DRF serializers
+│   │   ├── views.py                 # API views
+│   │   ├── urls.py                  # URL routing
+│   │   ├── search.py                # Elasticsearch integration
+│   │   ├── tasks.py                 # Import tasks (Celery)
+│   │   ├── validators.py            # Quran data validators
+│   │   ├── management/
+│   │   │   └── commands/
+│   │   │       ├── import_quran_text.py
+│   │   │       ├── import_surah_metadata.py
+│   │   │       └── index_quran_elasticsearch.py
+│   │   └── tests/
+│   │       ├── test_models.py
+│   │       ├── test_views.py
+│   │       ├── test_search.py
+│   │       └── factories.py
+│   │
+│   ├── reciters/                    # EPIC 3: Recitation Management
+│   │   ├── models.py                # Reciter, Audio models
+│   │   ├── serializers.py
+│   │   ├── views.py
+│   │   ├── urls.py
+│   │   ├── tasks.py                 # Audio import tasks
+│   │   ├── storage.py               # S3 storage handlers
+│   │   ├── management/
+│   │   │   └── commands/
+│   │   │       └── import_reciter_audio.py
+│   │   └── tests/
+│   │
+│   ├── translations/                # EPIC 4: Translation Management
+│   │   ├── models.py                # Translator, Translation models
+│   │   ├── serializers.py
+│   │   ├── views.py
+│   │   ├── urls.py
+│   │   ├── tasks.py                 # Translation import tasks
+│   │   ├── management/
+│   │   │   └── commands/
+│   │   │       └── import_translations.py
+│   │   └── tests/
+│   │
+│   ├── tafseer/                     # EPIC 5: Tafseer Management
+│   │   ├── models.py                # Scholar, Tafseer models
+│   │   ├── serializers.py
+│   │   ├── views.py
+│   │   ├── urls.py
+│   │   ├── tasks.py
+│   │   ├── management/
+│   │   │   └── commands/
+│   │   │       └── import_tafseer.py
+│   │   └── tests/
+│   │
+│   ├── bookmarks/                   # EPIC 6: Bookmark Management
+│   │   ├── models.py                # Bookmark, ReadingHistory models
+│   │   ├── serializers.py
+│   │   ├── views.py
+│   │   ├── urls.py
+│   │   └── tests/
+│   │
+│   ├── offline/                     # EPIC 7: Offline Content Management
+│   │   ├── models.py                # DownloadManifest, ContentVersion
+│   │   ├── serializers.py
+│   │   ├── views.py                 # Manifest API endpoints
+│   │   ├── urls.py
+│   │   ├── manifest_generator.py   # Generate download manifests
+│   │   ├── checksum.py             # SHA-256 hash utilities
+│   │   └── tests/
+│   │
+│   └── users/                       # User management (Cookiecutter Django)
+│       ├── models.py                # Custom User model
+│       ├── serializers.py
+│       ├── views.py
+│       ├── urls.py
+│       └── tests/
+│
+├── requirements/                     # Python dependencies
+│   ├── base.txt                     # Base requirements
+│   ├── local.txt                    # Local dev requirements
+│   └── production.txt               # Production requirements
+│
+├── compose/                          # Docker configuration
+│   ├── production/
+│   │   ├── django/
+│   │   │   ├── Dockerfile
+│   │   │   ├── entrypoint
+│   │   │   └── start
+│   │   └── postgres/
+│   └── local/
+│       ├── django/
+│       └── postgres/
+│
+├── docs/                            # Documentation
+│   ├── PRD.md                       # Product Requirements Document
+│   ├── epics.md                     # Epic and user story breakdown
+│   ├── architecture.md              # This document
+│   └── api/
+│       └── openapi.yaml             # API specification
+│
+├── .env.example                     # Environment template
+├── .env                            # Local environment (gitignored)
+├── .env.production                 # Production environment (gitignored)
+│
+├── manage.py                        # Django management script
+├── docker-compose.yml               # Docker compose (local)
+├── docker-compose.production.yml    # Docker compose (production)
+├── pytest.ini                       # Pytest configuration
+├── .pre-commit-config.yaml          # Pre-commit hooks
+└── README.md                        # Project README
+```
+
+---
+
+## Epic to Architecture Mapping
+
+| Epic | Django App | Primary Models | Key API Endpoints |
+|------|------------|----------------|-------------------|
+| **EPIC 1: Infrastructure** | `core` | BaseModel (abstract) | `/api/v1/auth/login/`, `/api/v1/auth/refresh/` |
+| **EPIC 2: Quran Text** | `quran` | Surah, Verse, Juz, Page | `/api/v1/surahs/`, `/api/v1/verses/`, `/api/v1/juz/`, `/api/v1/pages/`, `/api/v1/search/` |
+| **EPIC 3: Reciters** | `reciters` | Reciter, Audio | `/api/v1/reciters/`, `/api/v1/audio/` |
+| **EPIC 4: Translations** | `translations` | Translator, Translation | `/api/v1/translations/`, `/api/v1/translators/` |
+| **EPIC 5: Tafseer** | `tafseer` | Scholar, Tafseer | `/api/v1/tafseer/`, `/api/v1/scholars/` |
+| **EPIC 6: Bookmarks** | `bookmarks` | Bookmark, ReadingHistory | `/api/v1/bookmarks/`, `/api/v1/history/` |
+| **EPIC 7: Offline** | `offline` | DownloadManifest, ContentVersion | `/api/v1/offline/manifest/` |
+
+---
+
+## Data Architecture
+
+### Core Database Schema
+
+**Epic 2: Quran Text**
+
+```python
+class Surah(BaseModel):
+    """Surah (Chapter) of the Quran"""
+    id = IntegerField(primary_key=True)  # 1-114 (Mushaf order)
+    name_arabic = TextField()
+    name_english = CharField(max_length=100)
+    name_transliteration = CharField(max_length=100)
+    revelation_type = CharField(choices=['Meccan', 'Medinan'])
+    revelation_order = IntegerField()  # Chronological order of revelation (1-114)
+    revelation_note = TextField(blank=True)  # Exceptions (e.g., "Except 17-33 and 48-50, from Medina")
+    total_verses = IntegerField()
+    mushaf_page_start = IntegerField()
+    juz_start = IntegerField()
+
+    class Meta:
+        indexes = [
+            Index(fields=['revelation_order']),  # For chronological navigation
+        ]
+
+    @property
+    def is_mixed_revelation(self):
+        """Returns True if Surah has verses from both Mecca and Medina"""
+        return bool(self.revelation_note)
+
+class Verse(BaseModel):
+    """Individual verse (Ayah) of the Quran"""
+    id = AutoField(primary_key=True)
+    surah = ForeignKey(Surah, on_delete=CASCADE)
+    verse_number = IntegerField()  # 1-286
+    text_uthmani = TextField()  # Full Othmani script with diacritics
+    text_simple = TextField()  # Simplified Arabic (no diacritics)
+    juz_number = IntegerField()
+    mushaf_page = IntegerField()
+    hizb_quarter = IntegerField()
+    search_vector = SearchVectorField(null=True)  # For full-text search
+
+    class Meta:
+        unique_together = ('surah', 'verse_number')
+        indexes = [
+            Index(fields=['surah', 'verse_number']),
+            Index(fields=['juz_number']),
+            Index(fields=['mushaf_page']),
+            GinIndex(fields=['search_vector']),
+        ]
+
+class Juz(BaseModel):
+    """Juz (Part) of the Quran (1-30)"""
+    id = IntegerField(primary_key=True)  # 1-30
+    name_arabic = CharField(max_length=100)
+    first_verse = ForeignKey(Verse, related_name='juz_start')
+    last_verse = ForeignKey(Verse, related_name='juz_end')
+
+class Page(BaseModel):
+    """Mushaf page (1-604)"""
+    id = IntegerField(primary_key=True)  # 1-604
+    first_verse = ForeignKey(Verse, related_name='page_start')
+    last_verse = ForeignKey(Verse, related_name='page_end')
+    surah = ForeignKey(Surah)  # Primary Surah on this page
+```
+
+**Epic 3: Reciters & Audio**
+
+```python
+class Reciter(BaseModel):
+    """Quran reciter profile"""
+    id = AutoField(primary_key=True)
+    name_arabic = CharField(max_length=200)
+    name_english = CharField(max_length=200)
+    biography_arabic = TextField()
+    biography_english = TextField()
+    recitation_style = CharField(max_length=50)  # Hafs, Warsh, etc.
+    country_code = CharField(max_length=2)  # ISO 3166-1 alpha-2 (validated with pycountry)
+    photo_url = URLField(null=True)
+    is_active = BooleanField(default=True)
+
+    class Meta:
+        indexes = [
+            Index(fields=['is_active', 'name_english']),
+            Index(fields=['country_code']),
+        ]
+
+    @property
+    def country_name(self):
+        """Get country name from ISO code using pycountry"""
+        import pycountry
+        country = pycountry.countries.get(alpha_2=self.country_code)
+        return country.name if country else self.country_code
+
+    def clean(self):
+        """Validate country code using pycountry"""
+        import pycountry
+        if self.country_code and not pycountry.countries.get(alpha_2=self.country_code):
+            raise ValidationError(f"Invalid country code: {self.country_code}")
+
+class Audio(BaseModel):
+    """Audio file for a specific verse recitation"""
+    id = AutoField(primary_key=True)
+    reciter = ForeignKey(Reciter, on_delete=CASCADE)
+    verse = ForeignKey(Verse, on_delete=CASCADE)
+    s3_key = CharField(max_length=500)  # Path in S3 bucket
+    file_size_bytes = BigIntegerField()
+    duration_seconds = DecimalField(max_digits=6, decimal_places=2)
+    quality = CharField(max_length=20)  # bitrate info
+
+    # Optional: Audio analysis metadata (populated via numpy processing)
+    amplitude_mean = FloatField(null=True)  # Average amplitude
+    amplitude_std = FloatField(null=True)   # Standard deviation
+
+    class Meta:
+        unique_together = ('reciter', 'verse')
+        indexes = [
+            Index(fields=['reciter', 'verse']),
+        ]
+
+    def analyze_audio(self):
+        """Analyze audio file statistics using numpy (optional, Phase 2)"""
+        # Example: Load audio, compute statistics
+        # import numpy as np
+        # from scipy.io import wavfile
+        # rate, data = wavfile.read(audio_file)
+        # self.amplitude_mean = float(np.mean(np.abs(data)))
+        # self.amplitude_std = float(np.std(data))
+        pass
+
+    @property
+    def cloudfront_url(self):
+        """Generate CloudFront URL for audio delivery"""
+        surah_num = self.verse.surah.id
+        verse_num = self.verse.verse_number
+        return f"https://{settings.AWS_CLOUDFRONT_DOMAIN}/{self.reciter.id}/{surah_num:03d}/{verse_num:03d}.mp3"
+```
+
+**Epic 4: Translations**
+
+```python
+class Translator(BaseModel):
+    """Translator profile"""
+    id = AutoField(primary_key=True)
+    name = CharField(max_length=200)
+    language_code = CharField(max_length=10)  # ISO 639-1 (en, ar, ur, etc.)
+    biography = TextField()
+    methodology = TextField()  # Translation approach
+    year = IntegerField(null=True)
+
+    class Meta:
+        indexes = [
+            Index(fields=['language_code']),
+        ]
+
+class Translation(BaseModel):
+    """Verse translation"""
+    id = AutoField(primary_key=True)
+    translator = ForeignKey(Translator, on_delete=CASCADE)
+    verse = ForeignKey(Verse, on_delete=CASCADE)
+    text = TextField()
+
+    class Meta:
+        unique_together = ('translator', 'verse')
+        indexes = [
+            Index(fields=['translator', 'verse']),
+        ]
+```
+
+**Epic 5: Tafseer**
+
+```python
+class Scholar(BaseModel):
+    """Islamic scholar who authored Tafseer"""
+    id = AutoField(primary_key=True)
+    name_arabic = CharField(max_length=200)
+    name_english = CharField(max_length=200)
+    biography_arabic = TextField()
+    biography_english = TextField()
+    birth_year = IntegerField(null=True)
+    death_year = IntegerField(null=True)
+
+class Tafseer(BaseModel):
+    """Quranic interpretation (Tafseer)"""
+    id = AutoField(primary_key=True)
+    scholar = ForeignKey(Scholar, on_delete=CASCADE)
+    verse = ForeignKey(Verse, on_delete=CASCADE)
+    text_arabic = TextField()
+    text_english = TextField(null=True)
+
+    class Meta:
+        unique_together = ('scholar', 'verse')
+        indexes = [
+            Index(fields=['scholar', 'verse']),
+        ]
+```
+
+**Epic 6: Bookmarks**
+
+```python
+class Bookmark(BaseModel):
+    """User bookmark for a verse"""
+    id = AutoField(primary_key=True)
+    user = ForeignKey(User, on_delete=CASCADE)
+    verse = ForeignKey(Verse, on_delete=CASCADE)
+    note = TextField(blank=True)
+    category = CharField(max_length=50, choices=[
+        ('reading', 'Reading'),
+        ('memorization', 'Memorization'),
+        ('favorite', 'Favorite'),
+        ('study', 'Study'),
+    ])
+
+    class Meta:
+        unique_together = ('user', 'verse')
+        indexes = [
+            Index(fields=['user', 'created_at']),
+            Index(fields=['user', 'category']),
+        ]
+
+class ReadingHistory(BaseModel):
+    """Track user's reading activity"""
+    id = AutoField(primary_key=True)
+    user = ForeignKey(User, on_delete=CASCADE)
+    verse = ForeignKey(Verse, on_delete=CASCADE)
+    timestamp = DateTimeField(auto_now_add=True)
+    duration_seconds = IntegerField(null=True)  # How long they read/listened
+
+    class Meta:
+        indexes = [
+            Index(fields=['user', '-timestamp']),
+        ]
+```
+
+**Epic 7: Offline Content**
+
+```python
+class ContentVersion(BaseModel):
+    """Version tracking for offline content"""
+    id = AutoField(primary_key=True)
+    content_type = CharField(max_length=50, choices=[
+        ('quran_text', 'Quran Text'),
+        ('reciter_audio', 'Reciter Audio'),
+        ('translation', 'Translation'),
+        ('tafseer', 'Tafseer'),
+    ])
+    content_id = IntegerField()  # Reciter ID, Translator ID, etc.
+    version = CharField(max_length=20)
+    checksum = CharField(max_length=64)  # SHA-256 hash
+
+    class Meta:
+        unique_together = ('content_type', 'content_id', 'version')
+
+class DownloadManifest(BaseModel):
+    """Generated manifest for offline downloads"""
+    id = AutoField(primary_key=True)
+    reciter = ForeignKey(Reciter, null=True, on_delete=CASCADE)
+    surah = ForeignKey(Surah, null=True, on_delete=CASCADE)
+    juz = ForeignKey(Juz, null=True, on_delete=CASCADE)
+    scope = CharField(max_length=20, choices=[
+        ('verse', 'Single Verse'),
+        ('surah', 'Surah'),
+        ('juz', 'Juz'),
+        ('complete', 'Complete Quran'),
+    ])
+    manifest_json = JSONField()  # List of files with URLs, sizes, checksums
+    total_size_bytes = BigIntegerField()
+    generated_at = DateTimeField(auto_now=True)
+```
+
+---
+
+## API Contracts
+
+### Authentication Endpoints
+
+**POST /api/v1/auth/register/**
+```json
+Request:
+{
+  "email": "user@example.com",
+  "password": "SecurePassword123!",
+  "password_confirm": "SecurePassword123!"
+}
+
+Response: 201 Created
+{
+  "data": {
+    "user": {
+      "id": 1,
+      "email": "user@example.com",
+      "created_at": "2025-11-06T14:30:00Z"
+    },
+    "tokens": {
+      "access": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+      "refresh": "eyJ0eXAiOiJKV1QiLCJhbGc..."
+    }
+  }
+}
+```
+
+**POST /api/v1/auth/login/**
+```json
+Request:
+{
+  "email": "user@example.com",
+  "password": "SecurePassword123!"
+}
+
+Response: 200 OK
+{
+  "data": {
+    "tokens": {
+      "access": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+      "refresh": "eyJ0eXAiOiJKV1QiLCJhbGc..."
+    }
+  }
+}
+```
+
+**POST /api/v1/auth/refresh/**
+```json
+Request:
+{
+  "refresh": "eyJ0eXAiOiJKV1QiLCJhbGc..."
+}
+
+Response: 200 OK
+{
+  "data": {
+    "access": "eyJ0eXAiOiJKV1QiLCJhbGc..."
+  }
+}
+```
+
+### Quran Text Endpoints
+
+**GET /api/v1/surahs/**
+```json
+Response: 200 OK
+{
+  "data": [
+    {
+      "id": 1,
+      "name_arabic": "الفاتحة",
+      "name_english": "Al-Fatiha",
+      "name_transliteration": "Al-Faatiha",
+      "revelation_type": "Meccan",
+      "revelation_order": 5,
+      "total_verses": 7
+    },
+    ...
+  ],
+  "pagination": {
+    "page": 1,
+    "page_size": 20,
+    "total_pages": 6,
+    "total_count": 114
+  }
+}
+```
+
+**GET /api/v1/surahs/{id}/verses/**
+```json
+Response: 200 OK
+{
+  "data": {
+    "surah": {
+      "id": 1,
+      "name_arabic": "الفاتحة",
+      "name_english": "Al-Fatiha",
+      "revelation_order": 5
+    },
+    "verses": [
+      {
+        "id": 1,
+        "verse_number": 1,
+        "text_uthmani": "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
+        "text_simple": "بسم الله الرحمن الرحيم",
+        "juz_number": 1,
+        "mushaf_page": 1
+      },
+      ...
+    ]
+  }
+}
+```
+
+**GET /api/v1/verses/{id}/**
+```json
+Response: 200 OK
+{
+  "data": {
+    "id": 1,
+    "surah": {
+      "id": 1,
+      "name_arabic": "الفاتحة",
+      "name_english": "Al-Fatiha",
+      "revelation_order": 5
+    },
+    "verse_number": 1,
+    "text_uthmani": "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
+    "text_simple": "بسم الله الرحمن الرحيم",
+    "juz_number": 1,
+    "mushaf_page": 1
+  }
+}
+```
+
+**GET /api/v1/search/?q={query}**
+```json
+Request: /api/v1/search/?q=الرحمن
+
+Response: 200 OK
+{
+  "data": {
+    "query": "الرحمن",
+    "results": [
+      {
+        "verse_id": 1,
+        "surah_name": "Al-Fatiha",
+        "verse_number": 1,
+        "text": "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
+        "highlighted": "بِسْمِ ٱللَّهِ <mark>ٱلرَّحْمَٰنِ</mark> ٱلرَّحِيمِ"
+      },
+      ...
+    ],
+    "total_results": 169
+  },
+  "pagination": {
+    "page": 1,
+    "page_size": 20,
+    "total_pages": 9,
+    "total_count": 169
+  }
+}
+```
+
+### Reciter Endpoints
+
+**GET /api/v1/reciters/**
+```json
+Response: 200 OK
+{
+  "data": [
+    {
+      "id": 1,
+      "name_arabic": "عبد الباسط عبد الصمد",
+      "name_english": "Abdul Basit Abdul Samad",
+      "recitation_style": "Hafs",
+      "country": "Egypt",
+      "photo_url": "https://cdn.../reciters/1.jpg",
+      "is_active": true
+    },
+    ...
+  ],
+  "pagination": {
+    "page": 1,
+    "page_size": 20,
+    "total_pages": 6,
+    "total_count": 114
+  }
+}
+```
+
+**GET /api/v1/audio/?reciter_id={id}&verse_id={id}**
+```json
+Response: 200 OK
+{
+  "data": {
+    "id": 1,
+    "reciter": {
+      "id": 1,
+      "name_english": "Abdul Basit Abdul Samad"
+    },
+    "verse": {
+      "id": 1,
+      "surah_id": 1,
+      "verse_number": 1
+    },
+    "url": "https://d1234567890.cloudfront.net/1/001/001.mp3",
+    "file_size_bytes": 102400,
+    "duration_seconds": 4.5
+  }
+}
+```
+
+### Offline Manifest Endpoint
+
+**GET /api/v1/offline/manifest/?reciter_id={id}&scope=surah&surah_id={id}**
+```json
+Response: 200 OK
+{
+  "data": {
+    "version": "1.0",
+    "reciter_id": 1,
+    "scope": "surah",
+    "surah_id": 2,
+    "files": [
+      {
+        "verse_id": 1,
+        "url": "https://d1234567890.cloudfront.net/1/002/001.mp3",
+        "size_bytes": 102400,
+        "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "duration_seconds": 4.5
+      },
+      ...
+    ],
+    "total_size_bytes": 52428800,
+    "total_files": 286
+  }
+}
+```
+
+### Standard Error Response
+
+```json
+{
+  "error": {
+    "code": "VERSE_NOT_FOUND",
+    "message": "The requested verse does not exist",
+    "details": {
+      "surah_id": 115,
+      "verse_number": 1
+    },
+    "timestamp": "2025-11-06T14:30:00Z"
+  }
+}
+```
+
+---
+
+## Implementation Patterns
+
+### Naming Conventions
+
+**Database Tables:**
+- Convention: Singular, lowercase with underscores
+- Examples: `quran_surah`, `quran_verse`, `reciters_reciter`, `reciters_audio`
+
+**Database Columns:**
+- Convention: snake_case
+- Examples: `surah_id`, `verse_number`, `name_arabic`, `created_at`
+
+**Django Models:**
+- Convention: PascalCase, singular
+- Examples: `Surah`, `Verse`, `Reciter`, `Audio`
+
+**API Endpoints:**
+- Convention: Plural nouns, kebab-case for multi-word
+- Examples: `/api/v1/surahs/`, `/api/v1/reciters/`, `/api/v1/audio-files/`, `/api/v1/reading-history/`
+
+**Python Files:**
+- Convention: snake_case
+- Examples: `models.py`, `serializers.py`, `test_models.py`, `import_quran_text.py`
+
+**Environment Variables:**
+- Convention: UPPER_CASE with underscores
+- Examples: `DEBUG`, `SECRET_KEY`, `DATABASE_URL`, `AWS_ACCESS_KEY_ID`
+
+### Code Organization
+
+**Django App Structure:**
+```python
+apps/quran/
+├── models.py              # All models for this app
+├── serializers.py         # All DRF serializers
+├── views.py               # All API views
+├── urls.py                # URL routing
+├── tasks.py               # Celery tasks
+├── validators.py          # Custom validators
+├── management/
+│   └── commands/          # Management commands
+├── tests/
+│   ├── test_models.py
+│   ├── test_views.py
+│   ├── test_serializers.py
+│   └── factories.py       # Test data factories
+└── migrations/            # Database migrations
+```
+
+**Import Order:**
+```python
+# Standard library
+import os
+from datetime import datetime
+
+# Third-party
+from django.db import models
+from rest_framework import serializers
+
+# Local
+from apps.quran.models import Verse
+from apps.core.exceptions import ValidationError
+```
+
+### Response Formats
+
+**Success - Single Resource:**
+```python
+{
+  "data": {
+    "id": 1,
+    "surah_number": 1,
+    "name_arabic": "الفاتحة"
+  }
+}
+```
+
+**Success - List with Pagination:**
+```python
+{
+  "data": [...],
+  "pagination": {
+    "page": 1,
+    "page_size": 20,
+    "total_pages": 6,
+    "total_count": 114
+  }
+}
+```
+
+**Error:**
+```python
+{
+  "error": {
+    "code": "VERSE_NOT_FOUND",
+    "message": "The requested verse does not exist",
+    "details": {...},
+    "timestamp": "2025-11-06T14:30:00Z"
+  }
+}
+```
+
+### Consistency Rules
+
+**Date/Time Format:**
+- Convention: ISO 8601 UTC
+- Format: `"2025-11-06T14:30:00Z"`
+- Storage: UTC timestamps in database
+- Client: Responsible for timezone conversion
+
+**JSON Field Naming:**
+- Convention: snake_case (consistent with Python)
+- Example: `{"surah_number": 1, "created_at": "2025-11-06T14:30:00Z"}`
+
+**Logging:**
+```python
+import logging
+logger = logging.getLogger(__name__)
+
+logger.info(
+    "Verse retrieved",
+    extra={
+        "surah_id": 1,
+        "verse_number": 1,
+        "user_id": request.user.id,
+        "endpoint": "/api/v1/verses/"
+    }
+)
+```
+
+**Log Levels:**
+- DEBUG: Detailed debugging information
+- INFO: General informational messages
+- WARNING: Warning messages (deprecated usage, etc.)
+- ERROR: Error messages (recoverable)
+- CRITICAL: Critical errors (system crash)
+
+**Error Messages (User-Facing):**
+- Convention: Clear, actionable, no technical jargon
+- Good: "The requested verse does not exist. Please check the Surah and verse numbers."
+- Bad: "DoesNotExist: Verse matching query does not exist."
+
+**Model Timestamps:**
+```python
+from django.db import models
+
+class BaseModel(models.Model):
+    """Base model with timestamps for all models"""
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
+
+# All models inherit from BaseModel
+class Verse(BaseModel):
+    surah = models.ForeignKey(Surah, on_delete=models.CASCADE)
+    verse_number = models.IntegerField()
+    text_uthmani = models.TextField()
+```
+
+### Location Patterns
+
+**S3 Audio File Paths:**
+- Convention: `{reciter_id}/{surah:03d}/{verse:03d}.mp3`
+- Examples:
+  - `s3://quran-audio/1/001/001.mp3`
+  - `s3://quran-audio/1/002/286.mp3`
+  - `s3://quran-audio/42/114/006.mp3`
+
+**CloudFront URL Generation:**
+```python
+def get_audio_url(reciter_id, surah_number, verse_number):
+    return f"https://{settings.AWS_CLOUDFRONT_DOMAIN}/{reciter_id}/{surah_number:03d}/{verse_number:03d}.mp3"
+```
+
+**Redis Cache Keys:**
+```python
+# Quran text
+quran:surah:{surah_id}  → Full Surah JSON
+quran:verse:{surah_id}:{verse_number}  → Single verse
+quran:page:{page_number}  → Mushaf page
+quran:juz:{juz_number}  → Complete Juz
+
+# Reciters
+reciters:list  → All active reciters
+reciters:detail:{reciter_id}  → Reciter profile
+
+# Translations
+translations:list:{language_code}  → Translations for language
+translations:verse:{translator_id}:{verse_id}  → Single verse translation
+
+# User data (short TTL)
+user:{user_id}:bookmarks  → User's bookmarks list
+```
+
+**Static/Media Files:**
+```python
+static/
+├── admin/          # Django admin static files
+├── rest_framework/ # DRF browsable API assets
+└── api/           # Custom API assets (if any)
+
+media/
+└── reciters/
+    └── photos/
+        └── {reciter_id}.jpg
+```
+
+---
+
+## Error Handling
+
+### Error Response Format
+
+```python
+{
+  "error": {
+    "code": "ERROR_CODE",
+    "message": "User-friendly error message",
+    "details": {
+      "field_name": "Additional context"
+    },
+    "timestamp": "2025-11-06T14:30:00Z"
+  }
+}
+```
+
+### Error Code Categories
+
+**Authentication Errors (AUTH_*):**
+- `AUTH_INVALID_TOKEN`: JWT token is invalid or malformed
+- `AUTH_EXPIRED_TOKEN`: JWT token has expired
+- `AUTH_INVALID_CREDENTIALS`: Email/password combination is incorrect
+- `AUTH_USER_NOT_FOUND`: User account does not exist
+
+**Validation Errors (VALIDATION_*):**
+- `VALIDATION_INVALID_SURAH`: Surah ID out of range (must be 1-114)
+- `VALIDATION_INVALID_VERSE`: Verse number exceeds Surah's total verses
+- `VALIDATION_INVALID_JUZ`: Juz number out of range (must be 1-30)
+- `VALIDATION_INVALID_PAGE`: Page number out of range (must be 1-604)
+- `VALIDATION_REQUIRED_FIELD`: Required field is missing
+
+**Resource Errors (RESOURCE_*):**
+- `RESOURCE_NOT_FOUND`: Requested resource does not exist
+- `RESOURCE_ALREADY_EXISTS`: Resource already exists (duplicate)
+- `RESOURCE_CONFLICT`: Operation conflicts with existing data
+
+**Server Errors (SERVER_*):**
+- `SERVER_ERROR`: Internal server error (500)
+- `SERVER_UNAVAILABLE`: Service temporarily unavailable (503)
+- `SERVER_TIMEOUT`: Request timed out
+
+**Rate Limiting (RATE_LIMIT_*):**
+- `RATE_LIMIT_EXCEEDED`: Too many requests, rate limit exceeded
+
+### HTTP Status Codes
+
+```python
+# Success
+200 OK: Successful GET, PUT, PATCH
+201 Created: Successful POST (resource created)
+204 No Content: Successful DELETE
+
+# Client Errors
+400 Bad Request: Validation errors, malformed request
+401 Unauthorized: Authentication required
+403 Forbidden: Insufficient permissions
+404 Not Found: Resource not found
+409 Conflict: Resource conflict (duplicate)
+429 Too Many Requests: Rate limit exceeded
+
+# Server Errors
+500 Internal Server Error: Unhandled server error
+503 Service Unavailable: Service temporarily down
+```
+
+### Logging Strategy
+
+**What to Log:**
+- All API requests (endpoint, user, timestamp)
+- All errors with full context
+- Authentication events (login, logout, failed attempts)
+- Import job progress and failures
+- Performance metrics (slow queries, cache misses)
+
+**What NOT to Log:**
+- Passwords or tokens
+- Personal user data (PII)
+- Full request/response bodies (unless debugging)
+
+**Log Format:**
+```python
+# Structured logging with context
+logger.error(
+    "Verse retrieval failed",
+    extra={
+        "error_code": "RESOURCE_NOT_FOUND",
+        "surah_id": 115,
+        "verse_number": 1,
+        "user_id": request.user.id,
+        "endpoint": "/api/v1/verses/",
+        "ip_address": request.META.get('REMOTE_ADDR')
+    },
+    exc_info=True  # Include stack trace
+)
+```
+
+---
+
+## Security Architecture
+
+### Authentication & Authorization
+
+**JWT Token Flow:**
+```
+1. User registers/logs in
+2. Server generates access token (30 min) + refresh token (14 days)
+3. Client stores tokens securely
+4. All API requests include: Authorization: Bearer <access_token>
+5. Server validates token signature and expiration
+6. When access token expires, client uses refresh token to get new access token
+```
+
+**Token Configuration:**
+```python
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=14),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': settings.SECRET_KEY,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+```
+
+**Permission Levels:**
+- **Anonymous users**: Read-only access to Quran text, audio, translations, Tafseer
+- **Authenticated users**: Full access (bookmarks, history, downloads)
+- **Admin users**: Import operations, content management
+
+### Data Protection
+
+**Passwords:**
+- Hashing: Django default (Argon2 or PBKDF2)
+- Minimum requirements: 8 characters, mix of letters/numbers/symbols
+- Password reset: Time-limited tokens via email
+
+**Data Encryption:**
+- **In Transit**: TLS 1.3+ enforced on all API endpoints
+- **At Rest**:
+  - RDS PostgreSQL: Encryption enabled
+  - S3: Server-side encryption (SSE-S3 or SSE-KMS)
+  - ElastiCache Redis: Encryption enabled
+
+**Sensitive Data:**
+- Email addresses: Stored hashed for privacy
+- User preferences: Encrypted at field level if containing PII
+- No user location data collected or stored (privacy commitment)
+
+### Rate Limiting
+
+**Tiered Rate Limits:**
+```python
+# Django REST Framework throttling
+REST_FRAMEWORK = {
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',  # Anonymous users
+        'user': '1000/hour',  # Authenticated users
+    }
+}
+```
+
+**Rate Limit Headers:**
+```
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 999
+X-RateLimit-Reset: 1699281600
+```
+
+**Rate Limit Exceeded Response:**
+```json
+{
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "You have exceeded the rate limit. Please try again later.",
+    "details": {
+      "limit": 1000,
+      "reset_at": "2025-11-06T15:00:00Z"
+    }
+  }
+}
+```
+
+### CORS Configuration
+
+```python
+CORS_ALLOWED_ORIGINS = [
+    "https://app.yourapp.com",
+    "https://admin.yourapp.com",
+]
+
+# Local development only
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+```
+
+---
+
+## Performance Considerations
+
+### Caching Strategy
+
+**Redis Cache Layers:**
+
+```python
+# Quran text (NEVER EXPIRE - immutable)
+CACHE_TTL = {
+    'quran_text': None,  # Never expire
+    'tafseer': None,  # Classical Tafseer never changes
+    'reciters': 86400,  # 24 hours
+    'translations': 86400,  # 24 hours
+    'audio_metadata': 604800,  # 7 days
+    'user_bookmarks': 300,  # 5 minutes
+}
+```
+
+**Cache Invalidation:**
+```python
+# Manual admin command
+python manage.py clear_cache --pattern="reciters:*"
+
+# Automatic on update
+@receiver(post_save, sender=Reciter)
+def invalidate_reciter_cache(sender, instance, **kwargs):
+    cache.delete_pattern(f"reciters:detail:{instance.id}")
+    cache.delete("reciters:list")
+```
+
+**CloudFront Caching:**
+```
+Audio files: 365 days (immutable)
+API responses: No caching (dynamic content)
+```
+
+### Database Optimization
+
+**Indexes:**
+```python
+class Verse(BaseModel):
+    class Meta:
+        indexes = [
+            Index(fields=['surah', 'verse_number']),  # Primary lookup
+            Index(fields=['juz_number']),  # Juz navigation
+            Index(fields=['mushaf_page']),  # Page navigation
+            GinIndex(fields=['search_vector']),  # Full-text search
+        ]
+```
+
+**Query Optimization:**
+```python
+# Use select_related for foreign keys
+verses = Verse.objects.select_related('surah').filter(juz_number=1)
+
+# Use prefetch_related for many-to-many or reverse FKs
+reciters = Reciter.objects.prefetch_related('audio_set').filter(is_active=True)
+
+# Only select needed fields
+verses = Verse.objects.only('id', 'text_uthmani', 'verse_number')
+```
+
+**Connection Pooling:**
+```python
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'CONN_MAX_AGE': 600,  # 10 minutes
+        'OPTIONS': {
+            'connect_timeout': 10,
+        }
+    }
+}
+```
+
+### Elasticsearch Optimization
+
+**Index Settings:**
+```json
+{
+  "settings": {
+    "number_of_shards": 3,
+    "number_of_replicas": 2,
+    "analysis": {
+      "analyzer": {
+        "arabic_analyzer": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "filter": ["lowercase", "arabic_normalization", "arabic_stemmer"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "text_uthmani": {"type": "text", "analyzer": "arabic_analyzer"},
+      "text_simple": {"type": "text", "analyzer": "arabic_analyzer"},
+      "surah_id": {"type": "integer"},
+      "verse_number": {"type": "integer"}
+    }
+  }
+}
+```
+
+**Advanced Search with Morfessor (Phase 2):**
+
+For root word analysis and morphological search, integrate morfessor:
+
+```python
+# apps/quran/search.py
+import morfessor
+
+class ArabicMorphologyAnalyzer:
+    """Arabic morphological segmentation for advanced search"""
+
+    def __init__(self):
+        self.model = morfessor.MorfessorIO()
+        # Load pre-trained Arabic model or train on Quran corpus
+
+    def segment_word(self, arabic_word):
+        """
+        Segment Arabic word into morphemes
+        Example: "المسلمون" → ["ال", "مسلم", "ون"]
+        """
+        return self.model.viterbi_segment(arabic_word)[0]
+
+    def find_root(self, arabic_word):
+        """Extract potential root from Arabic word"""
+        segments = self.segment_word(arabic_word)
+        # Apply Arabic root extraction rules
+        # Return root candidates
+        return segments
+
+# Usage in search queries (Phase 2)
+def advanced_search(query):
+    """
+    Search with morphological analysis
+    - User searches: "المؤمنين"
+    - Morfessor finds root: "ءمن"
+    - Returns all verses with words from same root
+    """
+    analyzer = ArabicMorphologyAnalyzer()
+    root = analyzer.find_root(query)
+    # Search Elasticsearch with root variants
+    return search_by_root(root)
+```
+
+**Note:** Morfessor integration is Phase 2 enhancement for advanced search features.
+
+### API Response Time Targets
+
+```
+Quran text retrieval: < 200ms (p95)
+Audio URL generation: < 100ms (p95)
+Search queries: < 500ms (p95)
+Manifest generation: < 1000ms (p95)
+Bookmark operations: < 300ms (p95)
+```
+
+---
+
+## Deployment Architecture
+
+### AWS Infrastructure
+
+**Compute:**
+- **ECS Fargate** or **EKS**: Containerized Django application
+- **Auto Scaling**: Scale based on CPU/memory/request count
+- **Application Load Balancer**: HTTPS termination, health checks
+
+**Database:**
+- **RDS PostgreSQL 16**: Multi-AZ for high availability
+- **Instance Type**: db.t4g.medium (production start, scale up as needed)
+- **Backups**: Automated daily backups, 7-day retention
+
+**Cache:**
+- **ElastiCache Redis**: Cluster mode enabled
+- **Node Type**: cache.t4g.micro (start), scale to cache.r6g.large
+
+**Search:**
+- **OpenSearch Service**: Managed Elasticsearch cluster
+- **Instance Type**: t3.medium.search (start), scale to r6g.large.search
+- **Availability Zones**: 3 AZs for production
+
+**Storage:**
+- **S3**: Audio files bucket with versioning enabled
+- **CloudFront**: Global CDN with 365-day cache for audio
+- **Lifecycle Policy**: Archive old audio versions to Glacier after 90 days
+
+**Networking:**
+- **VPC**: Private subnets for RDS, Redis, OpenSearch
+- **Security Groups**: Strict ingress/egress rules
+- **NAT Gateway**: For private subnet internet access
+
+**Monitoring:**
+- **CloudWatch**: Logs, metrics, alarms
+- **X-Ray**: Distributed tracing (optional)
+- **Sentry**: Error tracking and performance monitoring
+
+### Environment Variables (.env)
+
+```bash
+# Django
+DEBUG=False
+SECRET_KEY=your-production-secret-key-min-50-chars
+ALLOWED_HOSTS=api.yourapp.com,www.yourapp.com
+DATABASE_URL=postgres://user:password@rds-endpoint:5432/quran_db
+
+# Redis
+REDIS_URL=redis://elasticache-endpoint:6379/0
+
+# AWS
+AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+AWS_STORAGE_BUCKET_NAME=quran-audio-production
+AWS_S3_REGION_NAME=us-east-1
+AWS_CLOUDFRONT_DOMAIN=d1234567890.cloudfront.net
+
+# Elasticsearch
+ELASTICSEARCH_URL=https://opensearch-endpoint.us-east-1.es.amazonaws.com
+
+# JWT
+JWT_ACCESS_TOKEN_LIFETIME=30
+JWT_REFRESH_TOKEN_LIFETIME=14
+
+# Sentry (Error Tracking)
+SENTRY_DSN=https://examplePublicKey@o0.ingest.sentry.io/0
+
+# Email (for password reset)
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.sendgrid.net
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=apikey
+EMAIL_HOST_PASSWORD=SG.xxx
+```
+
+### Deployment Process
+
+**1. Build Docker Image:**
+```bash
+docker build -f compose/production/django/Dockerfile -t quran-api:latest .
+docker push quran-api:latest
+```
+
+**2. Deploy to ECS:**
+```bash
+# Update ECS service with new image
+aws ecs update-service --cluster quran-cluster --service quran-api --force-new-deployment
+```
+
+**3. Run Migrations:**
+```bash
+# Run as one-time task in ECS
+aws ecs run-task --cluster quran-cluster --task-definition quran-migrate
+```
+
+**4. Collect Static Files:**
+```bash
+python manage.py collectstatic --noinput
+```
+
+### Health Checks
+
+```python
+# Health check endpoint
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def health_check(request):
+    """Health check for load balancer"""
+    # Check database
+    try:
+        from django.db import connection
+        connection.cursor()
+    except Exception:
+        return Response({'status': 'unhealthy'}, status=503)
+
+    # Check Redis
+    try:
+        from django.core.cache import cache
+        cache.set('health_check', 'ok', 10)
+        cache.get('health_check')
+    except Exception:
+        return Response({'status': 'unhealthy'}, status=503)
+
+    return Response({'status': 'healthy'}, status=200)
+```
+
+---
+
+## Development Environment
+
+### Prerequisites
+
+**Required Software:**
+- Python 3.14
+- Docker & Docker Compose
+- Git
+- PostgreSQL client (psql)
+- Redis client (redis-cli)
+
+**Optional:**
+- AWS CLI (for S3/CloudFront testing)
+- Elasticsearch/Kibana (local development)
+- VS Code (for debugpy integration)
+
+### Local Setup Commands
+
+```bash
+# Clone repository
+git clone https://github.com/yourorg/django-muslim-companion.git
+cd django-muslim-companion
+
+# Create .env from template
+cp .env.example .env
+# Edit .env with local values
+
+# Build and start Docker containers
+docker-compose up -d
+
+# Run database migrations
+docker-compose exec django python manage.py migrate
+
+# Create superuser
+docker-compose exec django python manage.py createsuperuser
+
+# Import initial data
+docker-compose exec django python manage.py import_quran_text --source data/quran.xml
+docker-compose exec django python manage.py import_surah_metadata --source docs/Original/Suras-Order.csv
+docker-compose exec django python manage.py import_translations --language en
+
+# Index Quran text in Elasticsearch
+docker-compose exec django python manage.py index_quran_elasticsearch
+
+# Run tests
+docker-compose exec django pytest
+
+# Access Django shell
+docker-compose exec django python manage.py shell
+
+# View logs
+docker-compose logs -f django
+
+# Generate API documentation
+docker-compose exec django sphinx-build -b html docs/source docs/build
+
+# Run debugger (VS Code attach on port 5678)
+# Add to docker-compose.yml django service:
+# command: python -m debugpy --listen 0.0.0.0:5678 --wait-for-client manage.py runserver 0.0.0.0:8000
+```
+
+### Debugging with VS Code
+
+**VS Code launch.json configuration:**
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Remote Attach",
+      "type": "python",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "/app"
+        }
+      ],
+      "justMyCode": false
+    }
+  ]
+}
+```
+
+**Usage:**
+1. Update docker-compose.yml django service command with debugpy
+2. Start containers: `docker-compose up -d`
+3. In VS Code: Run > Start Debugging (F5)
+4. Set breakpoints and debug as normal
+
+### API Documentation Generation
+
+**Initialize Sphinx (one-time setup):**
+```bash
+mkdir -p docs/source
+docker-compose exec django sphinx-quickstart docs
+```
+
+**Documentation structure:**
+```
+docs/
+├── source/
+│   ├── conf.py          # Sphinx configuration
+│   ├── index.rst        # Documentation index
+│   ├── api/
+│   │   ├── endpoints.rst    # API endpoint reference
+│   │   ├── authentication.rst
+│   │   └── models.rst
+│   └── guides/
+│       ├── quickstart.rst
+│       └── deployment.rst
+└── build/               # Generated HTML (gitignored)
+```
+
+**Generate documentation:**
+```bash
+# Build HTML documentation
+docker-compose exec django sphinx-build -b html docs/source docs/build
+
+# View at: http://localhost:8000/docs/ (serve via Django static)
+```
+
+**Auto-document Django models and views:**
+```python
+# In docs/source/conf.py
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.napoleon',  # For Google/NumPy docstrings
+]
+```
+
+### Docker Compose Services
+
+```yaml
+# docker-compose.yml
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: quran_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+
+  django:
+    build:
+      context: .
+      dockerfile: compose/local/django/Dockerfile
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+      - elasticsearch
+    env_file:
+      - .env
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: compose/local/django/Dockerfile
+    command: celery -A config worker -l info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - postgres
+    env_file:
+      - .env
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: compose/local/django/Dockerfile
+    command: celery -A config beat -l info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+    env_file:
+      - .env
+```
+
+### Testing Strategy
+
+**Test Coverage Requirements:**
+- Overall: > 80%
+- Critical modules (quran, reciters): > 90%
+- Models: 100% (all fields, methods, validators)
+- Views: > 85% (all endpoints, error cases)
+- Serializers: > 90% (validation, transformations)
+
+**Test Structure:**
+```python
+# apps/quran/tests/test_models.py
+import pytest
+from apps.quran.models import Surah, Verse
+
+@pytest.mark.django_db
+class TestSurahModel:
+    def test_surah_creation(self):
+        surah = Surah.objects.create(
+            id=1,
+            name_arabic="الفاتحة",
+            name_english="Al-Fatiha",
+            revelation_type="Meccan",
+            total_verses=7
+        )
+        assert surah.name_english == "Al-Fatiha"
+        assert surah.total_verses == 7
+
+    def test_surah_str_representation(self):
+        surah = Surah.objects.create(id=1, name_english="Al-Fatiha", total_verses=7)
+        assert str(surah) == "Al-Fatiha"
+
+@pytest.mark.django_db
+class TestVerseModel:
+    def test_verse_creation_with_surah(self):
+        surah = Surah.objects.create(id=1, name_english="Al-Fatiha", total_verses=7)
+        verse = Verse.objects.create(
+            surah=surah,
+            verse_number=1,
+            text_uthmani="بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
+            juz_number=1,
+            mushaf_page=1
+        )
+        assert verse.surah == surah
+        assert verse.verse_number == 1
+
+# apps/quran/tests/test_views.py
+import pytest
+from rest_framework.test import APIClient
+
+@pytest.mark.django_db
+class TestSurahAPI:
+    def test_list_surahs(self):
+        client = APIClient()
+        response = client.get('/api/v1/surahs/')
+        assert response.status_code == 200
+        assert 'data' in response.json()
+
+    def test_retrieve_surah_detail(self):
+        surah = Surah.objects.create(id=1, name_english="Al-Fatiha", total_verses=7)
+        client = APIClient()
+        response = client.get(f'/api/v1/surahs/{surah.id}/')
+        assert response.status_code == 200
+        assert response.json()['data']['name_english'] == "Al-Fatiha"
+```
+
+**Run Tests:**
+```bash
+# All tests
+pytest
+
+# With coverage
+pytest --cov=apps --cov-report=html
+
+# Specific app
+pytest apps/quran/tests/
+
+# Specific test
+pytest apps/quran/tests/test_models.py::TestSurahModel::test_surah_creation
+```
+
+---
+
+## Architecture Decision Records (ADRs)
+
+### ADR-001: Use Cookiecutter Django as Foundation
+
+**Status:** Accepted
+**Date:** 2025-11-06
+**Context:** Need a production-ready Django boilerplate with best practices
+**Decision:** Use Cookiecutter Django template
+**Rationale:**
+- Saves ~40% of initial setup decisions
+- Production-ready security configurations
+- Docker/Docker Compose included
+- Celery, Redis, pytest pre-configured
+- Active maintenance and community support
+
+**Consequences:**
+- Faster initial setup
+- Lower risk (proven template)
+- Some customization needed (single settings.py)
+
+---
+
+### ADR-002: Single settings.py with django-environ
+
+**Status:** Accepted
+**Date:** 2025-11-06
+**Context:** Cookiecutter Django uses separate settings/base.py, local.py, production.py
+**Decision:** Replace with single settings.py using django-environ for .env management
+**Rationale:**
+- Simpler mental model
+- Easier for intermediate developers
+- Environment-specific logic handled via environment variables
+- Follows 12-factor app principles
+
+**Consequences:**
+- Requires manual merge of Cookiecutter's split settings
+- All environment differences managed via .env files
+
+---
+
+### ADR-003: Elasticsearch for Arabic Text Search
+
+**Status:** Accepted
+**Date:** 2025-11-06
+**Context:** Need robust Arabic text search with diacritical mark handling
+**Decision:** Use Elasticsearch (AWS OpenSearch) instead of PostgreSQL FTS
+**Rationale:**
+- Superior Arabic language analysis
+- Fuzzy matching and relevance scoring
+- Scalable for future advanced search features
+- Root word analysis support for Phase 2
+
+**Consequences:**
+- Additional infrastructure (OpenSearch cluster)
+- Higher operational complexity
+- Better search quality and user experience
+
+---
+
+### ADR-004: S3 + CloudFront for Audio Delivery
+
+**Status:** Accepted
+**Date:** 2025-11-06
+**Context:** 600K+ audio files need global delivery with <2s startup time
+**Decision:** Use S3 for storage + CloudFront CDN for delivery
+**Rationale:**
+- Meets NFR: <2s audio startup globally via edge caching
+- S3: Unlimited scale, 11 nines durability
+- CloudFront: 400+ edge locations worldwide
+- Cost-effective for read-heavy workload
+
+**Consequences:**
+- CloudFront costs for bandwidth
+- Need to manage S3 bucket lifecycle policies
+
+---
+
+### ADR-005: JWT Authentication with djangorestframework-simplejwt
+
+**Status:** Accepted
+**Date:** 2025-11-06
+**Context:** Mobile-first API needs stateless authentication
+**Decision:** Use JWT tokens via djangorestframework-simplejwt
+**Rationale:**
+- Stateless (no server-side session storage)
+- Mobile-friendly (store tokens in secure storage)
+- Industry standard for REST APIs
+- Horizontal scaling without sticky sessions
+
+**Consequences:**
+- Cannot revoke tokens immediately (must wait for expiration)
+- Implement refresh token rotation for security
+
+---
+
+### ADR-006: Aggressive Redis Caching for Immutable Content
+
+**Status:** Accepted
+**Date:** 2025-11-06
+**Context:** Quran text never changes, must optimize for <200ms response time
+**Decision:** Cache Quran text with no expiration (never expire)
+**Rationale:**
+- Quran text is immutable (verified, never changes)
+- Memory is cheap, API speed is critical
+- NFR requires <200ms response time
+
+**Consequences:**
+- Need manual cache invalidation mechanism (edge case)
+- Higher memory usage (acceptable tradeoff)
+
+---
+
+### ADR-007: Normalized Database Schema with Audio Table
+
+**Status:** Accepted
+**Date:** 2025-11-06
+**Context:** Decision between Audio table vs pattern-based URL generation
+**Decision:** Explicit Audio table with FK relationships
+**Rationale:**
+- Flexibility for per-file metadata (duration, size, quality)
+- Easier to track missing audio files
+- Can handle multiple qualities per verse
+- Better for reporting and analytics
+
+**Consequences:**
+- 600K+ audio records in database
+- More storage, but better tracking and flexibility
+
+---
+
+### ADR-008: Hybrid Offline Sync with Content Hashes
+
+**Status:** Accepted
+**Date:** 2025-11-06
+**Context:** Users need reliable offline content with integrity verification
+**Decision:** Manifest API with SHA-256 checksums, hybrid download options
+**Rationale:**
+- Content hashes detect corruption/tampering
+- Manifest allows pause/resume per file
+- Hybrid approach (packages + custom) serves all user needs
+- Industry standard (npm, apt use checksums)
+
+**Consequences:**
+- Need to compute and store SHA-256 for all audio files
+- Manifest generation overhead (cached aggressively)
+
+---
+
+### ADR-009: Celery Priority Queues
+
+**Status:** Accepted
+**Date:** 2025-11-06
+**Context:** Background jobs have different priorities (imports vs analytics)
+**Decision:** Three Celery queues: celery_high, celery_default, celery_low
+**Rationale:**
+- Import jobs shouldn't block user operations
+- Simple but effective priority management
+- Easy to scale workers per queue
+
+**Consequences:**
+- Need to configure queue assignments per task
+- More complex Celery worker deployment
+
+---
+
+## Document Updates
+
+**Version:** 1.2
+**Update Date:** 2025-11-06
+**Changes:**
+
+### Version 1.2 Updates
+
+**1. Python Version Update:**
+- Updated Python 3.13 → **Python 3.14** throughout document
+- Updated Cookiecutter prompt: `use_pycharm: n`
+
+**2. Revelation Order Feature (FR-002 from PRD v1.1):**
+- Added `revelation_order` field to Surah model (chronological revelation sequence 1-114)
+- Added `revelation_note` field for documenting mixed revelation Surahs
+- Added `is_mixed_revelation` property to identify Surahs with verses from both Mecca and Medina
+- Added database index for revelation_order for chronological navigation
+- Updated all API endpoint examples to include revelation_order in Surah responses
+- Supports historical context feature from PRD "Product Magic" section
+- **Data Source:** `docs/Original/Suras-Order.csv` (authoritative revelation order data)
+- Added `import_surah_metadata` management command for CSV import
+
+**Example:** Surah Al-Fatiha (Mushaf order: 1, Revelation order: 5)
+**Mixed Revelation Example:** Al-Qalam (Mushaf: 68, Revelation: 2) - "Except 17-33 and 48-50, from Medina"
+
+### Version 1.1 Updates
+
+### Additional Libraries Integrated
+
+**Added Production Libraries:**
+- **python-dotenv 1.0.0**: Environment variable loading (django-environ backup)
+- **pycountry 23.12.11**: ISO country codes for reciter validation
+- **numpy 1.26.2**: Audio analysis and statistical processing
+- **morfessor 2.0.6**: Arabic morphological analysis for advanced search (Phase 2)
+- **sphinx 7.2.6**: API documentation generation
+- **sphinx-rtd-theme 2.0.0**: ReadTheDocs theme for documentation
+- **debugpy 1.8.0**: VS Code remote debugging support
+
+**Libraries Excluded (Conflicts with Django ORM):**
+- ❌ alembic (Django migrations used instead)
+- ❌ asyncpg (psycopg2-binary synchronous driver used)
+- ❌ pydantic-settings (django-environ used for settings)
+
+### Architecture Updates
+
+1. **Reciter Model Enhanced:**
+   - Changed `country` (CharField) → `country_code` (ISO 3166-1 alpha-2)
+   - Added `country_name` property using pycountry
+   - Added country code validation in `clean()` method
+   - Added country_code index
+
+2. **Audio Model Enhanced:**
+   - Added optional audio analysis fields: `amplitude_mean`, `amplitude_std`
+   - Added `analyze_audio()` method for numpy-based audio processing (Phase 2)
+
+3. **Development Environment:**
+   - Added VS Code debugging configuration with debugpy
+   - Added Sphinx documentation generation workflow
+   - Added documentation structure and auto-documentation setup
+
+4. **Search Enhancement (Phase 2):**
+   - Documented morfessor integration for Arabic morphological analysis
+   - Added `ArabicMorphologyAnalyzer` class example
+   - Root word search capability for advanced queries
+
+5. **Library Usage Documentation:**
+   - Added detailed usage notes for each new library
+   - Clarified Phase 1 vs Phase 2 features
+   - Updated Python libraries section with categories
+
+**Decisions Preserved:**
+- ✅ Django ORM + Django migrations (not SQLAlchemy)
+- ✅ django-environ for settings management
+- ✅ psycopg2-binary for synchronous PostgreSQL driver
+- ✅ All original architectural decisions maintained
+
+---
+
+## Data Sources and Import Strategy
+
+### Authoritative Data Sources
+
+**Quran Text & Metadata:**
+- **Revelation Order:** `docs/Original/Suras-Order.csv` (authoritative source)
+  - Contains chronological revelation order (1-114)
+  - Includes revelation type (Meccan/Medinan)
+  - Documents exceptions where Surahs have verses from both locations
+  - Example: Al-Qalam (68) - "Except 17-33 and 48-50, from Medina"
+
+**CSV Format:**
+```csv
+Order,Sura Name,Number,Type,Note
+1,Al-Alaq,96,Meccan,
+2,Al-Qalam,68,Meccan,Except 17-33 and 48-50, from Medina
+5,Al-Faatiha,1,Meccan,
+87,Al-Baqara,2,Medinan,Except 281 from Mina at the time of the Last Hajj
+...
+```
+
+**Import Implementation:**
+
+```python
+# apps/quran/management/commands/import_surah_metadata.py
+import csv
+from django.core.management.base import BaseCommand
+from apps.quran.models import Surah
+
+class Command(BaseCommand):
+    help = 'Import Surah metadata including revelation order from CSV'
+
+    def add_arguments(self, parser):
+        parser.add_argument('--source', type=str, required=True)
+
+    def handle(self, *args, **options):
+        with open(options['source'], 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f, delimiter='\t')
+            for row in reader:
+                surah_number = int(row['Number'])
+                Surah.objects.update_or_create(
+                    id=surah_number,
+                    defaults={
+                        'revelation_order': int(row['Order']),
+                        'revelation_type': row['Type'],
+                        'revelation_note': row['Note'].strip(),
+                    }
+                )
+        self.stdout.write(self.success('Successfully imported revelation order data'))
+```
+
+**Key Insights from Data:**
+- 86 Meccan Surahs (revealed 1-86 chronologically)
+- 28 Medinan Surahs (revealed 87-114 chronologically)
+- 31 Surahs have mixed verses (both Meccan and Medinan)
+- Al-Alaq (96) was first revealed (revelation_order: 1)
+- An-Nasr (110) was last revealed (revelation_order: 114)
+
+**Data Quality Validation:**
+- All 114 Surahs must have revelation_order between 1-114
+- No duplicate revelation_order values
+- revelation_type must be 'Meccan' or 'Medinan'
+- revelation_note documents exceptions for mixed Surahs
+
+---
+
+## Conclusion
+
+This architecture document provides a comprehensive blueprint for building the Quran Backend API with consistency and quality. All architectural decisions are documented, implementation patterns are explicit, and integration points are validated.
+
+**Key Strengths:**
+- ✅ Production-ready foundation (Cookiecutter Django)
+- ✅ Scalable infrastructure (AWS, PostgreSQL, Redis, Elasticsearch)
+- ✅ Performance-optimized (aggressive caching, CDN, database indexes)
+- ✅ Mobile-friendly (JWT auth, offline-first, manifest downloads)
+- ✅ Developer-friendly (clear patterns, comprehensive documentation)
+- ✅ AI agent consistency (explicit naming, structure, format conventions)
+
+**Next Steps:**
+1. Initialize project with Cookiecutter Django
+2. Implement core infrastructure (Epic 1)
+3. Import Quran text and index in Elasticsearch (Epic 2)
+4. Configure S3/CloudFront for audio delivery (Epic 3)
+5. Implement remaining epics (4-7)
+6. Run solutioning gate check before implementation
+7. Proceed to sprint planning
+
+---
+
+_Generated by BMAD Decision Architecture Workflow v1.3.2_
+_Date: 2025-11-06_
+_For: Osama_
+_Project: django-muslim-companion_

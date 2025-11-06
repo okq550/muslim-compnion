@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "SlashCommand(/bmad:bmm:workflows:workflow-status)",
+      "SlashCommand(/bmad:bmm:workflows:workflow-init)",
+      "WebSearch"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
