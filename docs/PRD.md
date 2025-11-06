@@ -40,7 +40,7 @@ The Quran Backend embodies several unique differentiators that transform it from
 **Why It Matters:** Muslims trust their spiritual practice to this app. Textual accuracy isn't a feature - it's a sacred responsibility.
 
 #### 2. **Holistic Quran Experience**
-- **Quality-First Audio Library:** Curated collection of 100+ renowned reciters with error-free recitations, not just volume but quality
+- **Quality-First Audio Library:** Curated collection of 25 authenticated reciters from Tanzil.net with verified, error-free recitations - quality over quantity
 - **Smart Offline Functionality:** Complete Quran access without internet - spiritual practice should never depend on connectivity
 - **Unified Content Delivery:** Text, audio, translations, Tafseer, and bookmarks work seamlessly together
 - **Flexible Navigation:** By Surah, Juz, Page, or Verse - respecting how different Muslims engage with the Quran
@@ -81,7 +81,7 @@ The Quran Backend embodies several unique differentiators that transform it from
 
 - **Technical Complexity:**
   - Multi-modal content delivery (text, audio, metadata)
-  - Large dataset management (114 Surahs, 6,236 verses, 100+ reciters, 20+ translations)
+  - Large dataset management (114 Surahs, 6,236 verses, 25 reciters from Tanzil.net, 20+ translations)
   - Offline synchronization and content download management
   - Performance optimization for mobile and low-bandwidth environments
   - Cross-language text rendering and bidirectional text support
@@ -130,7 +130,7 @@ The Quran Backend embodies several unique differentiators that transform it from
 **MUST HAVE - Core Quran Engagement:**
 - ✅ Complete Quran text in Othmani script (all 114 Surahs, 6,236 verses)
 - ✅ 20+ translations in multiple languages (English, Urdu, French, Indonesian, Turkish, Arabic)
-- ✅ 100+ authenticated reciters with complete recitations
+- ✅ 25 authenticated reciters from Tanzil.net with complete recitations (expansion to 50+ reciters in Phase 2 based on user demand)
 - ✅ Basic Tafseer from 2 classical scholars (Ibn Kathir, Al-Jalalayn)
 - ✅ Multiple navigation modes (by Surah, Juz, Page, Verse)
 - ✅ Bookmarking and reading history

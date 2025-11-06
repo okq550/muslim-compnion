@@ -1,7 +1,7 @@
 # Architecture Document
 ## Quran Backend API - Islamic Spiritual Companion App
 
-**Version:** 1.2
+**Version:** 1.4
 **Date:** 2025-11-06 (Updated)
 **Project:** django-muslim-companion
 **Author:** Architecture Team
@@ -49,8 +49,27 @@ cookiecutter https://github.com/cookiecutter/cookiecutter-django
 **Post-initialization customization:**
 1. Replace `config/settings/` (base.py, local.py, production.py) with single `config/settings.py`
 2. Install `django-environ` for .env management
-3. Add Django apps per epic structure (see Project Structure section)
-4. Configure AWS S3, CloudFront, and OpenSearch integrations
+3. **Configure Arabic i18n (internationalization):**
+   ```python
+   LANGUAGE_CODE = 'ar'  # Arabic as default language
+   LANGUAGES = [
+       ('ar', 'العربية'),
+       ('en', 'English'),
+   ]
+   USE_I18N = True
+   USE_L10N = True
+   LOCALE_PATHS = [str(BASE_DIR / 'locale')]
+
+   MIDDLEWARE = [
+       ...
+       'django.middleware.locale.LocaleMiddleware',  # Add for language switching
+       ...
+   ]
+   ```
+4. Add Django apps per epic structure (see Project Structure section)
+5. Configure AWS S3, CloudFront, and OpenSearch integrations
+6. Generate Arabic translation files: `django-admin makemessages -l ar`
+7. Configure Django admin for Arabic RTL layout (automatic with LANGUAGE_CODE='ar')
 
 This establishes the base architecture with these decisions:
 - Django 5.2.8 LTS + Python 3.14
@@ -61,6 +80,8 @@ This establishes the base architecture with these decisions:
 - Celery + Celery Beat for background jobs
 - pytest for testing framework
 - Pre-commit hooks for code quality
+- **Arabic as default language with bilingual support (Arabic/English)**
+- **Django admin panel in Arabic with RTL layout**
 
 ---
 
@@ -79,6 +100,9 @@ This establishes the base architecture with these decisions:
 | **Background Jobs** | Celery + Redis | Latest | All | Async task processing, scheduled jobs, import pipelines |
 | **Authentication** | JWT (simplejwt) | Latest | All | Stateless auth, mobile-friendly, industry standard for REST APIs |
 | **Environment Config** | django-environ | 0.11.2 | All | Secure .env file management, 12-factor app principles |
+| **Error Tracking** | Sentry | Latest | All | Real-time error monitoring, performance tracking, critical for zero-error tolerance |
+| **Internationalization** | Django i18n | Built-in | All | Arabic as default, bilingual support (Arabic/English), RTL layout |
+| **Admin Dashboard** | Django Admin | Built-in | Epic 2-5 | Content management (reciters, translations, tafseer, audio uploads) |
 | **Containerization** | Docker + Docker Compose | Latest | All | Consistent dev/prod environments, easy deployment |
 | **Cloud Provider** | AWS | N/A | All | Comprehensive services (S3, CloudFront, OpenSearch, RDS, ECS) |
 
@@ -99,7 +123,7 @@ This establishes the base architecture with these decisions:
 - **Elasticsearch (AWS OpenSearch)**: Full-text search engine for Arabic Quran text
 
 **Infrastructure:**
-- **AWS S3**: Object storage for 600K+ audio files (~100-200MB per reciter)
+- **AWS S3**: Object storage for 156K+ audio files (25 reciters × 6,236 verses)
 - **AWS CloudFront**: CDN for global audio delivery with edge caching
 - **AWS RDS PostgreSQL**: Managed database with Multi-AZ for high availability
 - **AWS ElastiCache Redis**: Managed Redis cluster
@@ -114,6 +138,13 @@ This establishes the base architecture with these decisions:
 - **djangorestframework-simplejwt**: JWT token authentication
 - **Access tokens**: 30-minute lifetime
 - **Refresh tokens**: 14-day lifetime
+
+**Monitoring & Error Tracking:**
+- **Sentry**: Application monitoring and error tracking
+- **Real-time alerts**: Immediate notification of errors and performance issues
+- **Performance monitoring**: Track API response times, database queries, slow endpoints
+- **Release tracking**: Associate errors with specific deployments
+- **User context**: Track which users experience errors
 
 **Python Libraries:**
 ```
@@ -147,6 +178,12 @@ morfessor==2.0.6
 # Country Data
 pycountry==23.12.11
 
+# HTTP Requests
+requests==2.31.0
+
+# Monitoring & Error Tracking
+sentry-sdk==1.40.0
+
 # Documentation
 sphinx==7.2.6
 sphinx-rtd-theme==2.0.0
@@ -167,6 +204,8 @@ debugpy==1.8.0
 - **numpy**: Audio processing, statistical analysis for recitation metadata
 - **morfessor**: Arabic morphological segmentation for advanced search (Phase 2)
 - **pycountry**: Standardized country names/codes for reciter profiles
+- **requests**: HTTP client for downloading audio files from Tanzil.net
+- **sentry-sdk**: Real-time error tracking and performance monitoring (critical for zero-error tolerance NFR)
 - **sphinx**: API documentation generation
 - **debugpy**: VS Code debugging support for Django development
 
@@ -184,6 +223,10 @@ Redis ElastiCache ← Celery → Background Jobs
                    ← Django Cache → All Apps
 
 OpenSearch ← Django Models → Quran Search
+
+Sentry ← Django Middleware → Error Tracking
+       ← Celery Integration → Background Job Monitoring
+       ← Custom Instrumentation → Critical Operations
 ```
 
 **Internal App Dependencies:**
@@ -253,6 +296,7 @@ django-muslim-companion/
 │   │   ├── storage.py               # S3 storage handlers
 │   │   ├── management/
 │   │   │   └── commands/
+│   │   │       ├── initialize_reciters.py
 │   │   │       └── import_reciter_audio.py
 │   │   └── tests/
 │   │
@@ -424,11 +468,12 @@ class Page(BaseModel):
 class Reciter(BaseModel):
     """Quran reciter profile"""
     id = AutoField(primary_key=True)
+    slug = CharField(max_length=50, unique=True)  # Tanzil.net reciter slug (e.g., 'abdulbasit', 'afasy')
     name_arabic = CharField(max_length=200)
     name_english = CharField(max_length=200)
-    biography_arabic = TextField()
-    biography_english = TextField()
-    recitation_style = CharField(max_length=50)  # Hafs, Warsh, etc.
+    biography_arabic = TextField(blank=True)
+    biography_english = TextField(blank=True)
+    recitation_style = CharField(max_length=50)  # Hafs, Warsh, Mujawwad, etc.
     country_code = CharField(max_length=2)  # ISO 3166-1 alpha-2 (validated with pycountry)
     photo_url = URLField(null=True)
     is_active = BooleanField(default=True)
@@ -437,6 +482,7 @@ class Reciter(BaseModel):
         indexes = [
             Index(fields=['is_active', 'name_english']),
             Index(fields=['country_code']),
+            Index(fields=['slug']),
         ]
 
     @property
@@ -487,7 +533,14 @@ class Audio(BaseModel):
         """Generate CloudFront URL for audio delivery"""
         surah_num = self.verse.surah.id
         verse_num = self.verse.verse_number
-        return f"https://{settings.AWS_CLOUDFRONT_DOMAIN}/{self.reciter.id}/{surah_num:03d}/{verse_num:03d}.mp3"
+        return f"https://{settings.AWS_CLOUDFRONT_DOMAIN}/{self.reciter.slug}/{surah_num:03d}{verse_num:03d}.mp3"
+
+    @property
+    def tanzil_source_url(self):
+        """Generate Tanzil.net source URL for downloading audio"""
+        surah_num = self.verse.surah.id
+        verse_num = self.verse.verse_number
+        return f"https://tanzil.net/res/audio/{self.reciter.slug}/{surah_num:03d}{verse_num:03d}.mp3"
 ```
 
 **Epic 4: Translations**
@@ -1048,16 +1101,21 @@ class Verse(BaseModel):
 ### Location Patterns
 
 **S3 Audio File Paths:**
-- Convention: `{reciter_id}/{surah:03d}/{verse:03d}.mp3`
+- Convention: `{reciter_slug}/{surah:03d}{verse:03d}.mp3` (matches Tanzil.net format)
 - Examples:
-  - `s3://quran-audio/1/001/001.mp3`
-  - `s3://quran-audio/1/002/286.mp3`
-  - `s3://quran-audio/42/114/006.mp3`
+  - `s3://quran-audio/abdulbasit/001001.mp3` (Al-Fatiha, verse 1 by AbdulBasit)
+  - `s3://quran-audio/afasy/002286.mp3` (Al-Baqara, verse 286 by Al-Afasy)
+  - `s3://quran-audio/husary-mjwd/114006.mp3` (An-Nas, verse 6 by Al-Husary Mujawwad)
 
 **CloudFront URL Generation:**
 ```python
-def get_audio_url(reciter_id, surah_number, verse_number):
-    return f"https://{settings.AWS_CLOUDFRONT_DOMAIN}/{reciter_id}/{surah_number:03d}/{verse_number:03d}.mp3"
+def get_audio_url(reciter_slug, surah_number, verse_number):
+    """Generate CloudFront URL for audio file"""
+    return f"https://{settings.AWS_CLOUDFRONT_DOMAIN}/{reciter_slug}/{surah_number:03d}{verse_number:03d}.mp3"
+
+def get_tanzil_source_url(reciter_slug, surah_number, verse_number):
+    """Generate Tanzil.net source URL for downloading audio"""
+    return f"https://tanzil.net/res/audio/{reciter_slug}/{surah_number:03d}{verse_number:03d}.mp3"
 ```
 
 **Redis Cache Keys:**
@@ -1625,8 +1683,16 @@ docker-compose exec django python manage.py migrate
 docker-compose exec django python manage.py createsuperuser
 
 # Import initial data
-docker-compose exec django python manage.py import_quran_text --source data/quran.xml
+docker-compose exec django python manage.py import_quran_text --source docs/Data/quran-uthmani.xml
 docker-compose exec django python manage.py import_surah_metadata --source docs/Data/Suras-Order.csv
+
+# Initialize all 25 reciters from Tanzil.net
+docker-compose exec django python manage.py initialize_reciters
+
+# Import audio files for priority reciters (example: abdulbasit)
+docker-compose exec django python manage.py import_reciter_audio --reciter-slug abdulbasit
+
+# Import translations
 docker-compose exec django python manage.py import_translations --language en
 
 # Index Quran text in Elasticsearch
@@ -1939,16 +2005,18 @@ pytest apps/quran/tests/test_models.py::TestSurahModel::test_surah_creation
 
 **Status:** Accepted
 **Date:** 2025-11-06
-**Context:** 600K+ audio files need global delivery with <2s startup time
-**Decision:** Use S3 for storage + CloudFront CDN for delivery
+**Context:** 156K+ audio files (25 reciters) need global delivery with <2s startup time
+**Decision:** Use Tanzil.net as source, S3 for storage + CloudFront CDN for delivery
 **Rationale:**
+- Tanzil.net provides all 25 reciters with consistent format
 - Meets NFR: <2s audio startup globally via edge caching
 - S3: Unlimited scale, 11 nines durability
 - CloudFront: 400+ edge locations worldwide
 - Cost-effective for read-heavy workload
 
 **Consequences:**
-- CloudFront costs for bandwidth
+- Need to download 156K files from Tanzil.net (one-time)
+- CloudFront costs for bandwidth (~$50-100/month for moderate traffic)
 - Need to manage S3 bucket lifecycle policies
 
 ---
@@ -2041,11 +2109,492 @@ pytest apps/quran/tests/test_models.py::TestSurahModel::test_surah_creation
 
 ---
 
+### ADR-010: Sentry for Error Tracking and Performance Monitoring
+
+**Status:** Accepted
+**Date:** 2025-11-06
+**Context:**
+- PRD NFR-037 requires "zero tolerance for Quran text errors"
+- NFR-038 requires audio quality monitoring
+- Need real-time alerting when errors occur in production
+- 99.9% uptime requirement demands proactive error detection
+- Global user base requires visibility into errors across regions
+
+**Decision:** Use Sentry for application monitoring, error tracking, and performance monitoring
+
+**Rationale:**
+- **Zero-error tolerance alignment**: Immediate alerts when Quran text retrieval fails
+- **Performance monitoring**: Track API response times against < 200ms NFR target
+- **Contextual debugging**: Stack traces, user context, request data for rapid issue resolution
+- **Release tracking**: Associate errors with deployments to identify regressions quickly
+- **Production-ready**: Cookiecutter Django includes Sentry support out-of-the-box
+- **Free tier sufficient**: 5,000 errors/month adequate for MVP phase
+- **Critical for sacred content**: Any error serving Quran text must be detected immediately
+
+**Integration Points:**
+- Django middleware captures all unhandled exceptions
+- Performance tracking for API endpoints (identify slow queries, bottlenecks)
+- Celery integration for background job error tracking
+- Custom events for critical operations (Quran import verification, audio file validation)
+- Alert rules for critical errors (Quran text errors, authentication failures, data corruption)
+
+**Consequences:**
+- **Positive:**
+  - Real-time error notifications via email, Slack, or PagerDuty
+  - Detailed stack traces with request context for faster debugging
+  - Performance insights identifying slow endpoints before they impact users
+  - Release tracking helps identify which deployment introduced bugs
+  - User impact tracking (how many users affected by each error)
+
+- **Negative:**
+  - Additional external dependency (requires Sentry account)
+  - Small performance overhead (< 5ms per request)
+  - Costs scale with error volume (mitigated by free tier + error prevention)
+  - Sensitive data may appear in error reports (requires PII scrubbing configuration)
+
+**Configuration:**
+```python
+# config/settings.py
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+from sentry_sdk.integrations.celery import CeleryIntegration
+
+sentry_sdk.init(
+    dsn=env('SENTRY_DSN'),
+    integrations=[
+        DjangoIntegration(),
+        CeleryIntegration(),
+    ],
+    environment=env('ENVIRONMENT', default='production'),
+    release=env('RELEASE_VERSION', default='unknown'),
+
+    # Performance monitoring (10% of transactions)
+    traces_sample_rate=0.1,
+
+    # Error filtering
+    ignore_errors=[
+        # Don't alert on 404s (expected for invalid Surah IDs)
+        'django.http.response.Http404',
+    ],
+
+    # PII scrubbing
+    send_default_pii=False,
+    before_send=scrub_sensitive_data,
+)
+
+def scrub_sensitive_data(event, hint):
+    """Remove sensitive data from Sentry events"""
+    # Scrub passwords, tokens, API keys from error reports
+    if 'request' in event:
+        event['request'].pop('cookies', None)
+        if 'headers' in event['request']:
+            event['request']['headers'].pop('Authorization', None)
+    return event
+```
+
+**Alert Configuration:**
+```python
+# Critical alerts (immediate notification)
+- Quran text retrieval errors (any verse not found)
+- Database connection failures
+- S3/CloudFront audio delivery failures
+- Authentication system errors
+
+# Warning alerts (daily digest)
+- API response time > 500ms (p95)
+- Error rate > 1% of requests
+- Celery queue backup (> 1000 pending jobs)
+```
+
+**Custom Instrumentation:**
+```python
+# Track critical operations
+with sentry_sdk.start_transaction(op="quran.import", name="Import Quran Text"):
+    import_quran_text_from_xml()
+    sentry_sdk.capture_message("Quran import completed", level="info")
+
+# Track verse retrieval performance
+@sentry_sdk.trace
+def get_verse(surah_id, verse_number):
+    # Automatically tracked in performance monitoring
+    return Verse.objects.get(surah_id=surah_id, verse_number=verse_number)
+```
+
+---
+
+### ADR-011: Django Admin for Content Management
+
+**Status:** Accepted
+**Date:** 2025-11-06
+**Context:**
+- Need administrative interface for managing reciters, translations, tafseer, and audio files
+- Epic 2 (Quran Text), Epic 3 (Reciters), Epic 4 (Translations), Epic 5 (Tafseer) require content management
+- US-RC-001, US-TR-001, US-TF-001, US-RC-002 specify admin CRUD requirements
+- Arabic localization required for admin panel (LANGUAGE_CODE = 'ar')
+- Verse-level audio upload capability needed (US-RC-002)
+
+**Decision:** Use Django Admin with Arabic localization and custom ModelAdmin classes for content management
+
+**Rationale:**
+- **Built-in solution**: Django Admin included in Cookiecutter Django, zero additional dependencies
+- **Feature-rich**: List views, filtering, search, bulk actions, inline editing out-of-the-box
+- **Customizable**: ModelAdmin classes allow custom forms, actions, and validations
+- **Arabic support**: Django i18n automatically translates admin interface to Arabic
+- **Permission system**: Built-in authentication, groups, and permissions (django.contrib.auth)
+- **Rapid development**: Saves weeks compared to building custom admin UI
+- **Production-ready**: Used by thousands of Django projects, battle-tested for years
+
+**Content Management Requirements:**
+
+**Reciters (US-RC-001):**
+- CRUD operations for reciter profiles
+- List display: name_arabic, name_english, recitation_style, country_code, is_active
+- List filters: is_active, country_code, recitation_style
+- Search fields: name_arabic, name_english, slug
+- Bulk actions: Activate/deactivate reciters
+- Arabic localization for all field labels and help text
+
+**Translations (US-TR-001):**
+- CRUD operations for translations
+- List display: translator_name, language_code, is_active
+- List filters: is_active, language_code
+- Search fields: translator_name, translator_name_arabic
+- Bulk actions: Activate/deactivate translations
+
+**Tafseer (US-TF-001):**
+- CRUD operations for tafseer sources
+- List display: author_name, language_code, is_active
+- List filters: is_active, language_code
+- Search fields: author_name, author_name_arabic
+- Bulk actions: Activate/deactivate tafseer sources
+
+**Audio Uploads (US-RC-002):**
+- Custom admin action or inline for verse-level audio file uploads
+- File validation: MP3 format only, max 5MB per file
+- S3 storage integration via django-storages
+- Audio model inline in Reciter admin for bulk uploads
+- Progress tracking for large batch uploads
+
+**Implementation:**
+```python
+# apps/reciters/admin.py
+from django.contrib import admin
+from django.utils.translation import gettext_lazy as _
+from .models import Reciter, Audio
+
+@admin.register(Reciter)
+class ReciterAdmin(admin.ModelAdmin):
+    list_display = ['name_arabic', 'name_english', 'recitation_style', 'country_code', 'is_active']
+    list_filter = ['is_active', 'country_code', 'recitation_style']
+    search_fields = ['name_arabic', 'name_english', 'slug']
+    prepopulated_fields = {'slug': ('name_english',)}
+
+    fieldsets = (
+        (_('Basic Information'), {
+            'fields': ('slug', 'name_arabic', 'name_english', 'recitation_style', 'country_code')
+        }),
+        (_('Biography'), {
+            'fields': ('biography_arabic', 'biography_english', 'photo_url'),
+            'classes': ('collapse',)
+        }),
+        (_('Status'), {
+            'fields': ('is_active',)
+        }),
+    )
+
+    actions = ['activate_reciters', 'deactivate_reciters']
+
+    @admin.action(description=_('Activate selected reciters'))
+    def activate_reciters(self, request, queryset):
+        queryset.update(is_active=True)
+
+    @admin.action(description=_('Deactivate selected reciters'))
+    def deactivate_reciters(self, request, queryset):
+        queryset.update(is_active=False)
+
+@admin.register(Audio)
+class AudioAdmin(admin.ModelAdmin):
+    list_display = ['reciter', 'surah', 'verse_number', 'file_size_mb', 'created_at']
+    list_filter = ['reciter', 'surah']
+    search_fields = ['reciter__name_english', 'surah__name_english']
+
+    def file_size_mb(self, obj):
+        """Display file size in MB"""
+        if obj.s3_key:
+            # Calculate from S3 metadata
+            return f"{obj.get_file_size() / 1024 / 1024:.2f} MB"
+        return "N/A"
+    file_size_mb.short_description = _('File Size')
+
+# apps/translations/admin.py
+@admin.register(Translation)
+class TranslationAdmin(admin.ModelAdmin):
+    list_display = ['translator_name', 'language_code', 'is_active']
+    list_filter = ['is_active', 'language_code']
+    search_fields = ['translator_name', 'translator_name_arabic']
+    actions = ['activate_translations', 'deactivate_translations']
+
+# apps/tafseer/admin.py
+@admin.register(Tafseer)
+class TafseerAdmin(admin.ModelAdmin):
+    list_display = ['author_name', 'language_code', 'is_active']
+    list_filter = ['is_active', 'language_code']
+    search_fields = ['author_name', 'author_name_arabic']
+    actions = ['activate_tafseer', 'deactivate_tafseer']
+```
+
+**Audio Upload Form:**
+```python
+# apps/reciters/forms.py
+from django import forms
+from django.core.validators import FileExtensionValidator
+from django.utils.translation import gettext_lazy as _
+from .models import Audio
+
+class AudioUploadForm(forms.ModelForm):
+    """Form for verse-level audio file uploads"""
+    audio_file = forms.FileField(
+        label=_('Audio File'),
+        validators=[FileExtensionValidator(allowed_extensions=['mp3'])],
+        help_text=_('MP3 format only, max 5MB per file')
+    )
+
+    class Meta:
+        model = Audio
+        fields = ['reciter', 'surah', 'verse_number', 'audio_file']
+
+    def clean_audio_file(self):
+        """Validate file size and format"""
+        file = self.cleaned_data['audio_file']
+
+        # Validate file size (max 5MB)
+        max_size = 5 * 1024 * 1024  # 5MB in bytes
+        if file.size > max_size:
+            raise forms.ValidationError(_('File size must not exceed 5MB'))
+
+        # Validate MIME type
+        if file.content_type != 'audio/mpeg':
+            raise forms.ValidationError(_('Only MP3 files are allowed'))
+
+        return file
+
+    def save(self, commit=True):
+        """Upload to S3 and save Audio record"""
+        instance = super().save(commit=False)
+        audio_file = self.cleaned_data['audio_file']
+
+        # Generate S3 key
+        s3_key = f"{instance.reciter.slug}/{instance.surah.id:03d}{instance.verse_number:03d}.mp3"
+
+        # Upload to S3 (django-storages handles this automatically)
+        instance.s3_key = s3_key
+        instance.file_size = audio_file.size
+
+        if commit:
+            instance.save()
+
+        return instance
+```
+
+**Arabic Localization:**
+```python
+# locale/ar/LC_MESSAGES/django.po
+msgid "Basic Information"
+msgstr "المعلومات الأساسية"
+
+msgid "Biography"
+msgstr "السيرة الذاتية"
+
+msgid "Status"
+msgstr "الحالة"
+
+msgid "Activate selected reciters"
+msgstr "تنشيط القراء المحددين"
+
+msgid "Deactivate selected reciters"
+msgstr "إلغاء تنشيط القراء المحددين"
+```
+
+**Consequences:**
+- **Positive:**
+  - Complete CRUD operations for all content types (reciters, translations, tafseer)
+  - Arabic-first admin interface aligns with target audience
+  - Built-in permission system restricts access to authorized staff
+  - Bulk actions enable efficient content management at scale
+  - Zero additional development time for basic admin UI
+  - File upload validation prevents corrupt audio files
+
+- **Negative:**
+  - Admin UI customization limited compared to custom-built interface
+  - Complex workflows may require custom admin actions
+  - Performance issues with very large datasets (mitigated by pagination, caching)
+  - Default styling may need CSS overrides for branding
+
+**Security Considerations:**
+- Admin access restricted to `is_staff=True` users only
+- CSRF protection enabled for all admin forms
+- File upload validation prevents malicious file uploads
+- S3 pre-signed URLs prevent unauthorized audio access
+- Audit logging via django-simple-history (optional enhancement)
+
+---
+
 ## Document Updates
 
-**Version:** 1.2
+**Version:** 1.5
 **Update Date:** 2025-11-06
 **Changes:**
+
+### Version 1.5 Updates
+
+**Arabic Internationalization and Admin Dashboard Management:**
+
+Based on PRD and epics updates documented in `docs/prd-epics-update-summary.md`, the following enhancements have been integrated into the architecture:
+
+1. **Arabic i18n (Internationalization) Configuration:**
+   - Added to Project Initialization section (step 3 post-initialization)
+   - `LANGUAGE_CODE = 'ar'` - Arabic as default language
+   - Bilingual support: Arabic (العربية) and English
+   - `LocaleMiddleware` for language switching
+   - `LOCALE_PATHS` configuration for translation files
+   - RTL (Right-to-Left) layout support for Arabic UI
+   - Aligns with US-API-000: Initialize Django Project with Cookiecutter Django
+
+2. **Decision Summary Table Updates:**
+   - Added **Internationalization** row: Django i18n with Arabic as default, bilingual support (Arabic/English), RTL layout
+   - Added **Admin Dashboard** row: Django Admin for content management (reciters, translations, tafseer, audio uploads)
+
+3. **Created ADR-011: Django Admin for Content Management**
+   - **Context:** Epic 2-5 require admin CRUD operations for reciters, translations, tafseer, and audio files
+   - **Decision:** Use Django Admin with Arabic localization and custom ModelAdmin classes
+   - **Rationale:** Built-in solution, zero dependencies, Arabic i18n support, permission system, rapid development
+   - **Implementation Details:**
+     - `ReciterAdmin`: CRUD, filtering, search, bulk actions, Arabic localization (US-RC-001)
+     - `TranslationAdmin`: CRUD, filtering, search, bulk actions (US-TR-001)
+     - `TafseerAdmin`: CRUD, filtering, search, bulk actions (US-TF-001)
+     - `AudioAdmin`: Verse-level audio uploads with validation (US-RC-002)
+     - `AudioUploadForm`: Custom form with MP3 validation, max 5MB file size, S3 integration
+     - Arabic translation examples in `locale/ar/LC_MESSAGES/django.po`
+
+4. **Audio Upload Capability (US-RC-002):**
+   - Custom admin form for verse-level MP3 file uploads
+   - File validation: MP3 format only, max 5MB per file
+   - S3 storage integration via django-storages
+   - Automatic S3 key generation: `{reciter_slug}/{surah:03d}{verse:03d}.mp3`
+   - MIME type validation (audio/mpeg)
+   - File size tracking in Audio model
+
+5. **Revelation Order Feature Emphasis:**
+   - Already implemented in Surah model (v1.1) with `revelation_order` field (1-114 chronological)
+   - `revelation_note` field for documenting mixed revelation Surahs
+   - Database index for chronological navigation
+   - Data source: `docs/Data/Suras-Order.csv`
+   - Supports US-QT-001 revelation order filtering and sorting requirements
+
+6. **US-API-000 Cookiecutter Django Initialization:**
+   - Already documented in ADR-001 (v1.0)
+   - Enhanced with Arabic i18n configuration in Project Initialization section
+   - Django 5.2.8 LTS with Python 3.14
+   - Bilingual support (Arabic/English) from project inception
+
+**Updated Components:**
+- Project Initialization section (added step 3: Arabic i18n configuration)
+- Decision Summary table (added Internationalization and Admin Dashboard rows)
+- ADRs (added ADR-011: Django Admin for Content Management)
+- Arabic localization examples and configuration throughout document
+
+**Alignment with PRD/Epics Updates:**
+All changes from `docs/prd-epics-update-summary.md` are now reflected in architecture:
+- ✅ HP-001: Quran text verification (addressed in US-QT-001 via PM agent)
+- ✅ HP-002: 25 reciters from Tanzil.net (already in v1.3)
+- ✅ HP-003: US-API-000 Cookiecutter Django initialization (enhanced with i18n)
+- ✅ HP-004: Tanzil.net integration (already in v1.3)
+- ✅ MP-001: Revelation order feature (already in v1.1, now emphasized)
+- ✅ Admin dashboard management (ADR-011 created)
+- ✅ Arabic i18n as default language (Project Initialization updated)
+- ✅ Verse-level audio upload capability (AudioUploadForm in ADR-011)
+
+### Version 1.4 Updates
+
+**Sentry Integration for Error Tracking and Performance Monitoring:**
+
+1. **Added Sentry to Technology Stack:**
+   - Added to Decision Summary table as "Error Tracking" category
+   - Integrated with Django and Celery for comprehensive monitoring
+   - Free tier (5,000 errors/month) sufficient for MVP
+
+2. **Created ADR-010: Sentry for Error Tracking and Performance Monitoring**
+   - **Context:** Zero tolerance for Quran text errors (NFR-037) requires real-time alerting
+   - **Decision:** Use Sentry for application monitoring and performance tracking
+   - **Rationale:** Critical for detecting Quran text errors immediately, performance tracking against < 200ms NFR
+   - **Configuration:** Django integration, Celery integration, PII scrubbing, alert rules
+   - **Custom instrumentation:** Track critical operations (Quran imports, verse retrieval)
+
+3. **Added sentry-sdk to Python Dependencies:**
+   - `sentry-sdk==1.40.0` for error tracking and performance monitoring
+   - Integrated with djangorestframework-simplejwt for context tracking
+
+4. **Alert Configuration Documented:**
+   - Critical alerts: Quran text errors, database failures, S3/CloudFront issues, authentication errors
+   - Warning alerts: API response times > 500ms, error rate > 1%, Celery queue backups
+
+5. **PII Protection:**
+   - Configured `send_default_pii=False`
+   - Custom `scrub_sensitive_data` function removes passwords, tokens, cookies from error reports
+   - Complies with NFR-026 (no location data selling) and privacy requirements
+
+**Updated Components:**
+- Decision Summary table (added Error Tracking row)
+- Technology Stack Details (added Monitoring & Error Tracking section)
+- Python Libraries (added sentry-sdk==1.40.0)
+- Library Usage notes (documented sentry-sdk purpose)
+- ADRs (added ADR-010 with complete configuration)
+- Cookiecutter prompts (already had use_sentry: y)
+
+### Version 1.3 Updates
+
+**Audio Source Integration (Tanzil.net):**
+
+1. **Audio Source Updated:**
+   - Changed from EveryAyah.com to **Tanzil.net** as primary audio source
+   - URL format: `https://tanzil.net/res/audio/{reciter_slug}/{surah:03d}{verse:03d}.mp3`
+   - Total files: 156,590 (25 reciters × 6,236 verses)
+
+2. **Reciter Model Enhanced:**
+   - Added `slug` field (unique, indexed) for Tanzil.net reciter identification
+   - Changed biography fields to `blank=True` (not all reciters have bios initially)
+   - Added slug index for faster lookups
+
+3. **Audio Model Enhanced:**
+   - Updated `cloudfront_url` property to use `reciter.slug` instead of `reciter.id`
+   - S3 path format: `{reciter_slug}/{surah:03d}{verse:03d}.mp3`
+   - Added `tanzil_source_url` property for downloading from Tanzil.net
+
+4. **Complete Reciter Database (25 Reciters):**
+   - Documented all 25 Tanzil.net reciters with slugs, names, styles, and countries
+   - Added top 10 priority reciters recommendation for Phase 1
+   - Includes popular reciters: AbdulBasit, Al-Afasy, Al-Ghamadi, Al-Sudais, Al-Husary, etc.
+   - Includes both Murattal (standard) and Mujawwad (melodic) styles
+
+5. **Import Management Commands:**
+   - Added `initialize_reciters.py` - Creates all 25 reciters in database
+   - Enhanced `import_reciter_audio.py` - Downloads from Tanzil.net and uploads to S3
+   - Includes resume capability (--start-verse parameter)
+   - Batch processing with progress reporting
+
+6. **Data Sources Section:**
+   - Added comprehensive audio source documentation
+   - Complete reciter table with slugs and metadata
+   - Import strategy and workflow examples
+   - Updated local setup commands with reciter initialization
+
+**Updated Components:**
+- Reciter model schema (added slug field)
+- Audio model properties (cloudfront_url, tanzil_source_url)
+- S3 path patterns (reciter slug-based)
+- API endpoint examples (using slug)
+- Management commands (initialize_reciters, import_reciter_audio)
+- Local development setup workflow
 
 ### Version 1.2 Updates
 
@@ -2124,11 +2673,67 @@ pytest apps/quran/tests/test_models.py::TestSurahModel::test_surah_creation
 ### Authoritative Data Sources
 
 **Quran Text & Metadata:**
+- **Quran Text:** `docs/Data/quran-uthmani.xml` (Tanzil Project - Uthmani v1.1)
+  - Complete Quran text: 114 Surahs, 6,236 verses
+  - Uthmani script with full diacritics
+  - XML format with structured metadata
+  - License: Creative Commons Attribution 3.0
+
 - **Revelation Order:** `docs/Data/Suras-Order.csv` (authoritative source)
   - Contains chronological revelation order (1-114)
   - Includes revelation type (Meccan/Medinan)
   - Documents exceptions where Surahs have verses from both locations
   - Example: Al-Qalam (68) - "Except 17-33 and 48-50, from Medina"
+
+**Audio Files (Tanzil.net):**
+- **Source:** https://tanzil.net/res/audio/
+- **Format:** `https://tanzil.net/res/audio/{reciter_slug}/{surah:03d}{verse:03d}.mp3`
+- **Total Files:** 156,590 files (25 reciters × 6,236 verses + 114 basmallahs)
+- **File Naming:**
+  - Surah 1, Verse 1 by AbdulBasit: `001001.mp3`
+  - Surah 114, Verse 6 by Al-Afasy: `114006.mp3`
+
+**Available Reciters (25 Total):**
+
+| Slug | Reciter Name | Style | Notes |
+|------|--------------|-------|-------|
+| `abdulbasit` | AbdulBasit Abdul Samad | Murattal | Standard recitation |
+| `abdulbasit-mjwd` | AbdulBasit Abdul Samad | Mujawwad | Melodic recitation |
+| `afasy` | Mishary Rashid Al-Afasy | Hafs | Popular contemporary reciter |
+| `ajamy` | Ahmed Al-Ajamy | Hafs | Egyptian reciter |
+| `akhdar` | Ibrahim Al-Akhdar | Hafs | Moroccan reciter |
+| `ghamadi` | Saad Al-Ghamadi | Hafs | Saudi reciter |
+| `hudhaify` | Ali Al-Hudhaify | Hafs | Imam of Prophet's Mosque |
+| `husary` | Mahmoud Khalil Al-Husary | Murattal | Legendary Egyptian reciter |
+| `husary-mjwd` | Mahmoud Khalil Al-Husary | Mujawwad | Melodic style |
+| `juhany` | Abdullah Al-Juhany | Hafs | Imam of Makkah |
+| `matrood` | Abdullah Matrood | Hafs | Contemporary Saudi reciter |
+| `minshawi` | Mohamed Siddiq Al-Minshawi | Murattal | Classic Egyptian reciter |
+| `minshawi-mjwd` | Mohamed Siddiq Al-Minshawi | Mujawwad | Melodic style |
+| `muaiqly` | Maher Al-Muaiqly | Hafs | Imam of Masjid al-Haram |
+| `qasim` | Nasser Al-Qasim | Hafs | Saudi reciter |
+| `hani` | Hani Ar-Rifai | Hafs | Contemporary reciter |
+| `sudais` | Abdul Rahman Al-Sudais | Hafs | Imam of Masjid al-Haram |
+| `shateri` | Abu Bakr Al-Shatri | Hafs | Kuwaiti reciter |
+| `shuraim` | Saud Al-Shuraim | Hafs | Imam of Masjid al-Haram |
+| `tablawi` | Mohammad At-Tablawi | Hafs | Egyptian reciter |
+| `basfar` | Abdullah Basfar | Hafs | Saudi reciter |
+| `basfar2` | Abdullah Basfar | Hafs | Alternative recording |
+| `bukhatir` | Ali Bukhatir | Hafs | Contemporary reciter |
+| `ayyub` | Muhammad Ayyub | Hafs | Former Imam of Prophet's Mosque |
+| `jibreel` | Muhammad Jibreel | Hafs | Egyptian reciter |
+
+**Recommended Priority Reciters (Phase 1 - Top 10):**
+1. `abdulbasit` - AbdulBasit Abdul Samad (most famous)
+2. `afasy` - Mishary Rashid Al-Afasy (very popular)
+3. `ghamadi` - Saad Al-Ghamadi (widely used)
+4. `sudais` - Abdul Rahman Al-Sudais (Imam of Makkah)
+5. `husary` - Mahmoud Khalil Al-Husary (legendary)
+6. `muaiqly` - Maher Al-Muaiqly (Imam of Makkah)
+7. `ajamy` - Ahmed Al-Ajamy (popular)
+8. `minshawi` - Mohamed Siddiq Al-Minshawi (classic)
+9. `basfar` - Abdullah Basfar (contemporary)
+10. `shateri` - Abu Bakr Al-Shatri (clear pronunciation)
 
 **CSV Format:**
 ```csv
@@ -2140,7 +2745,7 @@ Order,Sura Name,Number,Type,Note
 ...
 ```
 
-**Import Implementation:**
+**Import Implementation - Surah Metadata:**
 
 ```python
 # apps/quran/management/commands/import_surah_metadata.py
@@ -2168,6 +2773,149 @@ class Command(BaseCommand):
                     }
                 )
         self.stdout.write(self.success('Successfully imported revelation order data'))
+```
+
+**Import Implementation - Audio Files:**
+
+```python
+# apps/reciters/management/commands/import_reciter_audio.py
+import requests
+from django.core.management.base import BaseCommand
+from django.core.files.base import ContentFile
+from apps.reciters.models import Reciter, Audio
+from apps.quran.models import Verse
+
+class Command(BaseCommand):
+    help = 'Download and import audio files from Tanzil.net for a specific reciter'
+
+    def add_arguments(self, parser):
+        parser.add_argument('--reciter-slug', type=str, required=True,
+                          help='Reciter slug (e.g., abdulbasit, afasy)')
+        parser.add_argument('--batch-size', type=int, default=100,
+                          help='Number of files to process in each batch')
+        parser.add_argument('--start-verse', type=int, default=1,
+                          help='Start from verse ID (for resume capability)')
+
+    def handle(self, *args, **options):
+        reciter_slug = options['reciter_slug']
+        batch_size = options['batch_size']
+        start_verse = options['start_verse']
+
+        try:
+            reciter = Reciter.objects.get(slug=reciter_slug)
+        except Reciter.DoesNotExist:
+            self.stderr.write(f"Reciter '{reciter_slug}' not found. Create reciter first.")
+            return
+
+        verses = Verse.objects.filter(id__gte=start_verse).order_by('id')
+        total_verses = verses.count()
+        self.stdout.write(f"Importing {total_verses} audio files for {reciter.name_english}...")
+
+        success_count = 0
+        failed_count = 0
+
+        for verse in verses:
+            surah_num = verse.surah.id
+            verse_num = verse.verse_number
+
+            # Generate Tanzil.net URL
+            url = f"https://tanzil.net/res/audio/{reciter_slug}/{surah_num:03d}{verse_num:03d}.mp3"
+
+            try:
+                # Download audio file
+                response = requests.get(url, timeout=30)
+                response.raise_for_status()
+
+                # Generate S3 key
+                s3_key = f"{reciter_slug}/{surah_num:03d}{verse_num:03d}.mp3"
+
+                # Upload to S3 (using django-storages)
+                from django.core.files.storage import default_storage
+                file_path = default_storage.save(s3_key, ContentFile(response.content))
+
+                # Create Audio record
+                Audio.objects.update_or_create(
+                    reciter=reciter,
+                    verse=verse,
+                    defaults={
+                        's3_key': s3_key,
+                        'file_size_bytes': len(response.content),
+                        'duration_seconds': 0,  # Calculate later if needed
+                        'quality': '64kbps',
+                    }
+                )
+
+                success_count += 1
+
+                if success_count % batch_size == 0:
+                    self.stdout.write(f"Progress: {success_count}/{total_verses} files imported")
+
+            except Exception as e:
+                self.stderr.write(f"Failed to import {url}: {str(e)}")
+                failed_count += 1
+                continue
+
+        self.stdout.write(self.style.SUCCESS(
+            f"Import complete: {success_count} succeeded, {failed_count} failed"
+        ))
+```
+
+**Import Implementation - Initialize Reciters:**
+
+```python
+# apps/reciters/management/commands/initialize_reciters.py
+from django.core.management.base import BaseCommand
+from apps.reciters.models import Reciter
+
+class Command(BaseCommand):
+    help = 'Initialize all 25 Tanzil.net reciters in the database'
+
+    RECITERS = [
+        {'slug': 'abdulbasit', 'name': 'AbdulBasit Abdul Samad', 'style': 'Murattal', 'country': 'EG'},
+        {'slug': 'abdulbasit-mjwd', 'name': 'AbdulBasit Abdul Samad', 'style': 'Mujawwad', 'country': 'EG'},
+        {'slug': 'afasy', 'name': 'Mishary Rashid Al-Afasy', 'style': 'Hafs', 'country': 'KW'},
+        {'slug': 'ajamy', 'name': 'Ahmed Al-Ajamy', 'style': 'Hafs', 'country': 'EG'},
+        {'slug': 'akhdar', 'name': 'Ibrahim Al-Akhdar', 'style': 'Hafs', 'country': 'MA'},
+        {'slug': 'ghamadi', 'name': 'Saad Al-Ghamadi', 'style': 'Hafs', 'country': 'SA'},
+        {'slug': 'hudhaify', 'name': 'Ali Al-Hudhaify', 'style': 'Hafs', 'country': 'SA'},
+        {'slug': 'husary', 'name': 'Mahmoud Khalil Al-Husary', 'style': 'Murattal', 'country': 'EG'},
+        {'slug': 'husary-mjwd', 'name': 'Mahmoud Khalil Al-Husary', 'style': 'Mujawwad', 'country': 'EG'},
+        {'slug': 'juhany', 'name': 'Abdullah Al-Juhany', 'style': 'Hafs', 'country': 'SA'},
+        {'slug': 'matrood', 'name': 'Abdullah Matrood', 'style': 'Hafs', 'country': 'SA'},
+        {'slug': 'minshawi', 'name': 'Mohamed Siddiq Al-Minshawi', 'style': 'Murattal', 'country': 'EG'},
+        {'slug': 'minshawi-mjwd', 'name': 'Mohamed Siddiq Al-Minshawi', 'style': 'Mujawwad', 'country': 'EG'},
+        {'slug': 'muaiqly', 'name': 'Maher Al-Muaiqly', 'style': 'Hafs', 'country': 'SA'},
+        {'slug': 'qasim', 'name': 'Nasser Al-Qasim', 'style': 'Hafs', 'country': 'SA'},
+        {'slug': 'hani', 'name': 'Hani Ar-Rifai', 'style': 'Hafs', 'country': 'SA'},
+        {'slug': 'sudais', 'name': 'Abdul Rahman Al-Sudais', 'style': 'Hafs', 'country': 'SA'},
+        {'slug': 'shateri', 'name': 'Abu Bakr Al-Shatri', 'style': 'Hafs', 'country': 'KW'},
+        {'slug': 'shuraim', 'name': 'Saud Al-Shuraim', 'style': 'Hafs', 'country': 'SA'},
+        {'slug': 'tablawi', 'name': 'Mohammad At-Tablawi', 'style': 'Hafs', 'country': 'EG'},
+        {'slug': 'basfar', 'name': 'Abdullah Basfar', 'style': 'Hafs', 'country': 'SA'},
+        {'slug': 'basfar2', 'name': 'Abdullah Basfar II', 'style': 'Hafs', 'country': 'SA'},
+        {'slug': 'bukhatir', 'name': 'Ali Bukhatir', 'style': 'Hafs', 'country': 'AE'},
+        {'slug': 'ayyub', 'name': 'Muhammad Ayyub', 'style': 'Hafs', 'country': 'SA'},
+        {'slug': 'jibreel', 'name': 'Muhammad Jibreel', 'style': 'Hafs', 'country': 'EG'},
+    ]
+
+    def handle(self, *args, **options):
+        for reciter_data in self.RECITERS:
+            reciter, created = Reciter.objects.update_or_create(
+                slug=reciter_data['slug'],
+                defaults={
+                    'name_english': reciter_data['name'],
+                    'name_arabic': reciter_data['name'],  # TODO: Add Arabic names
+                    'recitation_style': reciter_data['style'],
+                    'country_code': reciter_data['country'],
+                    'is_active': True,
+                }
+            )
+            status = "Created" if created else "Updated"
+            self.stdout.write(f"{status}: {reciter.name_english} ({reciter.slug})")
+
+        self.stdout.write(self.style.SUCCESS(
+            f"Successfully initialized {len(self.RECITERS)} reciters"
+        ))
 ```
 
 **Key Insights from Data:**

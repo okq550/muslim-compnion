@@ -19,6 +19,137 @@ The implementation follows a structured approach with 7 epics:
 
 ## EPIC 1: Cross-Cutting / Infrastructure Stories
 
+### US-API-000: Initialize Django Project with Cookiecutter Django
+
+**As a** development team
+**I want to** initialize the Django project using Cookiecutter Django template
+**So that** we have a production-ready foundation with best practices and essential tooling configured
+
+#### User Story Details:
+
+**Epic:** Quran Backend - First Release
+**Module:** Infrastructure / Project Setup
+**Priority:** Critical (Phase 1 - Foundation)
+**Functional Requirements:** N/A (Infrastructure)
+**Dependencies:**
+
+- None (foundational - must be completed first)
+
+#### Description:
+
+The project needs to be initialized using the Cookiecutter Django template to provide a production-ready foundation with approximately 40% setup time savings. This includes Django 5.2.8 LTS, Docker configuration, Django REST Framework, Celery for async tasks, and AWS cloud provider setup as specified in Architecture ADR-001.
+
+#### Business Rules:
+
+1.  **Project Configuration:**
+
+    - Project name: quran_backend
+    - Python version: 3.14
+    - Django version: 5.2.8 LTS
+    - Use Docker: Yes
+    - Use Django REST Framework: Yes
+    - Use Celery: Yes
+    - Cloud provider: AWS
+
+2.  **Initial Setup:**
+
+    - Docker containers must build successfully
+    - Database migrations must apply cleanly
+    - Admin interface must be accessible
+    - All services (web, db, redis, celery) must start correctly
+
+3.  **Development Environment:**
+
+    - Docker Compose configuration for local development
+    - VS Code debugger configuration included
+    - Environment variables properly configured
+    - Development dependencies installed
+
+#### Acceptance Criteria:
+
+✅ Run `cookiecutter gh:cookiecutter/cookiecutter-django` with correct prompts
+✅ Project structure created with project_slug=quran_backend
+✅ Docker configuration includes web, PostgreSQL, Redis, Celery services
+✅ `docker-compose up` builds all containers successfully
+✅ Database migrations apply without errors
+✅ Django admin interface accessible at localhost:8000/admin
+✅ DRF browsable API accessible at localhost:8000/api/
+✅ Environment variables configured in .env file
+✅ Git repository initialized with initial commit
+✅ Development documentation updated with setup instructions
+✅ Django internationalization (i18n) configured with Arabic (ar) and English (en) languages
+✅ LANGUAGE_CODE set to 'ar' (Arabic as default)
+✅ USE_I18N = True and USE_L10N = True in settings
+✅ LANGUAGES configured with both Arabic and English options
+✅ LocaleMiddleware included in MIDDLEWARE
+✅ Admin panel displays in Arabic by default with language switcher available
+
+#### Out of Scope:
+
+- Custom app creation (handled in subsequent stories)
+- Data model implementation
+- API endpoint implementation
+- Production deployment configuration
+- CI/CD pipeline setup
+
+#### Definition of Done:
+
+- All acceptance criteria tested and passing
+- Docker containers build and run successfully
+- Initial migrations applied to database
+- Admin interface accessible and functional
+- DRF browsable API accessible
+- README updated with local setup instructions
+- Development team can run project locally
+- Code committed to version control
+- Ready for feature development to begin
+
+#### Test Data Requirements:
+
+- N/A (infrastructure setup)
+
+#### Notes for Development Team:
+
+- Use Cookiecutter Django template from: https://github.com/cookiecutter/cookiecutter-django
+- Ensure Python 3.14 is installed locally
+- Configure prompts exactly as specified:
+  - python_version: 3.14
+  - project_name: Quran Backend
+  - project_slug: quran_backend
+  - use_docker: y
+  - use_drf: y
+  - use_celery: y
+  - cloud_provider: AWS
+  - use_pycharm: n
+- After initialization, verify all Docker services start:
+  - Web server (Django)
+  - PostgreSQL database
+  - Redis cache
+  - Celery worker
+- Document any environment-specific configurations
+- Reference: Architecture Document ADR-001 (Cookiecutter Django Foundation)
+- This story MUST be completed before any other development stories
+- Estimated effort: 4-6 hours including setup and verification
+- **Arabic Localization Setup:**
+  - Update settings.py with i18n configuration:
+    ```python
+    LANGUAGE_CODE = 'ar'  # Arabic as default
+    LANGUAGES = [
+        ('ar', 'العربية'),
+        ('en', 'English'),
+    ]
+    USE_I18N = True
+    USE_L10N = True
+    LOCALE_PATHS = [str(BASE_DIR / 'locale')]
+    ```
+  - Ensure 'django.middleware.locale.LocaleMiddleware' is in MIDDLEWARE (after SessionMiddleware)
+  - Create locale directory: `mkdir -p locale`
+  - Run `django-admin makemessages -l ar` to generate Arabic translation files
+  - Install Arabic translations for Django admin: Django includes built-in Arabic translations
+  - Admin panel will automatically display in Arabic based on LANGUAGE_CODE
+  - For testing, verify admin displays Arabic labels and RTL (right-to-left) layout
+  - Note: Cookiecutter Django may include i18n_patterns in URLs - configure as needed
+
 ### US-API-001: Implement User Authentication and Authorization
 
 **As a** Quran app user  
@@ -915,15 +1046,32 @@ sources.
 
 #### Acceptance Criteria:
 
-✅ User can select any Surah from 1 to 114  
-✅ Complete Surah text displays in Othmani script  
-✅ Each verse is numbered correctly  
-✅ Basmala appears at the beginning of applicable Surahs  
-✅ Text is right-aligned and renders properly in Arabic  
-✅ All diacritical marks and Arabic characters display correctly  
-✅ Surah metadata displays (name, revelation type, verse count)  
-✅ Text loads with acceptable performance  
+✅ User can select any Surah from 1 to 114
+✅ Complete Surah text displays in Othmani script
+✅ Each verse is numbered correctly
+✅ Basmala appears at the beginning of applicable Surahs
+✅ Text is right-aligned and renders properly in Arabic
+✅ All diacritical marks and Arabic characters display correctly
+✅ Surah metadata displays (name, revelation type, verse count)
+✅ Text loads with acceptable performance
 ✅ Tajweed marks are preserved in the text
+
+**Quran Text Verification Process (NFR-037 - Zero Tolerance for Errors):**
+✅ Automated verse count validation confirms exactly 6,236 verses across 114 Surahs
+✅ Automated Surah count validation confirms exactly 114 Surahs
+✅ Manual verification of 10 randomly selected verses against physical Madani Mushaf
+✅ Islamic scholar review and sign-off on Quran text accuracy and authenticity
+✅ Verification date and Islamic scholar credentials documented in system
+✅ Data source verified as Tanzil Uthmani v1.1 from authoritative source (docs/Data/quran-uthmani.xml)
+✅ Verification report stored with reviewer name, credentials, date, and sample verses checked
+
+**Revelation Order Feature (FR-002 & PRD v1.1):**
+✅ Surah API response includes `revelation_order` field (chronological sequence 1-114)
+✅ Surah API response includes `revelation_note` field for mixed revelation Surahs
+✅ Surah endpoint supports filtering by revelation_order
+✅ Surah endpoint supports sorting by revelation_order for chronological reading
+✅ Data source: docs/Data/Suras-Order.csv with authoritative chronological metadata
+✅ Field is indexed for efficient querying and sorting
 
 #### Out of Scope:
 
@@ -963,14 +1111,19 @@ sources.
 
 #### Notes for Development Team:
 
-- Text authenticity is critical - must match verified Mushaf sources
-
+- **CRITICAL:** Text authenticity is non-negotiable - zero tolerance for Quran text errors (NFR-037)
+- **Verification Required:** Islamic scholar review and sign-off MUST be completed before production deployment
+- **Data Source:** docs/Data/quran-uthmani.xml (Tanzil Uthmani v1.1 - verified source)
+- **Revelation Order Data:** docs/Data/Suras-Order.csv - import using `import_surah_metadata` management command
 - Consider text encoding to ensure all Arabic characters render properly
-
 - This is the foundation for all other Quran-related features
-
-- Tajweed color-coding data should be included but display can be
-  toggled
+- Tajweed color-coding data should be included but display can be toggled
+- Implement automated verification scripts for verse and Surah count validation
+- Document scholar review process and maintain verification records
+- Schedule sufficient time for scholar review (48-72 hours minimum)
+- Surah model includes `revelation_order` field (indexed), `revelation_note`, and `is_mixed_revelation` property
+- API responses must include revelation_order to support chronological reading mode
+- Reference: Architecture Document v1.3 - Surah Model and Suras-Order.csv data source
 
 ### US-QT-002: Retrieve Quran Text by Verse Range
 
@@ -1473,23 +1626,31 @@ reciter with different styles.
 
 #### Acceptance Criteria:
 
-✅ System can store complete reciter profile information  
-✅ Reciter names stored in both English and Arabic  
-✅ Biography stored in both English and Arabic  
-✅ Profile photos can be uploaded and stored  
-✅ Recitation style is associated with each reciter entry  
-✅ Each reciter-style combination treated as unique entry  
-✅ Active/inactive status can be set for each reciter  
-✅ Birth and death years are stored correctly  
+✅ System can store complete reciter profile information
+✅ Reciter names stored in both English and Arabic
+✅ Biography stored in both English and Arabic
+✅ Profile photos can be uploaded and stored
+✅ Recitation style is associated with each reciter entry
+✅ Each reciter-style combination treated as unique entry
+✅ Active/inactive status can be set for each reciter
+✅ Birth and death years are stored correctly
 ✅ Country information is stored
+✅ Reciter model registered in Django admin dashboard
+✅ All 25 reciters manageable through admin interface (add, edit, delete, activate/deactivate)
+✅ Admin dashboard shows reciter list with filtering by status, country, and recitation style
+✅ Admin dashboard supports bulk actions for managing multiple reciters
+✅ Photo uploads functional through admin interface
+✅ Admin dashboard displays in Arabic with proper RTL layout
+✅ All model field labels, help text, and admin UI elements translated to Arabic
+✅ Admin panel supports bilingual display (Arabic/English) with language switcher
 
 #### Out of Scope:
 
-- User interface for profile management
+- Public-facing user interface for profile management
 
 - Reciter approval workflow
 
-- Audio file management
+- Audio file management (handled in US-RC-002)
 
 - Reciter ratings or reviews
 
@@ -1523,14 +1684,31 @@ reciter with different styles.
 
 - This is foundational data for the recitation feature
 
-- Reciter data will be initially imported from external source
+- Reciter data will be initially imported from external source (see US-RC-002)
+
+- **Django Admin Dashboard:** All 25 reciters must be fully manageable through Django admin interface
+  - Register Reciter model in admin.py with list_display, list_filter, and search_fields
+  - Enable photo upload through admin interface
+  - Provide filtering by status (active/inactive), country, and recitation style
+  - Support bulk actions for activating/deactivating multiple reciters
+  - Cookiecutter Django provides production-ready admin interface out of the box
+
+- **Arabic Localization for Admin Panel:**
+  - Ensure model verbose_name and verbose_name_plural are translatable using gettext_lazy
+  - Add help_text in Arabic for all model fields using gettext_lazy
+  - Create Arabic translation files in locale/ar/LC_MESSAGES/django.po
+  - Translate all field labels, model names, and admin UI elements to Arabic
+  - Test RTL (right-to-left) layout rendering in admin dashboard
+  - Verify language switcher works correctly between Arabic and English
+  - Django admin already supports RTL languages out of the box
 
 - Consider data validation for required fields
 
-- Photo storage should support reasonable file sizes and formats
+- Photo storage should support reasonable file sizes and formats (use Django ImageField)
 
-- The reciter-style as unique entry concept is critical to
-  implementation
+- The reciter-style as unique entry concept is critical to implementation
+
+- Reference: Architecture Document v1.3 - Reciter Model with slug field for Tanzil.net integration
 
 ### US-RC-002: Import Reciter Data from External Source
 
@@ -1590,15 +1768,27 @@ system with multiple reciters and their recitations.
 
 #### Acceptance Criteria:
 
-✅ System can import reciter profiles from external source  
-✅ All profile fields are mapped correctly  
-✅ Audio files are imported and associated with correct reciters  
-✅ Duplicate reciters are detected and handled  
-✅ Import validates data completeness  
-✅ Incomplete or invalid data is flagged  
-✅ Import process can be monitored  
-✅ Failed imports can be retried  
+✅ System can import reciter profiles from external source
+✅ Import 25 reciters from Tanzil.net using `initialize_reciters` management command
+✅ Reciter model includes `slug` field for Tanzil.net identification (e.g., 'abdulbasit', 'afasy')
+✅ All profile fields are mapped correctly
+✅ Audio download URLs use Tanzil.net format: `https://tanzil.net/res/audio/{slug}/{surah:003d}{verse:003d}.mp3`
+✅ S3 storage paths match Tanzil.net structure: `{slug}/{surah:003d}{verse:003d}.mp3`
+✅ All 25 Tanzil.net reciters initialized with country codes (ISO)
+✅ Audio files are imported and associated with correct reciters
+✅ Duplicate reciters are detected and handled
+✅ Import validates data completeness
+✅ Incomplete or invalid data is flagged
+✅ Import process can be monitored via management command output
+✅ Failed imports can be retried
 ✅ Successfully imported data is immediately available
+✅ Admin dashboard allows uploading audio files for specific verses for specific reciters
+✅ Admin interface includes reciter selection, Surah selection, and verse selection dropdowns
+✅ Audio file upload validates file format (MP3 only) and size limits
+✅ Uploaded audio files are saved to S3 with correct path structure: `{slug}/{surah:003d}{verse:003d}.mp3`
+✅ Admin can replace/override existing audio files for a verse
+✅ Upload success/failure messages displayed in admin interface
+✅ Uploaded files immediately available through API endpoints
 
 #### Out of Scope:
 
@@ -1636,15 +1826,31 @@ system with multiple reciters and their recitations.
 
 #### Notes for Development Team:
 
-- External source URL and data format to be provided
-
-- May need to handle different audio formats
-
-- Consider storage requirements for large number of audio files
-
-- Import should be performant for large datasets
-
-- Document the import process for future use
+- **Data Source:** Tanzil.net (https://tanzil.net/res/audio/)
+- **Reciter Count:** 25 authenticated reciters with complete recitations
+- **Management Commands:**
+  - `initialize_reciters`: Initialize all 25 Tanzil.net reciters with metadata
+  - `import_reciter_audio`: Download audio files from Tanzil.net to S3
+- **Reciter Slug Field:** Required for Tanzil.net URL construction (e.g., 'abdulbasit', 'afasy', 'husary')
+- **Audio Format:** MP3 files from Tanzil.net
+- **URL Pattern:** `https://tanzil.net/res/audio/{slug}/{surah:003d}{verse:003d}.mp3`
+- **Storage:** S3 bucket with path structure: `{slug}/{surah:003d}{verse:003d}.mp3`
+- **File Count:** 156,590 audio files (25 reciters × 6,236 verses)
+- Consider storage requirements: ~156K files, estimated ~50-100GB total
+- Import should be performant - use Celery background jobs for large-scale imports
+- Reference: Architecture Document v1.3 - Data Sources section and ADR-004 (Audio Delivery)
+- Audio import can run in background; don't block development on complete import
+- Start with 10 reciters for testing, expand to all 25 for production
+- **Admin Audio Upload:**
+  - Create custom admin form for verse-level audio file uploads
+  - Use Django admin inlines or custom admin action for audio file management
+  - Implement file upload to S3 using django-storages with boto3
+  - Add file validation: MP3 format only, max size 5MB per file
+  - Use select2 or autocomplete widgets for reciter/Surah/verse selection for better UX
+  - Store audio file metadata in VerseAudio model (reciter, surah, verse, file_path, upload_date)
+  - Override existing files when uploading to same reciter/verse combination
+  - Display upload progress and success/failure messages using Django messages framework
+  - Ensure uploaded files follow naming convention: `{slug}/{surah:003d}{verse:003d}.mp3`
 
 ### US-RC-003: View Available Reciters with Their Information
 
@@ -2311,24 +2517,29 @@ expansion.
 
 #### Acceptance Criteria:
 
-✅ System can store translations in multiple languages  
-✅ Each verse translation is linked to correct Arabic verse  
-✅ Language-translator combinations are unique entries  
-✅ Translator metadata is stored completely  
-✅ Translation text supports Unicode characters for all languages  
-✅ All verse numbers map correctly to Arabic text  
-✅ Translation coverage can be tracked (complete vs. partial)  
+✅ System can store translations in multiple languages
+✅ Each verse translation is linked to correct Arabic verse
+✅ Language-translator combinations are unique entries
+✅ Translator metadata is stored completely
+✅ Translation text supports Unicode characters for all languages
+✅ All verse numbers map correctly to Arabic text
+✅ Translation coverage can be tracked (complete vs. partial)
 ✅ Multiple translations per language can coexist
+✅ Translation model registered in Django admin dashboard
+✅ All translations manageable through admin interface (add, edit, delete, activate/deactivate)
+✅ Admin dashboard shows translation list with filtering by language, translator, and status
+✅ Admin dashboard supports bulk actions for managing multiple translations
+✅ Translator metadata editable through admin interface
 
 #### Out of Scope:
 
-- Translation editing interface
+- Public-facing translation editing interface
 
-- Translation quality assessment
+- Translation quality assessment tools
 
-- User-submitted translations
+- User-submitted translations (without scholar review)
 
-- Translation comparison tools
+- Translation comparison tools (Phase 2)
 
 #### Definition of Done:
 
@@ -2357,8 +2568,14 @@ expansion.
 
 #### Notes for Development Team:
 
-- Each language-translator combination is a unique entry (similar to
-  reciter-style)
+- Each language-translator combination is a unique entry (similar to reciter-style)
+
+- **Django Admin Dashboard:** All translations must be fully manageable through Django admin interface
+  - Register Translation model in admin.py with list_display, list_filter, and search_fields
+  - Enable filtering by language, translator, status (active/inactive), and completeness
+  - Support bulk actions for activating/deactivating translations
+  - Inline editing for translator metadata
+  - Cookiecutter Django provides production-ready admin interface out of the box
 
 - Consider database indexing for efficient retrieval
 
@@ -2367,6 +2584,8 @@ expansion.
 - Translation text length varies significantly across languages
 
 - Initial target: approximately 20 languages
+
+- Reference: Architecture Document v1.3 - Translation Model with language_code and translator_id fields
 
 ### US-TR-002: Import Translation Data from Sources
 
@@ -2997,24 +3216,29 @@ Tafseer sources in different languages.
 
 #### Acceptance Criteria:
 
-✅ System can store Tafseer text from multiple scholars  
-✅ Each Tafseer entry is linked to correct verse(s)  
-✅ Scholar metadata is stored completely  
-✅ Tafseer supports multiple languages  
-✅ Multiple Tafseer sources can exist for same verse  
-✅ Tafseer text supports rich formatting (if needed)  
-✅ Tafseer coverage can be tracked  
+✅ System can store Tafseer text from multiple scholars
+✅ Each Tafseer entry is linked to correct verse(s)
+✅ Scholar metadata is stored completely
+✅ Tafseer supports multiple languages
+✅ Multiple Tafseer sources can exist for same verse
+✅ Tafseer text supports rich formatting (if needed)
+✅ Tafseer coverage can be tracked
 ✅ Long Tafseer texts are handled efficiently
+✅ Tafseer model registered in Django admin dashboard
+✅ All Tafseer entries manageable through admin interface (add, edit, delete, activate/deactivate)
+✅ Admin dashboard shows Tafseer list with filtering by scholar, language, and status
+✅ Admin dashboard supports bulk actions for managing multiple Tafseer entries
+✅ Scholar metadata editable through admin interface
 
 #### Out of Scope:
 
-- Tafseer editing interface
+- Public-facing Tafseer editing interface
 
-- User-submitted Tafseer
+- User-submitted Tafseer (without scholar review)
 
-- Tafseer audio
+- Tafseer audio (Phase 2)
 
-- Tafseer search within commentary
+- Tafseer search within commentary (Phase 2)
 
 #### Definition of Done:
 
