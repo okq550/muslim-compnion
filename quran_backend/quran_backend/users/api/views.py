@@ -148,7 +148,7 @@ class PasswordResetRequestView(APIView):
                 # In production, send email here
                 # For now, return token/uid in response (ONLY FOR DEVELOPMENT)
                 response_data = {
-                    "message": "Password reset email sent if account exists"
+                    "message": "Password reset email sent if account exists",
                 }
                 if settings.DEBUG:  # Only in development
                     response_data["dev_only"] = {"uid": uid, "token": token}

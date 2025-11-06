@@ -23,7 +23,9 @@ urlpatterns = router.urls + [
     path("v1/auth/login/", UserLoginView.as_view(), name="auth-login"),
     path("v1/auth/logout/", UserLogoutView.as_view(), name="auth-logout"),
     path(
-        "v1/auth/token/refresh/", TokenRefreshView.as_view(), name="auth-token-refresh"
+        "v1/auth/token/refresh/",
+        TokenRefreshView.as_view(),
+        name="auth-token-refresh",
     ),
     path(
         "v1/auth/password/reset/",

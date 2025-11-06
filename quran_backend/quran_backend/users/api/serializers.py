@@ -52,7 +52,7 @@ class UserRegistrationSerializer(serializers.Serializer):
             )
         if not re.search(r"\d", value):
             raise serializers.ValidationError(
-                "Password must contain at least one digit."
+                "Password must contain at least one digit.",
             )
 
         # Use Django's password validators (AC #13)
@@ -191,7 +191,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
             )
         if not re.search(r"\d", value):
             raise serializers.ValidationError(
-                "Password must contain at least one digit."
+                "Password must contain at least one digit.",
             )
 
         try:
@@ -220,7 +220,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
         if not default_token_generator.check_token(user, attrs["token"]):
             raise serializers.ValidationError(
-                {"detail": "Invalid or expired reset link."}
+                {"detail": "Invalid or expired reset link."},
             )
 
         attrs["user"] = user

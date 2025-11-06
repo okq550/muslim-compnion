@@ -197,7 +197,9 @@ class TestUserLoginView:
         return user
 
     def test_login_with_valid_credentials_returns_200_and_tokens(
-        self, api_client, test_user
+        self,
+        api_client,
+        test_user,
     ):
         """Test successful login returns 200 with JWT tokens (AC #2, #7, #8)."""
         url = reverse("api:auth-login")
@@ -236,7 +238,9 @@ class TestTokenRefreshView:
         return APIClient()
 
     def test_token_refresh_with_valid_token_returns_new_access_token(
-        self, api_client, user
+        self,
+        api_client,
+        user,
     ):
         """Test token refresh returns new access token (AC #9)."""
         from rest_framework_simplejwt.tokens import RefreshToken
@@ -281,7 +285,9 @@ class TestPasswordResetViews:
         assert "message" in response.data
 
     def test_password_reset_confirm_with_valid_token_returns_200(
-        self, api_client, test_user
+        self,
+        api_client,
+        test_user,
     ):
         """Test password reset confirmation with valid token (AC #5, #6)."""
         from django.contrib.auth.tokens import default_token_generator
