@@ -3,6 +3,7 @@ import re
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -30,7 +31,7 @@ class UserRegistrationSerializer(serializers.Serializer):
     def validate_email(self, value):
         """Validate that email is unique."""
         if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("A user with this email already exists.")
+            raise serializers.ValidationError(_("A user with this email already exists."))
         return value.lower()
 
     def validate_password(self, value):
@@ -38,21 +39,21 @@ class UserRegistrationSerializer(serializers.Serializer):
         # Minimum 8 characters
         if len(value) < 8:
             raise serializers.ValidationError(
-                "Password must be at least 8 characters long.",
+                _("Password must be at least 8 characters long."),
             )
 
         # Complexity validation: uppercase, lowercase, digit
         if not re.search(r"[A-Z]", value):
             raise serializers.ValidationError(
-                "Password must contain at least one uppercase letter.",
+                _("Password must contain at least one uppercase letter."),
             )
         if not re.search(r"[a-z]", value):
             raise serializers.ValidationError(
-                "Password must contain at least one lowercase letter.",
+                _("Password must contain at least one lowercase letter."),
             )
         if not re.search(r"\d", value):
             raise serializers.ValidationError(
-                "Password must contain at least one digit.",
+                _("Password must contain at least one digit."),
             )
 
         # Use Django's password validators (AC #13)
@@ -67,7 +68,7 @@ class UserRegistrationSerializer(serializers.Serializer):
         """Validate that passwords match."""
         if attrs["password"] != attrs["password_confirm"]:
             raise serializers.ValidationError(
-                {"password_confirm": "Passwords do not match."},
+                {"password_confirm": _("Passwords do not match.")},
             )
         return attrs
 
@@ -130,12 +131,12 @@ class UserLoginSerializer(serializers.Serializer):
 
         if user is None:
             raise serializers.ValidationError(
-                {"detail": "Invalid email or password."},
+                {"detail": _("Invalid email or password.")},
             )
 
         if not user.is_active:
             raise serializers.ValidationError(
-                {"detail": "User account is disabled."},
+                {"detail": _("User account is disabled.")},
             )
 
         attrs["user"] = user
@@ -179,19 +180,19 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         """Validate password strength (AC #6)."""
         if len(value) < 8:
             raise serializers.ValidationError(
-                "Password must be at least 8 characters long.",
+                _("Password must be at least 8 characters long."),
             )
         if not re.search(r"[A-Z]", value):
             raise serializers.ValidationError(
-                "Password must contain at least one uppercase letter.",
+                _("Password must contain at least one uppercase letter."),
             )
         if not re.search(r"[a-z]", value):
             raise serializers.ValidationError(
-                "Password must contain at least one lowercase letter.",
+                _("Password must contain at least one lowercase letter."),
             )
         if not re.search(r"\d", value):
             raise serializers.ValidationError(
-                "Password must contain at least one digit.",
+                _("Password must contain at least one digit."),
             )
 
         try:
@@ -205,7 +206,7 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         """Validate passwords match and token is valid."""
         if attrs["new_password"] != attrs["new_password_confirm"]:
             raise serializers.ValidationError(
-                {"new_password_confirm": "Passwords do not match."},
+                {"new_password_confirm": _("Passwords do not match.")},
             )
 
         from django.contrib.auth.tokens import default_token_generator
@@ -216,11 +217,11 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
             uid = force_str(urlsafe_base64_decode(attrs["uid"]))
             user = User.objects.get(pk=uid)
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            raise serializers.ValidationError({"detail": "Invalid reset link."})
+            raise serializers.ValidationError({"detail": _("Invalid reset link.")})
 
         if not default_token_generator.check_token(user, attrs["token"]):
             raise serializers.ValidationError(
-                {"detail": "Invalid or expired reset link."},
+                {"detail": _("Invalid or expired reset link.")},
             )
 
         attrs["user"] = user

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-06 16:39+0000\n"
+"POT-Creation-Date: 2025-11-06 23:54+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,55 +18,108 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
 "&& n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
-#: config/settings/base.py:33
+
 msgid "العربية"
 msgstr ""
 
-#: config/settings/base.py:34
 msgid "English"
 msgstr ""
 
-#: quran_backend/templates/allauth/layouts/entrance.html:8
-#: quran_backend/templates/base.html:98
 msgid "Sign In"
 msgstr ""
 
-#: quran_backend/templates/base.html:83
 msgid "My Profile"
 msgstr ""
 
-#: quran_backend/templates/base.html:87
 msgid "Sign Out"
 msgstr ""
 
-#: quran_backend/templates/base.html:93
 msgid "Sign Up"
 msgstr ""
 
-#: quran_backend/users/admin.py:24
 msgid "Personal info"
 msgstr ""
 
-#: quran_backend/users/admin.py:26
 msgid "Permissions"
 msgstr ""
 
-#: quran_backend/users/admin.py:37
 msgid "Important dates"
 msgstr ""
 
-#: quran_backend/users/apps.py:9
+msgid "A user with this email already exists."
+msgstr "يوجد مستخدم بالفعل بهذا البريد الإلكتروني."
+
+msgid "Password must be at least 8 characters long."
+msgstr "يجب أن تكون كلمة المرور 8 أحرف على الأقل."
+
+msgid "Password must contain at least one uppercase letter."
+msgstr "يجب أن تحتوي كلمة المرور على حرف كبير واحد على الأقل."
+
+msgid "Password must contain at least one lowercase letter."
+msgstr "يجب أن تحتوي كلمة المرور على حرف صغير واحد على الأقل."
+
+msgid "Password must contain at least one digit."
+msgstr "يجب أن تحتوي كلمة المرور على رقم واحد على الأقل."
+
+msgid "Passwords do not match."
+msgstr "كلمات المرور غير متطابقة."
+
+msgid "Invalid email or password."
+msgstr "البريد الإلكتروني أو كلمة المرور غير صحيحة."
+
+msgid "User account is disabled."
+msgstr "حساب المستخدم معطل."
+
+msgid "Invalid reset link."
+msgstr "رابط إعادة التعيين غير صالح."
+
+msgid "Invalid or expired reset link."
+msgstr "رابط إعادة التعيين غير صالح أو منتهي الصلاحية."
+
+msgid "Refresh token is required."
+msgstr "رمز التحديث مطلوب."
+
+msgid "Successfully logged out"
+msgstr "تم تسجيل الخروج بنجاح"
+
+msgid "Password reset email sent if account exists"
+msgstr "تم إرسال بريد إلكتروني لإعادة تعيين كلمة المرور إذا كان الحساب موجوداً"
+
+msgid "Password has been reset successfully"
+msgstr "تم إعادة تعيين كلمة المرور بنجاح"
+
 msgid "Users"
 msgstr ""
 
-#: quran_backend/users/forms.py:23 quran_backend/users/tests/test_forms.py:35
 msgid "This username has already been taken."
 msgstr ""
 
-#: quran_backend/users/models.py:15
+msgid "Email Address"
+msgstr ""
+
+msgid "User's email address for authentication."
+msgstr ""
+
 msgid "Name of User"
 msgstr ""
 
-#: quran_backend/users/tests/test_views.py:72 quran_backend/users/views.py:25
+msgid "Analytics Enabled"
+msgstr ""
+
+msgid "User has consented to usage analytics tracking."
+msgstr ""
+
+msgid "Preferred Language"
+msgstr ""
+
+msgid "User's preferred language for app interface (e.g., 'ar', 'en')."
+msgstr ""
+
+msgid "Timezone"
+msgstr ""
+
+msgid "User's timezone for prayer times and date formatting."
+msgstr ""
+
 msgid "Information successfully updated"
 msgstr ""

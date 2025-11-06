@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.utils.translation import gettext_lazy as _
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.mixins import ListModelMixin
@@ -100,7 +101,7 @@ class UserLogoutView(APIView):
 
         if not refresh_token:
             return Response(
-                {"detail": "Refresh token is required."},
+                {"detail": _("Refresh token is required.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -109,7 +110,7 @@ class UserLogoutView(APIView):
         # For now, we just return success as the client will discard the token
 
         return Response(
-            {"message": "Successfully logged out"},
+            {"message": _("Successfully logged out")},
             status=status.HTTP_200_OK,
         )
 
@@ -148,7 +149,7 @@ class PasswordResetRequestView(APIView):
                 # In production, send email here
                 # For now, return token/uid in response (ONLY FOR DEVELOPMENT)
                 response_data = {
-                    "message": "Password reset email sent if account exists",
+                    "message": _("Password reset email sent if account exists"),
                 }
                 if settings.DEBUG:  # Only in development
                     response_data["dev_only"] = {"uid": uid, "token": token}
@@ -161,7 +162,7 @@ class PasswordResetRequestView(APIView):
 
             # Always return success for security (don't reveal if email exists)
             return Response(
-                {"message": "Password reset email sent if account exists"},
+                {"message": _("Password reset email sent if account exists")},
                 status=status.HTTP_200_OK,
             )
 
@@ -191,7 +192,7 @@ class PasswordResetConfirmView(APIView):
             user.save()
 
             return Response(
-                {"message": "Password has been reset successfully"},
+                {"message": _("Password has been reset successfully")},
                 status=status.HTTP_200_OK,
             )
 
