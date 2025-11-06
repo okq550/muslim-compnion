@@ -1,0 +1,346 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1</storyId>
+    <title>Implement User Authentication and Authorization</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-06</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/us-api-001-implement-user-authentication-and-authorization.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>Quran app user</asA>
+    <iWant>securely access my personalized features using email and password</iWant>
+    <soThat>my bookmarks and preferences are protected and private</soThat>
+    <tasks>
+      - Task 1: Extend Custom User Model (AC: #1, #14, #15) - Modify User model with UUID primary key, email authentication, UserProfile
+      - Task 2: Configure JWT Authentication with djangorestframework-simplejwt (AC: #2, #7, #8, #9) - Set up JWT tokens, 30-min access, 14-day refresh
+      - Task 3: Implement User Registration Endpoint (AC: #1, #6, #13) - POST /api/v1/auth/register/ with password validation
+      - Task 4: Implement Login Endpoint (AC: #2, #7, #8) - POST /api/v1/auth/login/ returning JWT tokens
+      - Task 5: Implement Logout Endpoint (AC: #3) - POST /api/v1/auth/logout/ to invalidate refresh token
+      - Task 6: Implement Token Refresh Endpoint (AC: #9) - POST /api/v1/auth/token/refresh/ for new access token
+      - Task 7: Implement Password Reset Endpoints (AC: #4, #5) - Request and confirm password reset flows
+      - Task 8: Implement Rate Limiting on Auth Endpoints (AC: #11, #12) - 5 per 15 min, lockout after 10 failures
+      - Task 9: Implement Authorization Middleware (AC: #10) - IsOwnerPermission for user-specific resources
+      - Task 10: Standardized Error Responses (AC: #16) - Arabic/English localized errors
+      - Task 11: Integration Testing and Validation - Full auth flow tests, token expiration, rate limiting
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. User can register with email and password via /api/v1/auth/register/ endpoint
+    2. User can login and receive JWT access + refresh tokens via /api/v1/auth/login/ endpoint
+    3. User can logout (invalidate refresh token) via /api/v1/auth/logout/ endpoint
+    4. User can request password reset via /api/v1/auth/password-reset/ endpoint
+    5. User can confirm password reset with token via /api/v1/auth/password-reset-confirm/ endpoint
+    6. Passwords meet security requirements (minimum 8 characters, complexity validation)
+    7. JWT access tokens expire after 30 minutes
+    8. JWT refresh tokens expire after 14 days
+    9. Users can refresh access tokens using valid refresh token via /api/v1/auth/token/refresh/ endpoint
+    10. Users can only access their own profile data (authorization enforced via JWT middleware)
+    11. Failed login attempts limited to 5 per 15 minutes per IP address (rate limiting)
+    12. Account lockout implemented after 10 failed login attempts in 1 hour
+    13. Passwords hashed using Django's PBKDF2 algorithm (320,000 iterations)
+    14. User model extends Django AbstractUser with UUID primary key
+    15. UserProfile model created with one-to-one relationship to User for preferences
+    16. All authentication endpoints return standardized error responses in Arabic/English
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: Cross-Cutting / Infrastructure Stories</title>
+        <section>Authentication & Authorization (ADR-002)</section>
+        <snippet>JWT-based authentication using djangorestframework-simplejwt. Access tokens: 30-minute lifetime, Refresh tokens: 14-day lifetime. Custom User model extends AbstractUser with UUID primary key and email as USERNAME_FIELD. UserProfile model for preferences (language, timezone).</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: Cross-Cutting / Infrastructure Stories</title>
+        <section>APIs and Interfaces - Authentication Endpoints</section>
+        <snippet>POST /api/v1/auth/register/ (email, password) → 201 with user + tokens. POST /api/v1/auth/login/ (email, password) → 200 with tokens. POST /api/v1/auth/logout/ (refresh token) → 200. POST /api/v1/auth/token/refresh/ (refresh) → new access token. POST /api/v1/auth/password-reset/ and password-reset-confirm/.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: Cross-Cutting / Infrastructure Stories</title>
+        <section>Non-Functional Requirements - Security</section>
+        <snippet>Password hashing: PBKDF2 with 320,000 iterations. Rate limiting on auth endpoints: 5 login attempts per 15 minutes per IP. Account lockout after 10 failed attempts in 1 hour. HTTPS-only in production. No plaintext passwords stored.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Technology Stack - Authentication</section>
+        <snippet>djangorestframework-simplejwt for JWT authentication. Stateless auth suitable for mobile clients. Access tokens: 30-minute lifetime, Refresh tokens: 14-day lifetime. Supports future multi-device sessions.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Project Structure - Core App</section>
+        <snippet>apps/core/ contains infrastructure: authentication.py (JWT auth logic), permissions.py (custom permissions), throttling.py (rate limiting), exceptions.py (custom exceptions), middleware.py (error handling).</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epics Document</title>
+        <section>US-API-001: Implement User Authentication and Authorization</section>
+        <snippet>Email and password registration/login. Secure password requirements. Password reset functionality. Session management. Users can only access their own bookmarks and data. Authenticated users get full features. Passwords encrypted, secure token-based sessions, protection against common attacks.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>quran_backend/quran_backend/users/models.py</path>
+        <kind>model</kind>
+        <symbol>User</symbol>
+        <lines>7-26</lines>
+        <reason>Existing custom User model extending AbstractUser. Needs modification to add UUID primary key, email as USERNAME_FIELD, is_analytics_enabled field. Currently has 'name' field instead of first_name/last_name.</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/quran_backend/users/api/views.py</path>
+        <kind>viewset</kind>
+        <symbol>UserViewSet</symbol>
+        <lines>14-26</lines>
+        <reason>Existing DRF ViewSet for User model using SessionAuthentication and TokenAuthentication. Pattern to follow for new JWT auth views. Includes /me endpoint for current user profile. Authorization: filters queryset to current user only (line 21).</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/quran_backend/users/api/serializers.py</path>
+        <kind>serializer</kind>
+        <symbol>UserSerializer</symbol>
+        <lines>1-50</lines>
+        <reason>Existing User serializer. Need to create additional serializers: UserRegistrationSerializer, UserLoginSerializer, PasswordResetRequestSerializer, PasswordResetConfirmSerializer.</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/quran_backend/users/urls.py</path>
+        <kind>url_config</kind>
+        <symbol>app_name</symbol>
+        <lines>1-50</lines>
+        <reason>URL routing for users app. Need to add auth endpoints: /api/v1/auth/register/, /login/, /logout/, /token/refresh/, /password-reset/, /password-reset-confirm/.</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/config/settings/base.py</path>
+        <kind>settings</kind>
+        <symbol>REST_FRAMEWORK</symbol>
+        <lines>330-335</lines>
+        <reason>Current DRF settings use SessionAuthentication and TokenAuthentication. Need to add JWTAuthentication and configure SIMPLE_JWT settings (access/refresh token lifetimes).</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/config/settings/base.py</path>
+        <kind>settings</kind>
+        <symbol>INSTALLED_APPS</symbol>
+        <lines>63-93</lines>
+        <reason>rest_framework and rest_framework.authtoken already installed. Verify rest_framework_simplejwt is installed via dependencies.</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/quran_backend/users/tests/test_models.py</path>
+        <kind>test</kind>
+        <symbol>test_user_get_absolute_url</symbol>
+        <lines>1-6</lines>
+        <reason>Existing test pattern using pytest-django. Follow this pattern for new authentication tests. Use fixtures for User objects (from factories.py).</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/quran_backend/users/tests/factories.py</path>
+        <kind>test_factory</kind>
+        <symbol>UserFactory</symbol>
+        <lines>1-50</lines>
+        <reason>Factory Boy factories for generating test User objects. Use for creating test users in authentication test cases.</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/quran_backend/users/tests/api/test_views.py</path>
+        <kind>test</kind>
+        <symbol>API tests</symbol>
+        <lines>1-100</lines>
+        <reason>Existing API endpoint tests. Pattern for testing DRF views with authentication. Use for new auth endpoint tests.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <python>
+        <package>Django==5.2.8</package>
+        <package>djangorestframework==3.16.1</package>
+        <package>djangorestframework-simplejwt - TO BE INSTALLED</package>
+        <package>psycopg2-binary - PostgreSQL adapter</package>
+        <package>django-redis - Redis cache backend</package>
+        <package>celery - Background tasks</package>
+        <package>pytest-django - Testing framework</package>
+        <package>factory-boy - Test fixtures</package>
+        <package>django-environ - Environment configuration</package>
+      </python>
+      <database>
+        <service>PostgreSQL 16</service>
+        <service>Redis - Caching and Celery broker</service>
+      </database>
+      <containerization>
+        <tool>Docker + Docker Compose</tool>
+      </containerization>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - Use djangorestframework-simplejwt for JWT authentication (ADR-002)
+    - JWT access tokens: 30-minute lifetime, refresh tokens: 14-day lifetime
+    - User model must extend Django AbstractUser with UUID primary key
+    - Email as USERNAME_FIELD for authentication (no separate username)
+    - Password hashing: Django PBKDF2 with 320,000 iterations (Django 5.2 default)
+    - Rate limiting: 5 login attempts per 15 minutes per IP (prevents brute force)
+    - Account lockout: 10 failures in 1 hour (stored in Redis)
+    - All API endpoints follow /api/v1/ URL pattern
+    - Error responses must be localized (Arabic/English) based on Accept-Language header
+    - Standardized error response format with code, message, details, timestamp, request_id
+    - HTTP status codes: 200 OK, 201 Created, 400 Bad Request, 401 Unauthorized, 403 Forbidden, 429 Too Many Requests
+    - Authorization: Users can only access their own resources (IsOwnerPermission)
+    - HTTPS-only in production environment
+    - No sensitive data in logs (passwords, tokens filtered)
+    - Integration with Sentry for error tracking (authentication failures logged)
+    - Testing: pytest-django with factory_boy for fixtures
+    - Docker Compose workflow: docker-compose exec django python manage.py <command>
+    - Settings: Use config/settings/base.py for JWT and DRF configuration
+    - Arabic i18n: LANGUAGE_CODE='ar', LocaleMiddleware active
+  </constraints>
+
+  <interfaces>
+    <api>
+      <endpoint>
+        <name>POST /api/v1/auth/register/</name>
+        <kind>REST endpoint</kind>
+        <signature>
+          Request: { "email": "user@example.com", "password": "SecurePass123!", "password_confirm": "SecurePass123!" }
+          Response: { "user": {...}, "tokens": { "access": "...", "refresh": "..." } }
+          Status: 201 Created
+        </signature>
+        <path>quran_backend/users/views.py - UserRegistrationView (to be created)</path>
+      </endpoint>
+      <endpoint>
+        <name>POST /api/v1/auth/login/</name>
+        <kind>REST endpoint</kind>
+        <signature>
+          Request: { "email": "user@example.com", "password": "SecurePass123!" }
+          Response: { "tokens": { "access": "...", "refresh": "..." } }
+          Status: 200 OK
+        </signature>
+        <path>quran_backend/users/views.py - UserLoginView (to be created)</path>
+      </endpoint>
+      <endpoint>
+        <name>POST /api/v1/auth/logout/</name>
+        <kind>REST endpoint</kind>
+        <signature>
+          Request: { "refresh": "..." }
+          Response: { "message": "Successfully logged out" }
+          Status: 200 OK
+          Authentication: Required (JWT)
+        </signature>
+        <path>quran_backend/users/views.py - UserLogoutView (to be created)</path>
+      </endpoint>
+      <endpoint>
+        <name>POST /api/v1/auth/token/refresh/</name>
+        <kind>REST endpoint</kind>
+        <signature>
+          Request: { "refresh": "..." }
+          Response: { "access": "..." }
+          Status: 200 OK
+          Uses: rest_framework_simplejwt.views.TokenRefreshView (built-in)
+        </signature>
+        <path>quran_backend/users/urls.py - Route to TokenRefreshView</path>
+      </endpoint>
+      <endpoint>
+        <name>POST /api/v1/auth/password-reset/</name>
+        <kind>REST endpoint</kind>
+        <signature>
+          Request: { "email": "user@example.com" }
+          Response: { "message": "Password reset email sent" }
+          Status: 200 OK
+        </signature>
+        <path>quran_backend/users/views.py - PasswordResetRequestView (to be created)</path>
+      </endpoint>
+      <endpoint>
+        <name>POST /api/v1/auth/password-reset-confirm/</name>
+        <kind>REST endpoint</kind>
+        <signature>
+          Request: { "token": "...", "new_password": "NewPass123!", "new_password_confirm": "NewPass123!" }
+          Response: { "message": "Password reset successful" }
+          Status: 200 OK
+        </signature>
+        <path>quran_backend/users/views.py - PasswordResetConfirmView (to be created)</path>
+      </endpoint>
+    </api>
+    <serializers>
+      <serializer>
+        <name>UserSerializer</name>
+        <kind>DRF Serializer</kind>
+        <signature>Existing serializer at quran_backend/users/api/serializers.py</signature>
+        <path>quran_backend/users/api/serializers.py</path>
+      </serializer>
+      <serializer>
+        <name>UserRegistrationSerializer</name>
+        <kind>DRF Serializer</kind>
+        <signature>Fields: email, password, password_confirm. Validates: email format, uniqueness, password strength (min 8 chars, complexity), password match.</signature>
+        <path>quran_backend/users/serializers.py (to be created)</path>
+      </serializer>
+      <serializer>
+        <name>UserLoginSerializer</name>
+        <kind>DRF Serializer</kind>
+        <signature>Fields: email, password. Authenticates using django.contrib.auth.authenticate()</signature>
+        <path>quran_backend/users/serializers.py (to be created)</path>
+      </serializer>
+    </serializers>
+    <permissions>
+      <permission>
+        <name>IsOwnerPermission</name>
+        <kind>DRF Permission Class</kind>
+        <signature>Checks: request.user == object.user for user-specific resources. Returns: True (allow) or False (403 Forbidden)</signature>
+        <path>quran_backend/users/permissions.py (to be created)</path>
+      </permission>
+    </permissions>
+    <throttles>
+      <throttle>
+        <name>AuthRateThrottle</name>
+        <kind>DRF Throttle Class</kind>
+        <signature>Inherits: AnonRateThrottle. Rate: 5 requests per 15 minutes per IP. Returns: 429 Too Many Requests with Retry-After header when exceeded.</signature>
+        <path>quran_backend/users/throttling.py (to be created)</path>
+      </throttle>
+      <throttle>
+        <name>AccountLockoutThrottle</name>
+        <kind>DRF Throttle Class</kind>
+        <signature>Uses Redis to track failed login attempts by IP. Locks account for 1 hour after 10 failures.</signature>
+        <path>quran_backend/users/throttling.py (to be created)</path>
+      </throttle>
+    </throttles>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Use pytest-django testing framework with factory_boy for test data generation. Follow existing test patterns in quran_backend/users/tests/. Unit tests for serializers, models, utilities. Integration tests for API endpoints with authentication flows. Security tests for rate limiting, account lockout, authorization. Test coverage goal: >90% for authentication code. Run tests via: docker-compose exec django pytest quran_backend/users/tests/ -v
+    </standards>
+    <locations>
+      - quran_backend/users/tests/test_models.py - User and UserProfile model tests
+      - quran_backend/users/tests/test_views.py - Authentication endpoint integration tests
+      - quran_backend/users/tests/test_serializers.py - Serializer validation tests
+      - quran_backend/users/tests/test_permissions.py - Authorization tests (IsOwnerPermission)
+      - quran_backend/users/tests/test_throttling.py - Rate limiting and account lockout tests
+      - quran_backend/users/tests/api/test_views.py - DRF API endpoint tests
+      - quran_backend/users/tests/factories.py - Factory Boy factories for User, UserProfile
+    </locations>
+    <ideas>
+      - AC #1: Test POST /api/v1/auth/register/ with valid data returns 201, tokens, and user profile
+      - AC #1: Test registration with invalid email format returns 400 error
+      - AC #1: Test registration with duplicate email returns 400 error
+      - AC #6: Test registration with weak password (< 8 chars, no complexity) returns 400 error
+      - AC #2: Test POST /api/v1/auth/login/ with valid credentials returns 200 and tokens
+      - AC #2: Test login with invalid credentials returns 401 error
+      - AC #3: Test POST /api/v1/auth/logout/ with valid refresh token returns 200
+      - AC #3: Test logout without authentication returns 401
+      - AC #9: Test POST /api/v1/auth/token/refresh/ with valid refresh token returns new access token
+      - AC #9: Test token refresh with expired refresh token returns 401
+      - AC #7: Test access token expires after 30 minutes (time-based test)
+      - AC #8: Test refresh token expires after 14 days (time-based test)
+      - AC #4, #5: Test password reset request sends email and confirm resets password
+      - AC #10: Test User A cannot access User B's profile (returns 403 Forbidden)
+      - AC #10: Test authenticated user can access own profile (returns 200)
+      - AC #11: Test 6th login attempt within 15 minutes returns 429 with Retry-After header
+      - AC #12: Test 10 failed login attempts trigger 1-hour account lockout
+      - AC #12: Test successful login after lockout cooldown period
+      - AC #13: Test User.set_password() uses PBKDF2 hashing (verify hash format)
+      - AC #14: Test User model has UUID primary key
+      - AC #15: Test UserProfile created with User (one-to-one relationship)
+      - AC #16: Test error responses follow standardized format with Arabic/English localization
+      - Integration test: Full flow - register → login → authenticated request → token refresh → logout
+    </ideas>
+  </tests>
+</story-context>
