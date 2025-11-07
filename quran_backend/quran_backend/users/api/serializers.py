@@ -108,8 +108,8 @@ class UserRegistrationSerializer(serializers.Serializer):
                 "username": instance.username,
             },
             "tokens": {
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
+                "access_token": str(refresh.access_token),
+                "refresh_token": str(refresh),
             },
         }
 
@@ -149,8 +149,8 @@ class UserLoginSerializer(serializers.Serializer):
 
         return {
             "tokens": {
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
+                "access_token": str(refresh.access_token),
+                "refresh_token": str(refresh),
             },
         }
 

@@ -74,8 +74,8 @@ class TestAccountLockout:
         )
         assert response.status_code == status.HTTP_200_OK
         assert "tokens" in response.data
-        assert "access" in response.data["tokens"]
-        assert "refresh" in response.data["tokens"]
+        assert "access_token" in response.data["tokens"]
+        assert "refresh_token" in response.data["tokens"]
 
     def test_ten_failed_attempts_locks_account(self, api_client, test_user):
         """Test that 10 failed attempts lock the account."""

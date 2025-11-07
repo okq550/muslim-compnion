@@ -99,6 +99,7 @@ This establishes the base architecture with these decisions:
 | **Audio Format** | MP3 | N/A | Epic 3, 7 | Universal compatibility across mobile platforms |
 | **Background Jobs** | Celery + Redis | Latest | All | Async task processing, scheduled jobs, import pipelines |
 | **Authentication** | JWT (simplejwt) | Latest | All | Stateless auth, mobile-friendly, industry standard for REST APIs |
+| **JWT Token Naming** | OAuth 2.0 Standard (`access_token`/`refresh_token`) | N/A | Epic 1 | Standards compliance (RFC 6749), explicit naming, developer experience (See ADR-012) |
 | **Environment Config** | django-environ | 0.11.2 | All | Secure .env file management, 12-factor app principles |
 | **Error Tracking** | Sentry | Latest | All | Real-time error monitoring, performance tracking, critical for zero-error tolerance |
 | **Internationalization** | Django i18n | Built-in | All | Arabic as default, bilingual support (Arabic/English), RTL layout |
@@ -2436,6 +2437,167 @@ msgstr "إلغاء تنشيط القراء المحددين"
 - File upload validation prevents malicious file uploads
 - S3 pre-signed URLs prevent unauthorized audio access
 - Audit logging via django-simple-history (optional enhancement)
+
+---
+
+### ADR-012: JWT Token Response Parameter Naming Standardization
+
+**Status:** Approved
+**Date:** 2025-11-07
+**Decision Owner:** Osama (Architect)
+**Type:** Breaking Change
+
+**Context:**
+
+The current JWT authentication implementation uses abbreviated parameter names in token responses:
+- `"access"` for access tokens
+- `"refresh"` for refresh tokens
+
+This naming convention is used across:
+- User registration endpoint (`POST /api/v1/auth/register/`)
+- User login endpoint (`POST /api/v1/auth/login/`)
+- Token refresh endpoint (`POST /api/v1/auth/token/refresh/`)
+- Logout endpoint (consumes `"refresh"` parameter)
+
+**Problem:**
+
+The abbreviated naming does not align with industry standards:
+1. OAuth 2.0 RFC 6749 Section 5.1 specifies `access_token` as the standard response parameter
+2. Less explicit naming can cause confusion for API consumers
+3. Inconsistent with common OAuth implementations
+4. May complicate future token type additions (e.g., `id_token`)
+
+**Decision:**
+
+Rename JWT token response keys to use full, explicit naming:
+- `"access"` → `"access_token"`
+- `"refresh"` → `"refresh_token"`
+
+This applies to all authentication endpoints returning tokens.
+
+**Rationale:**
+1. **Standards Compliance**: Aligns with OAuth 2.0 RFC 6749 token response specifications
+2. **API Clarity**: More explicit naming reduces ambiguity about parameter purpose
+3. **Developer Experience**: Frontend/mobile developers familiar with OAuth patterns will immediately recognize the structure
+4. **Future-Proofing**: Establishes consistent naming pattern for potential future token types
+5. **Best Practice**: Matches naming conventions used by major authentication providers (Auth0, Okta, Firebase)
+
+**Impact Assessment:**
+
+**Severity:** Breaking Change - HIGH
+
+**Affected Components:**
+1. Backend Serializers (2 files):
+   - `UserRegistrationSerializer.to_representation()` (serializers.py:110-113)
+   - `UserLoginSerializer.to_representation()` (serializers.py:151-154)
+
+2. Backend Views (2 views):
+   - `UserLogoutView.post()` (views.py:149) - expects `"refresh"` in request body
+   - `ThrottledTokenRefreshView` (views.py:222) - inherits from SimpleJWT, returns `"access"`
+
+3. Test Suite (8 files):
+   - `test_views.py` - 3 assertions
+   - `test_lockout.py` - 1 assertion
+   - `test_token_expiration.py` - 2 assertions
+   - `test_blacklist.py` - 1 assertion
+   - `test_password_reset.py` - 1 assertion
+
+4. API Consumers:
+   - Frontend applications
+   - Mobile applications (iOS/Android)
+   - Third-party integrations (if any)
+
+5. Documentation:
+   - API documentation/OpenAPI specs
+   - User story acceptance criteria
+   - Integration guides
+
+**Response Structure Change:**
+
+Before:
+```json
+{
+  "tokens": {
+    "access": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+    "refresh": "eyJ0eXAiOiJKV1QiLCJhbGc..."
+  }
+}
+```
+
+After:
+```json
+{
+  "tokens": {
+    "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+    "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc..."
+  }
+}
+```
+
+**Implementation Strategy:**
+
+Chosen Approach: Hard Cutover (Option A)
+
+Justification:
+- Project is in early development phase (recent commit: US-API-002)
+- Comprehensive test coverage exists (8 test files)
+- No production traffic or external consumers yet
+- Simpler than maintaining dual responses or API versioning
+
+Implementation Steps:
+
+1. Backend Changes:
+   - Update `UserRegistrationSerializer.to_representation()` to use `access_token`/`refresh_token`
+   - Update `UserLoginSerializer.to_representation()` to use `access_token`/`refresh_token`
+   - Update `UserLogoutView` to accept `refresh_token` parameter
+   - Override or customize `ThrottledTokenRefreshView` to return `access_token`
+
+2. Test Updates:
+   - Update all 8 test files to assert new parameter names
+   - Verify all authentication flows still pass
+
+3. Documentation Updates:
+   - Update architecture.md Decision Summary table
+   - Update API documentation/OpenAPI specs
+   - Update user stories (US-API-001 and related)
+   - Create migration guide in CHANGELOG
+
+4. Frontend Coordination:
+   - Notify frontend/mobile teams of breaking change
+   - Provide migration timeline
+   - Update API integration examples
+
+Estimated Effort: 2-3 hours backend + testing + frontend coordination
+
+Rollback Plan: Git revert if issues arise during testing phase
+
+**Alternatives Considered:**
+
+Option B: Dual-Response Transition Period
+- Return both old and new keys for 2-4 weeks
+- Rejected: Unnecessary complexity for pre-production system
+
+Option C: API Versioning
+- Create `/api/v2/` endpoints with new structure
+- Rejected: Premature optimization, adds maintenance burden
+
+**Success Metrics:**
+- All 8 test files pass with updated assertions
+- Zero regressions in authentication flows
+- Frontend/mobile teams successfully integrate with new parameter names
+- API documentation reflects new structure
+- No security vulnerabilities introduced
+
+**Related Decisions:**
+- Initial authentication architecture (Decision Summary, Line 101)
+- ADR-005: JWT Authentication with djangorestframework-simplejwt
+- Epic 1: Infrastructure Setup
+- US-API-001: Implement User Authentication and Authorization
+
+**Notes:**
+- SimpleJWT library's default `TokenRefreshView` also needs customization
+- Consider documenting this pattern in API contribution guidelines
+- Future token types (e.g., `id_token` for OpenID Connect) should follow same `*_token` suffix pattern
 
 ---
 

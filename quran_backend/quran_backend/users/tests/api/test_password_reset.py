@@ -240,8 +240,8 @@ class TestPasswordResetFlow:
         )
         assert response.status_code == status.HTTP_200_OK
         assert "tokens" in response.data
-        assert "access" in response.data["tokens"]
-        assert "refresh" in response.data["tokens"]
+        assert "access_token" in response.data["tokens"]
+        assert "refresh_token" in response.data["tokens"]
 
         # Step 4: Verify old password no longer works
         response = api_client.post(

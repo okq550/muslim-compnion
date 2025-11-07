@@ -62,8 +62,8 @@ class TestUserRegistrationView:
         assert "user" in response.data
         assert "tokens" in response.data
         assert response.data["user"]["email"] == "newuser@example.com"
-        assert "access" in response.data["tokens"]
-        assert "refresh" in response.data["tokens"]
+        assert "access_token" in response.data["tokens"]
+        assert "refresh_token" in response.data["tokens"]
 
         # Verify user was created
         user = User.objects.get(email="newuser@example.com")
@@ -212,8 +212,8 @@ class TestUserLoginView:
 
         assert response.status_code == status.HTTP_200_OK
         assert "tokens" in response.data
-        assert "access" in response.data["tokens"]
-        assert "refresh" in response.data["tokens"]
+        assert "access_token" in response.data["tokens"]
+        assert "refresh_token" in response.data["tokens"]
 
     def test_login_with_invalid_credentials_returns_400(self, api_client, test_user):
         """Test login with wrong password returns 400."""
@@ -247,12 +247,12 @@ class TestTokenRefreshView:
 
         refresh = RefreshToken.for_user(user)
         url = reverse("api:auth-token-refresh")
-        data = {"refresh": str(refresh)}
+        data = {"refresh_token": str(refresh)}
 
         response = api_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
-        assert "access" in response.data
+        assert "access_token" in response.data
 
 
 @pytest.mark.django_db

@@ -146,7 +146,7 @@ class UserLogoutView(APIView):
 
     def post(self, request):
         """Handle user logout request and blacklist token."""
-        refresh_token = request.data.get("refresh")
+        refresh_token = request.data.get("refresh_token")
 
         if not refresh_token:
             return Response(
@@ -221,15 +221,32 @@ class PasswordResetRequestView(APIView):
 
 class ThrottledTokenRefreshView(TokenRefreshView):
     """
-    Token refresh endpoint with rate limiting.
+      Token refresh endpoint with rate limiting.
 
-    POST /api/v1/auth/token/refresh/
-    - Refreshes JWT access token using refresh token
-    - Rate limited to 5 requests per minute per user
-    - Returns: 200 OK with new access token
-    """
+      POST /api/v1/auth/token/refresh/
+      - Refreshes JWT access token using refresh token
+      - Rate limited to 5 requests per minute per user
+      - Returns: 200 OK with new access token
+      """
 
     throttle_classes = [AuthEndpointThrottle]
+
+    def post(self, request, *args, **kwargs):
+        """Override to use OAuth 2.0 standard parameter names (ADR-012)."""
+        # Accept both 'refresh_token' (OAuth 2.0) and 'refresh' (SimpleJWT default)
+        if 'refresh_token' in request.data and 'refresh' not in request.data:
+            request.data['refresh'] = request.data['refresh_token']
+
+        response = super().post(request, *args, **kwargs)
+
+        # Rename response keys for OAuth 2.0 compliance (ADR-012)
+        if response.status_code == 200:
+            if 'access' in response.data:
+                response.data['access_token'] = response.data.pop('access')
+            if 'refresh' in response.data:
+                response.data['refresh_token'] = response.data.pop('refresh')
+
+        return response
 
 
 class PasswordResetConfirmView(APIView):
