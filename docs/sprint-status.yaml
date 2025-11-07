@@ -43,7 +43,7 @@ development_status:
   us-api-001.1-implement-jwt-token-blacklisting: done
   us-api-001.2-implement-persistent-account-lockout: done
   us-api-001.3-localize-authentication-error-messages: done
-  us-api-002-implement-error-handling-and-user-feedback: backlog
+  us-api-002-implement-error-handling-and-user-feedback: done
   us-api-003-implement-data-caching-strategy: backlog
   us-api-004-implement-analytics-and-usage-tracking: backlog
   us-api-005-implement-rate-limiting-and-throttling: backlog

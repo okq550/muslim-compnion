@@ -24,7 +24,14 @@
       "Bash(git log:*)",
       "SlashCommand(/bmad:bmm:workflows:code-review)",
       "Bash(ruff check:*)",
-      "Bash(SKIP=ruff-format,djlint-django-format,djlint-django-lint pre-commit run:*)"
+      "Bash(SKIP=ruff-format,djlint-django-format,djlint-django-lint pre-commit run:*)",
+      "Bash(test:*)",
+      "SlashCommand(/bmad:bmm:workflows:story-context)",
+      "SlashCommand(/bmad:bmm:workflows:code-review:*)",
+      "SlashCommand(/bmad:bmm:workflows:story-done:*)",
+      "Bash(env SKIP=ruff-format,djlint-django-format,djlint-django-lint pre-commit run:*)",
+      "Bash(env SKIP=ruff-check,ruff-format,djlint-django-format,djlint-django-lint pre-commit run:*)",
+      "Bash(env SKIP=ruff-check git commit:*)"
     ],
     "deny": [],
     "ask": []

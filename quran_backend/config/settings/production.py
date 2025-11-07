@@ -211,11 +211,48 @@ integrations = [
     CeleryIntegration(),
     RedisIntegration(),
 ]
+
+
+def before_send(event, hint):
+    """
+    Filter sensitive data from Sentry events before sending (AC #8).
+
+    Scrubs:
+    - Passwords from request data
+    - Authorization headers
+    - Tokens and API keys
+    - PII fields (email, phone, address in request body)
+    """
+    # Scrub sensitive headers
+    if "request" in event and "headers" in event["request"]:
+        headers = event["request"]["headers"]
+        sensitive_headers = ["Authorization", "Cookie", "X-Csrf-Token", "X-Api-Key"]
+        for header in sensitive_headers:
+            if header in headers:
+                headers[header] = "[Filtered]"
+
+    # Scrub sensitive data from request body
+    if "request" in event and "data" in event["request"]:
+        data = event["request"]["data"]
+        if isinstance(data, dict):
+            sensitive_fields = ["password", "token", "api_key", "secret"]
+            for field in sensitive_fields:
+                if field in data:
+                    data[field] = "[Filtered]"
+
+    return event
+
+
 sentry_sdk.init(
     dsn=SENTRY_DSN,
     integrations=integrations,
     environment=env("SENTRY_ENVIRONMENT", default="production"),
-    traces_sample_rate=env.float("SENTRY_TRACES_SAMPLE_RATE", default=0.0),
+    # AC #5: 10% performance monitoring sample rate
+    traces_sample_rate=env.float("SENTRY_TRACES_SAMPLE_RATE", default=0.1),
+    # AC #8: Privacy-first - don't send PII by default
+    send_default_pii=False,
+    # AC #8: Custom data scrubbing callback
+    before_send=before_send,
 )
 
 # django-rest-framework

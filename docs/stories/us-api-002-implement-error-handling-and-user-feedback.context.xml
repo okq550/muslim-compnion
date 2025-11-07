@@ -1,0 +1,448 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>2</storyId>
+    <title>Implement Error Handling and User Feedback</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-07</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/us-api-002-implement-error-handling-and-user-feedback.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>Quran app user</asA>
+    <iWant>to receive clear feedback when errors occur</iWant>
+    <soThat>I understand what went wrong and what I can do about it</soThat>
+    <tasks>
+      <task id="1" name="Create Custom Exception Handler">
+        <subtasks>
+          <item>Create quran_backend/core/exceptions.py module</item>
+          <item>Implement custom_exception_handler(exc, context) function</item>
+          <item>Define error code constants (VALIDATION_ERROR, AUTH_ERROR, NOT_FOUND, NETWORK_ERROR, SERVER_ERROR, RATE_LIMIT_EXCEEDED)</item>
+          <item>Wrap error messages with gettext_lazy for localization</item>
+          <item>Configure in config/settings.py REST_FRAMEWORK['EXCEPTION_HANDLER']</item>
+        </subtasks>
+        <acceptanceCriteria>AC #1-4, #7</acceptanceCriteria>
+      </task>
+      <task id="2" name="Implement Error Middleware">
+        <subtasks>
+          <item>Create quran_backend/core/middleware/error_handler.py</item>
+          <item>Implement ErrorHandlingMiddleware class with request_id generation</item>
+          <item>Catch unhandled exceptions and log to Sentry</item>
+          <item>Ensure database transactions are rolled back</item>
+          <item>Add to MIDDLEWARE in config/settings.py</item>
+          <item>Configure Sentry context enrichment</item>
+        </subtasks>
+        <acceptanceCriteria>AC #2, #6, #8</acceptanceCriteria>
+      </task>
+      <task id="3" name="Create Custom Exception Classes">
+        <subtasks>
+          <item>Define ValidationError, AuthenticationError, AuthorizationError</item>
+          <item>Define ResourceNotFoundError, NetworkError, TransientError</item>
+          <item>Include error code, default message, details dict, HTTP status</item>
+        </subtasks>
+        <acceptanceCriteria>AC #3, #5</acceptanceCriteria>
+      </task>
+      <task id="4" name="Implement Retry Logic">
+        <subtasks>
+          <item>Create quran_backend/core/utils/retry.py</item>
+          <item>Implement retry_with_exponential_backoff decorator (max 3 retries, 1s/2s/4s delays)</item>
+          <item>Apply to external API calls, database connections, Redis operations</item>
+        </subtasks>
+        <acceptanceCriteria>AC #5</acceptanceCriteria>
+      </task>
+      <task id="5" name="Add Sentry Integration">
+        <subtasks>
+          <item>Verify Sentry SDK installed (sentry-sdk==1.40.0)</item>
+          <item>Configure Sentry in config/settings.py with DjangoIntegration and CeleryIntegration</item>
+          <item>Configure data scrubbing (passwords, tokens, PII)</item>
+          <item>Test error capture in Sentry dashboard</item>
+        </subtasks>
+        <acceptanceCriteria>AC #2, #8</acceptanceCriteria>
+      </task>
+      <task id="6" name="Implement Error Response Serializers">
+        <subtasks>
+          <item>Create quran_backend/core/serializers.py</item>
+          <item>Define ErrorDetailSerializer and ErrorResponseSerializer</item>
+          <item>Use serializer in custom exception handler</item>
+        </subtasks>
+        <acceptanceCriteria>AC #4</acceptanceCriteria>
+      </task>
+      <task id="7" name="Add Transaction Management">
+        <subtasks>
+          <item>Review all database writes for atomic transactions</item>
+          <item>Add @transaction.atomic to user registration, password reset, bookmarks, imports</item>
+          <item>Consider ATOMIC_REQUESTS setting</item>
+          <item>Test rollback behavior</item>
+        </subtasks>
+        <acceptanceCriteria>AC #6</acceptanceCriteria>
+      </task>
+      <task id="8" name="Create Error Message Catalog">
+        <subtasks>
+          <item>Create locale/en/LC_MESSAGES/errors.po</item>
+          <item>Create locale/ar/LC_MESSAGES/errors.po</item>
+          <item>Define all error messages with translations</item>
+          <item>Run makemessages and compilemessages</item>
+        </subtasks>
+        <acceptanceCriteria>AC #7</acceptanceCriteria>
+      </task>
+      <task id="9" name="Comprehensive Error Handling Tests">
+        <subtasks>
+          <item>Create quran_backend/core/tests/test_error_handling.py</item>
+          <item>Test custom exception handler (all error types, standardized format)</item>
+          <item>Test error middleware (unhandled exceptions, request_id, rollback)</item>
+          <item>Test retry logic (exponential backoff, max retries)</item>
+          <item>Test localization (Arabic/English)</item>
+          <item>Test Sentry integration (logging, filtering)</item>
+          <item>Test across all existing endpoints</item>
+        </subtasks>
+        <acceptanceCriteria>AC #9</acceptanceCriteria>
+      </task>
+      <task id="10" name="Update API Documentation">
+        <subtasks>
+          <item>Document error response format</item>
+          <item>List all possible error codes</item>
+          <item>Provide example error responses</item>
+          <item>Document retry behavior</item>
+          <item>Update OpenAPI/Swagger schema</item>
+        </subtasks>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1" name="User-Friendly Network Error Messages">
+      <requirement>Network connectivity errors return clear messages (not stack traces)</requirement>
+      <examples>
+        <item>Message: "Unable to connect. Please check your internet connection."</item>
+        <item>No technical details exposed (no IP addresses, server names, ports)</item>
+        <item>Error responses follow standardized JSON format</item>
+      </examples>
+    </criterion>
+    <criterion id="2" name="Server Error Protection">
+      <requirement>Server errors (500, 503) logged to Sentry with full context</requirement>
+      <details>
+        <item>Users see generic friendly message: "Something went wrong. Please try again."</item>
+        <item>Stack traces never exposed to clients</item>
+        <item>Error correlation ID included for support escalation</item>
+      </details>
+    </criterion>
+    <criterion id="3" name="Clear Validation Error Messages">
+      <requirement>Validation errors explain exactly what needs correction</requirement>
+      <examples>
+        <item>Field-level errors: {"email": "Enter a valid email address"}</item>
+        <item>Action-specific guidance provided where applicable</item>
+        <item>Examples shown when format is ambiguous</item>
+      </examples>
+    </criterion>
+    <criterion id="4" name="Standardized Error Response Format">
+      <requirement>All errors follow consistent JSON structure</requirement>
+      <schema>
+        {
+          "error": {
+            "code": "ERROR_CODE",
+            "message": "User-friendly message",
+            "details": {...},
+            "timestamp": "ISO 8601",
+            "request_id": "uuid"
+          }
+        }
+      </schema>
+      <errorCodes>
+        <code>VALIDATION_ERROR (400)</code>
+        <code>AUTH_ERROR (401, 403)</code>
+        <code>NOT_FOUND (404)</code>
+        <code>NETWORK_ERROR (503, 504)</code>
+        <code>SERVER_ERROR (500)</code>
+        <code>RATE_LIMIT_EXCEEDED (429)</code>
+      </errorCodes>
+    </criterion>
+    <criterion id="5" name="Automatic Retry for Transient Errors">
+      <requirement>Network timeouts trigger exponential backoff retry (max 3 attempts)</requirement>
+      <details>
+        <item>Retry delays: 1s, 2s, 4s</item>
+        <item>Idempotent operations only (GET, PUT with idempotency key)</item>
+        <item>User informed of retry attempts: "Retrying... (attempt 2/3)"</item>
+      </details>
+    </criterion>
+    <criterion id="6" name="Data Preservation During Errors">
+      <requirement>No partial database writes (use transactions)</requirement>
+      <details>
+        <item>Failed operations fully rolled back</item>
+        <item>User's in-progress data not lost</item>
+        <item>Celery task retries don't create duplicates</item>
+      </details>
+    </criterion>
+    <criterion id="7" name="Localized Error Messages">
+      <requirement>All error messages support Arabic/English</requirement>
+      <details>
+        <item>Accept-Language header determines language</item>
+        <item>Technical error codes remain in English</item>
+        <item>User-facing messages fully localized</item>
+        <item>Leverages i18n framework from US-API-001.3</item>
+      </details>
+    </criterion>
+    <criterion id="8" name="Comprehensive Error Logging">
+      <requirement>All errors logged to Sentry with full context</requirement>
+      <context>
+        <item>Request context (URL, method, headers, body)</item>
+        <item>User context (user ID, email, IP - if authenticated)</item>
+        <item>Error stack trace and exception chain</item>
+        <item>Timestamp and correlation ID</item>
+        <item>Sensitive data filtered (passwords, tokens, PII)</item>
+      </context>
+    </criterion>
+    <criterion id="9" name="Consistent Error Handling Across Endpoints">
+      <requirement>All endpoints use same error handling patterns</requirement>
+      <implementation>
+        <item>Custom exception handler configured in DRF settings</item>
+        <item>All apps use same error handling patterns</item>
+        <item>Middleware catches unhandled exceptions globally</item>
+        <item>Testing confirms consistency across all endpoints</item>
+      </implementation>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Technical Specification - Epic 1: Infrastructure</title>
+        <section>Error Handler Middleware</section>
+        <snippet>Catch exceptions, transform to user-friendly messages, log errors to Sentry. Standardized error response format with code, message, details, timestamp, and request_id.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Technical Specification - Epic 1</title>
+        <section>Error Handling Flow</section>
+        <snippet>Exception raised → Error Handler Middleware catches → Determine error type → Log to Sentry with full context → Transform to user-friendly message (localized) → Return standardized response.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Technical Specification - Epic 1</title>
+        <section>Acceptance Criteria (US-API-002)</section>
+        <snippet>AC #18-24: Network errors return user-friendly messages, server errors logged to Sentry, validation errors explain corrections, standardized JSON format, automatic retry with exponential backoff, data preservation via transactions, localized error messages.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>System Architecture</title>
+        <section>Error Tracking (Sentry Integration)</section>
+        <snippet>Real-time error monitoring with sentry-sdk==1.40.0. Django and Celery integration. Performance tracking at 10% sample rate. PII scrubbing configured (send_default_pii=False). Alert rules for critical errors.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>System Architecture</title>
+        <section>ADR-010: Sentry for Error Tracking</section>
+        <snippet>Zero-error tolerance for Quran text requires immediate alerts. Sentry provides contextual debugging with stack traces, user context, request data. Custom instrumentation for critical operations (Quran imports, verse retrieval).</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>System Architecture</title>
+        <section>Standard Error Response Format</section>
+        <snippet>All errors follow: {"error": {"code": "ERROR_CODE", "message": "User-friendly message", "details": {...}}}. Error codes categorized: AUTH_*, VALIDATION_*, RESOURCE_*, SERVER_*.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-034: Comprehensive Error Handling</section>
+        <snippet>Priority P0. System shall implement comprehensive error handling, providing clear user feedback and logging for debugging. User-friendly error messages with no technical jargon.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/us-api-001.3-localize-authentication-error-messages.md</path>
+        <title>Previous Story: Localize Authentication Error Messages</title>
+        <section>i18n Framework Integration</section>
+        <snippet>Django i18n configured with LANGUAGE_CODE='ar', LocaleMiddleware active, Accept-Language header processing, locale directory structure in place. Use gettext_lazy for wrapping messages.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>quran_backend/quran_backend/users/api/exceptions.py</path>
+        <kind>exception handler</kind>
+        <symbol>custom_exception_handler</symbol>
+        <lines>7-56</lines>
+        <reason>Existing custom exception handler for DRF. Transforms exceptions to standardized format. Will be extended to add request_id, timestamp, error codes, and Sentry logging.</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/quran_backend/middleware.py</path>
+        <kind>middleware</kind>
+        <symbol>ForceArabicMiddleware</symbol>
+        <lines>6-15</lines>
+        <reason>Example middleware pattern. New ErrorHandlingMiddleware will follow similar structure for generating request_id and catching unhandled exceptions.</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/config/settings/base.py</path>
+        <kind>configuration</kind>
+        <symbol>MIDDLEWARE, REST_FRAMEWORK</symbol>
+        <lines>139-144, 331-336</lines>
+        <reason>MIDDLEWARE configuration where ErrorHandlingMiddleware will be added. REST_FRAMEWORK settings where custom exception handler will be configured.</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/locale/ar/LC_MESSAGES/django.po</path>
+        <kind>translation file</kind>
+        <symbol>django.po</symbol>
+        <lines>all</lines>
+        <reason>Existing Arabic translation file. Will create separate errors.po file for error messages following same structure.</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/quran_backend/users/tests/api/test_views.py</path>
+        <kind>test</kind>
+        <symbol>TestUserRegistrationView</symbol>
+        <lines>42-50</lines>
+        <reason>Example test pattern using pytest and APIClient. Error handling tests will follow similar structure with fixtures and assertions.</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/quran_backend/users/models.py</path>
+        <kind>model</kind>
+        <symbol>UserProfile</symbol>
+        <lines>all</lines>
+        <reason>UserProfile model stores preferred_language which can override Accept-Language header for error message localization.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <python>
+        <package name="sentry-sdk" version="1.40.0" usage="Error tracking and performance monitoring" />
+        <package name="djangorestframework" version="latest" usage="REST API framework with exception handling" />
+        <package name="djangorestframework-simplejwt" version="latest" usage="JWT authentication (user context for errors)" />
+        <package name="pytest" version="latest" usage="Testing framework" />
+        <package name="pytest-django" version="latest" usage="Django-specific pytest fixtures" />
+        <package name="factory-boy" version="latest" usage="Test data factories" />
+        <package name="Django" version="5.2" usage="Web framework with i18n, transaction support" />
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="architecture">Custom DRF exception handler must be configured in REST_FRAMEWORK['EXCEPTION_HANDLER'] setting</constraint>
+    <constraint type="architecture">Error handling middleware must be placed after LocaleMiddleware in MIDDLEWARE stack for language detection</constraint>
+    <constraint type="architecture">All custom exceptions must inherit from DRF's APIException or Django's exceptions</constraint>
+    <constraint type="security">Never expose stack traces, database queries, file paths, or internal IDs to clients (only in DEBUG mode)</constraint>
+    <constraint type="security">Sensitive data (passwords, tokens, Authorization headers, PII) must be scrubbed from Sentry events using before_send callback</constraint>
+    <constraint type="localization">All user-facing error messages must be wrapped with gettext_lazy for translation support</constraint>
+    <constraint type="localization">Error messages must support both Arabic and English based on Accept-Language header</constraint>
+    <constraint type="data-integrity">All database writes that involve multiple operations must use @transaction.atomic decorator</constraint>
+    <constraint type="data-integrity">Failed operations must fully rollback, no partial state updates allowed</constraint>
+    <constraint type="testing">Unit test coverage for error handling must exceed 90%</constraint>
+    <constraint type="testing">All error scenarios must be tested: validation, auth, authorization, not found, server, network</constraint>
+    <constraint type="testing">Error handling tests must verify both Arabic and English responses</constraint>
+    <constraint type="monitoring">All ERROR and CRITICAL level logs must be sent to Sentry</constraint>
+    <constraint type="monitoring">Performance monitoring sample rate set to 10% to manage costs</constraint>
+    <constraint type="retry">Retry logic only for idempotent operations (GET, PUT with idempotency key)</constraint>
+    <constraint type="retry">Maximum 3 retry attempts with exponential backoff (1s, 2s, 4s)</constraint>
+  </constraints>
+  <interfaces>
+    <interface>
+      <name>custom_exception_handler</name>
+      <kind>function</kind>
+      <signature>def custom_exception_handler(exc: Exception, context: dict) -> Response | None</signature>
+      <path>quran_backend/quran_backend/users/api/exceptions.py</path>
+      <description>DRF exception handler that transforms exceptions to standardized error responses. Will be extended to add request_id, timestamp, error codes, and Sentry logging.</description>
+    </interface>
+    <interface>
+      <name>ErrorHandlingMiddleware</name>
+      <kind>class</kind>
+      <signature>class ErrorHandlingMiddleware: def __init__(get_response), def __call__(request), def process_exception(request, exception)</signature>
+      <path>quran_backend/core/middleware/error_handler.py (to be created)</path>
+      <description>Django middleware for generating request_id, catching unhandled exceptions, logging to Sentry, and ensuring transaction rollback.</description>
+    </interface>
+    <interface>
+      <name>ErrorResponseSerializer</name>
+      <kind>class</kind>
+      <signature>class ErrorResponseSerializer(serializers.Serializer): error = ErrorDetailSerializer()</signature>
+      <path>quran_backend/core/serializers.py (to be created)</path>
+      <description>Serializer for standardized error response format with code, message, details, timestamp, request_id.</description>
+    </interface>
+    <interface>
+      <name>retry_with_exponential_backoff</name>
+      <kind>decorator</kind>
+      <signature>@retry_with_exponential_backoff(max_retries=3, delays=[1, 2, 4], exceptions=(TransientError, NetworkError))</signature>
+      <path>quran_backend/core/utils/retry.py (to be created)</path>
+      <description>Decorator for automatic retry with exponential backoff on transient errors. Logs each attempt and respects max retry limit.</description>
+    </interface>
+    <interface>
+      <name>Sentry SDK Configuration</name>
+      <kind>configuration</kind>
+      <signature>sentry_sdk.init(dsn, integrations, traces_sample_rate, send_default_pii, environment, before_send)</signature>
+      <path>config/settings/base.py</path>
+      <description>Sentry initialization with Django and Celery integrations, PII scrubbing, and performance monitoring.</description>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>
+Testing framework: pytest with pytest-django plugin. Test pattern: Arrange-Act-Assert with descriptive test names (test_feature_condition_expected_result). Use APIClient for endpoint testing, APIRequestFactory for unit tests. Fixtures for test data (factory_boy). Mock Sentry calls in tests. Verify both success and failure scenarios. Test localization with HTTP_ACCEPT_LANGUAGE header. Aim for &gt;90% coverage on error handling code. Integration tests for end-to-end error flows. Load tests for retry logic under stress.
+    </standards>
+    <locations>
+      <location>quran_backend/quran_backend/core/tests/test_error_handling.py (to be created)</location>
+      <location>quran_backend/quran_backend/core/tests/test_middleware.py (to be created)</location>
+      <location>quran_backend/quran_backend/core/tests/test_retry.py (to be created)</location>
+      <location>quran_backend/quran_backend/users/tests/api/test_views.py (existing, add error scenarios)</location>
+    </locations>
+    <ideas>
+      <test ac="1" name="test_network_error_returns_user_friendly_message">
+        <description>Simulate network timeout, verify error response contains user-friendly message without technical details, verify no IP addresses or server names exposed</description>
+      </test>
+      <test ac="1" name="test_network_error_follows_standardized_format">
+        <description>Trigger network error, assert response has error.code, error.message, error.details, error.timestamp, error.request_id</description>
+      </test>
+      <test ac="2" name="test_server_error_logged_to_sentry">
+        <description>Raise unhandled exception, mock Sentry capture_exception, verify it was called with full context including request and user data</description>
+      </test>
+      <test ac="2" name="test_server_error_returns_generic_message">
+        <description>Trigger 500 error, verify response shows "Something went wrong. Please try again." without stack trace</description>
+      </test>
+      <test ac="2" name="test_server_error_includes_correlation_id">
+        <description>Trigger server error, verify response includes request_id for support escalation</description>
+      </test>
+      <test ac="3" name="test_validation_error_explains_correction">
+        <description>Submit invalid email format, verify error message specifies "Enter a valid email address" with field name</description>
+      </test>
+      <test ac="3" name="test_validation_error_provides_field_level_errors">
+        <description>Submit form with multiple invalid fields, verify response contains field-level error dict</description>
+      </test>
+      <test ac="4" name="test_all_errors_follow_standardized_format">
+        <description>Trigger various error types (validation, auth, not found, server), assert all have same JSON structure</description>
+      </test>
+      <test ac="4" name="test_error_codes_match_http_status">
+        <description>Verify VALIDATION_ERROR returns 400, AUTH_ERROR returns 401, NOT_FOUND returns 404, SERVER_ERROR returns 500</description>
+      </test>
+      <test ac="5" name="test_transient_error_triggers_retry">
+        <description>Mock external API call to fail twice then succeed, verify 3 attempts made with exponential backoff delays</description>
+      </test>
+      <test ac="5" name="test_retry_respects_max_attempts">
+        <description>Mock external API to always fail, verify exactly 3 attempts made before giving up</description>
+      </test>
+      <test ac="5" name="test_user_informed_of_retry_attempts">
+        <description>Trigger retry scenario, verify response or logs contain "Retrying... (attempt X/3)" messages</description>
+      </test>
+      <test ac="6" name="test_database_transaction_rolled_back_on_error">
+        <description>Start multi-step database operation, force failure mid-way, verify no partial data written</description>
+      </test>
+      <test ac="6" name="test_celery_task_retry_no_duplicates">
+        <description>Simulate Celery task failure and retry, verify idempotency (no duplicate records)</description>
+      </test>
+      <test ac="7" name="test_error_messages_localized_to_arabic">
+        <description>Trigger error with Accept-Language: ar, verify error message in Arabic</description>
+      </test>
+      <test ac="7" name="test_error_messages_localized_to_english">
+        <description>Trigger error with Accept-Language: en, verify error message in English</description>
+      </test>
+      <test ac="7" name="test_error_codes_remain_in_english">
+        <description>Verify error.code field always in English regardless of Accept-Language</description>
+      </test>
+      <test ac="8" name="test_error_logged_with_request_context">
+        <description>Trigger error, mock Sentry, verify logged context includes URL, method, headers, body</description>
+      </test>
+      <test ac="8" name="test_error_logged_with_user_context">
+        <description>Authenticated user triggers error, verify Sentry context includes user_id and email</description>
+      </test>
+      <test ac="8" name="test_sensitive_data_filtered_from_logs">
+        <description>Trigger error with password in request, verify Sentry event has password scrubbed</description>
+      </test>
+      <test ac="9" name="test_error_handling_consistent_across_endpoints">
+        <description>Trigger same error type on multiple endpoints (auth, users, etc), verify identical response format</description>
+      </test>
+      <test ac="9" name="test_middleware_catches_unhandled_exceptions">
+        <description>Raise exception not caught by view, verify middleware transforms it to standardized response</description>
+      </test>
+    </ideas>
+  </tests>
+</story-context>

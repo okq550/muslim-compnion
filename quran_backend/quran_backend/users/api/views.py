@@ -1,6 +1,7 @@
 import logging
 
 from django.contrib.auth.tokens import default_token_generator
+from django.db import transaction
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.utils.translation import gettext_lazy as _
@@ -243,8 +244,9 @@ class PasswordResetConfirmView(APIView):
 
     permission_classes = [AllowAny]
 
+    @transaction.atomic
     def post(self, request):
-        """Handle password reset confirmation."""
+        """Handle password reset confirmation with transaction protection (AC #6)."""
         serializer = PasswordResetConfirmSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data["user"]

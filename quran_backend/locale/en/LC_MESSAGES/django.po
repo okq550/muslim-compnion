@@ -16,9 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
-"&& n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
-
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 #: config/settings/base.py:34
 msgid "العربية"
 msgstr ""
@@ -29,37 +27,37 @@ msgstr ""
 
 #: quran_backend/core/exceptions.py:39
 msgid "Validation failed. Please check your input."
-msgstr "فشل التحقق من الصحة. يرجى التحقق من المدخلات."
+msgstr ""
 
 #: quran_backend/core/exceptions.py:47
 msgid "Invalid credentials provided."
-msgstr "بيانات اعتماد غير صالحة."
+msgstr ""
 
 #: quran_backend/core/exceptions.py:55
 msgid "You do not have permission to access this resource."
-msgstr "ليس لديك إذن للوصول إلى هذا المورد."
+msgstr ""
 
 #: quran_backend/core/exceptions.py:63
 msgid "The requested resource was not found."
-msgstr "المورد المطلوب غير موجود."
+msgstr ""
 
 #: quran_backend/core/exceptions.py:71
 msgid "Service temporarily unavailable. Please try again later."
-msgstr "الخدمة غير متوفرة مؤقتاً. يرجى المحاولة مرة أخرى لاحقاً."
+msgstr ""
 
 #: quran_backend/core/exceptions.py:82
 msgid "Temporary error occurred. Retrying..."
-msgstr "حدث خطأ مؤقت. جارٍ إعادة المحاولة..."
+msgstr ""
 
 #: quran_backend/core/exceptions.py:90
 msgid "Too many requests. Please try again later."
-msgstr "عدد كبير جداً من الطلبات. يرجى المحاولة مرة أخرى لاحقاً."
+msgstr ""
 
 #: quran_backend/core/exceptions.py:161 quran_backend/core/exceptions.py:186
 #: quran_backend/core/exceptions.py:196
 #: quran_backend/core/middleware/error_handler.py:139
 msgid "Something went wrong. Please try again."
-msgstr "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+msgstr ""
 
 #: quran_backend/templates/allauth/layouts/entrance.html:8
 #: quran_backend/templates/base.html:86
@@ -92,76 +90,75 @@ msgstr ""
 
 #: quran_backend/users/api/serializers.py:34
 msgid "A user with this email already exists."
-msgstr "يوجد مستخدم بالفعل بهذا البريد الإلكتروني."
+msgstr ""
 
 #: quran_backend/users/api/serializers.py:42
 #: quran_backend/users/api/serializers.py:183
 msgid "Password must be at least 8 characters long."
-msgstr "يجب أن تكون كلمة المرور 8 أحرف على الأقل."
+msgstr ""
 
 #: quran_backend/users/api/serializers.py:48
 #: quran_backend/users/api/serializers.py:187
 msgid "Password must contain at least one uppercase letter."
-msgstr "يجب أن تحتوي كلمة المرور على حرف كبير واحد على الأقل."
+msgstr ""
 
 #: quran_backend/users/api/serializers.py:52
 #: quran_backend/users/api/serializers.py:191
 msgid "Password must contain at least one lowercase letter."
-msgstr "يجب أن تحتوي كلمة المرور على حرف صغير واحد على الأقل."
+msgstr ""
 
 #: quran_backend/users/api/serializers.py:56
 #: quran_backend/users/api/serializers.py:195
 msgid "Password must contain at least one digit."
-msgstr "يجب أن تحتوي كلمة المرور على رقم واحد على الأقل."
+msgstr ""
 
 #: quran_backend/users/api/serializers.py:71
 #: quran_backend/users/api/serializers.py:209
 msgid "Passwords do not match."
-msgstr "كلمات المرور غير متطابقة."
+msgstr ""
 
 #: quran_backend/users/api/serializers.py:134
 msgid "Invalid email or password."
-msgstr "البريد الإلكتروني أو كلمة المرور غير صحيحة."
+msgstr ""
 
 #: quran_backend/users/api/serializers.py:139
 msgid "User account is disabled."
-msgstr "حساب المستخدم معطل."
+msgstr ""
 
 #: quran_backend/users/api/serializers.py:220
 msgid "Invalid reset link."
-msgstr "رابط إعادة التعيين غير صالح."
+msgstr ""
 
 #: quran_backend/users/api/serializers.py:224
 msgid "Invalid or expired reset link."
-msgstr "رابط إعادة التعيين غير صالح أو منتهي الصلاحية."
+msgstr ""
 
 #: quran_backend/users/api/views.py:111
-#, fuzzy, python-format
-#| msgid "Account temporarily locked due to multiple failed login attempts. "
+#, python-format
 msgid ""
 "Account temporarily locked due to multiple failed login attempts. Try again "
 "in %s minutes."
-msgstr "تم قفل الحساب مؤقتاً بسبب محاولات تسجيل دخول فاشلة متعددة. "
+msgstr ""
 
 #: quran_backend/users/api/views.py:153
 msgid "Refresh token is required."
-msgstr "رمز التحديث مطلوب."
+msgstr ""
 
 #: quran_backend/users/api/views.py:164
 msgid "Invalid or expired token."
-msgstr "رمز غير صالح أو منتهي الصلاحية."
+msgstr ""
 
 #: quran_backend/users/api/views.py:169
 msgid "Successfully logged out"
-msgstr "تم تسجيل الخروج بنجاح"
+msgstr ""
 
 #: quran_backend/users/api/views.py:207 quran_backend/users/api/views.py:215
 msgid "Password reset email sent if account exists"
-msgstr "تم إرسال بريد إلكتروني لإعادة تعيين كلمة المرور إذا كان الحساب موجوداً"
+msgstr ""
 
 #: quran_backend/users/api/views.py:257
 msgid "Password has been reset successfully"
-msgstr "تم إعادة تعيين كلمة المرور بنجاح"
+msgstr ""
 
 #: quran_backend/users/apps.py:9
 msgid "Users"
