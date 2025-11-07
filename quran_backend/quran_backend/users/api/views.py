@@ -1,4 +1,7 @@
 from django.conf import settings
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 from django.utils.translation import gettext_lazy as _
 from rest_framework import status
 from rest_framework.decorators import action
@@ -9,9 +12,13 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from quran_backend.users.models import User
 
+from .serializers import PasswordResetConfirmSerializer
+from .serializers import PasswordResetRequestSerializer
 from .serializers import UserLoginSerializer
 from .serializers import UserRegistrationSerializer
 from .serializers import UserSerializer
@@ -88,7 +95,7 @@ class UserLogoutView(APIView):
     API endpoint for user logout (AC #3).
 
     POST /api/v1/auth/logout/
-    - Invalidates refresh token (blacklist if enabled)
+    - Blacklists refresh token immediately
     - Requires: refresh token in body
     - Returns: 200 OK with success message
     """
@@ -96,7 +103,7 @@ class UserLogoutView(APIView):
     permission_classes = [AllowAny]  # Allow any since we're just accepting token
 
     def post(self, request):
-        """Handle user logout request."""
+        """Handle user logout request and blacklist token."""
         refresh_token = request.data.get("refresh")
 
         if not refresh_token:
@@ -105,9 +112,16 @@ class UserLogoutView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Note: Token blacklisting is not enabled in settings (BLACKLIST_AFTER_ROTATION=False)
-        # In production, you may want to enable rest_framework_simplejwt.token_blacklist
-        # For now, we just return success as the client will discard the token
+        try:
+            # Decode and blacklist the refresh token
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+        except TokenError:
+            # Token is invalid or already blacklisted
+            return Response(
+                {"detail": _("Invalid or expired token.")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         return Response(
             {"message": _("Successfully logged out")},
@@ -130,12 +144,6 @@ class PasswordResetRequestView(APIView):
 
     def post(self, request):
         """Handle password reset request."""
-        from django.contrib.auth.tokens import default_token_generator
-        from django.utils.encoding import force_bytes
-        from django.utils.http import urlsafe_base64_encode
-
-        from quran_backend.users.api.serializers import PasswordResetRequestSerializer
-
         serializer = PasswordResetRequestSerializer(data=request.data)
         if serializer.is_valid():
             email = serializer.validated_data["email"]
@@ -183,8 +191,6 @@ class PasswordResetConfirmView(APIView):
 
     def post(self, request):
         """Handle password reset confirmation."""
-        from quran_backend.users.api.serializers import PasswordResetConfirmSerializer
-
         serializer = PasswordResetConfirmSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data["user"]

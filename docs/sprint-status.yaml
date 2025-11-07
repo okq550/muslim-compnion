@@ -40,7 +40,7 @@ development_status:
   epic-1: contexted
   us-api-000-initialize-django-project-with-cookiecutter-django: done
   us-api-001-implement-user-authentication-and-authorization: done
-  us-api-001.1-implement-jwt-token-blacklisting: backlog
+  us-api-001.1-implement-jwt-token-blacklisting: done
   us-api-001.2-implement-persistent-account-lockout: backlog
   us-api-001.3-localize-authentication-error-messages: done
   us-api-002-implement-error-handling-and-user-feedback: backlog

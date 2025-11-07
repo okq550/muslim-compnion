@@ -14,7 +14,14 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(pre-commit install:*)",
-      "Bash(pre-commit run:*)"
+      "Bash(pre-commit run:*)",
+      "Bash(docker-compose exec:*)",
+      "Bash(docker-compose:*)",
+      "Bash(python3:*)",
+      "Bash(source ../.venv/bin/activate)",
+      "Bash(python manage.py:*)",
+      "Bash(DJANGO_READ_DOT_ENV_FILE=True DJANGO_SETTINGS_MODULE=config.settings.local DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres python manage.py makemigrations:*)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []

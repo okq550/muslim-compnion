@@ -6,6 +6,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+from django.utils.translation import gettext_lazy as _
 
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
 # quran_backend/
@@ -29,8 +30,6 @@ TIME_ZONE = "UTC"
 # https://docs.djangoproject.com/en/dev/ref/settings/#language-code
 LANGUAGE_CODE = "ar"
 # https://docs.djangoproject.com/en/dev/ref/settings/#languages
-from django.utils.translation import gettext_lazy as _
-
 LANGUAGES = [
     ("ar", _("العربية")),
     ("en", _("English")),
@@ -83,6 +82,7 @@ THIRD_PARTY_APPS = [
     "django_celery_beat",
     "rest_framework",
     "rest_framework.authtoken",
+    "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "drf_spectacular",
 ]
@@ -345,8 +345,8 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
-    "ROTATE_REFRESH_TOKENS": False,
-    "BLACKLIST_AFTER_ROTATION": False,
+    "ROTATE_REFRESH_TOKENS": True,  # Generate new refresh token on refresh
+    "BLACKLIST_AFTER_ROTATION": True,  # Blacklist old tokens after rotation
     "ALGORITHM": "HS256",
     # SIGNING_KEY defaults to SECRET_KEY, which is set in local.py/production.py
     "AUTH_HEADER_TYPES": ("Bearer",),
