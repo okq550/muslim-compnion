@@ -5,7 +5,7 @@
       "SlashCommand(/bmad:bmm:workflows:workflow-init)",
       "WebSearch",
       "Bash(pip install:*)",
-      "Bash(python3 run_cookiecutter.py:*)",
+      "Bash(python3.14 run_cookiecutter.py:*)",
       "Bash(open -a Docker)",
       "Bash(docker info:*)",
       "Bash(/dev/null)",
@@ -31,7 +31,8 @@
       "SlashCommand(/bmad:bmm:workflows:story-done:*)",
       "Bash(env SKIP=ruff-format,djlint-django-format,djlint-django-lint pre-commit run:*)",
       "Bash(env SKIP=ruff-check,ruff-format,djlint-django-format,djlint-django-lint pre-commit run:*)",
-      "Bash(env SKIP=ruff-check git commit:*)"
+      "Bash(env SKIP=ruff-check git commit:*)",
+      "Bash(pytest:*)"
     ],
     "deny": [],
     "ask": []
