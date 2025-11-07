@@ -1,6 +1,6 @@
 # Story 1.1.2: Implement Persistent Account Lockout
 
-Status: backlog
+Status: done
 
 ## Story
 
@@ -274,7 +274,8 @@ docker-compose exec django pytest quran_backend/users/tests/api/test_lockout.py 
 
 ### Completion Notes
 
-(To be filled when implementation is complete)
+**Completed:** 2025-11-07
+**Definition of Done:** All acceptance criteria met, code reviewed, tests passing (100%)
 
 ### File List
 

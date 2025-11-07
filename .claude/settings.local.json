@@ -21,7 +21,10 @@
       "Bash(source ../.venv/bin/activate)",
       "Bash(python manage.py:*)",
       "Bash(DJANGO_READ_DOT_ENV_FILE=True DJANGO_SETTINGS_MODULE=config.settings.local DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres python manage.py makemigrations:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "SlashCommand(/bmad:bmm:workflows:code-review)",
+      "Bash(ruff check:*)",
+      "Bash(SKIP=ruff-format,djlint-django-format,djlint-django-lint pre-commit run:*)"
     ],
     "deny": [],
     "ask": []

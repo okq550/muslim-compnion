@@ -129,6 +129,17 @@ ignore = [
 [tool.ruff.lint.isort]
 force-single-line = true
 
+[tool.ruff.lint.per-file-ignores]
+"*/tests/*" = [
+    "B007",     # Loop control variable not used
+    "E501",     # Line too long
+    "F841",     # Local variable assigned but never used
+    "PLC0415",  # Import should be at top-level
+    "PLR2004",  # Magic value in comparison
+    "S105",     # Possible hardcoded password
+    "SLF001",   # Private member accessed
+]
+
 [dependency-groups]
 dev = [
     "coverage==7.11.0",

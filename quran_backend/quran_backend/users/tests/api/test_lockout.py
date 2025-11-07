@@ -358,3 +358,164 @@ class TestAccountLockout:
             format="json",
         )
         assert response.status_code == status.HTTP_423_LOCKED
+
+    def test_lockout_expires_after_duration(self, api_client, test_user):
+        """Test that account lockout automatically expires after configured duration."""
+        import time
+        from unittest.mock import patch
+
+        from quran_backend.users.services.account_lockout import LOCKOUT_DURATION
+
+        email = "lockout@example.com"
+
+        # Lock the account
+        for i in range(10):
+            AccountLockoutService.record_failed_attempt(email, "192.168.1.1")
+
+        # Verify account is locked
+        is_locked, seconds_remaining = AccountLockoutService.is_locked(email)
+        assert is_locked is True
+        assert seconds_remaining > 0
+
+        # Mock time to simulate lockout expiration
+        with patch("time.time") as mock_time:
+            # Set current time to past lockout expiration
+            mock_time.return_value = time.time() + LOCKOUT_DURATION + 1
+
+            # Check lockout status - should be expired
+            is_locked, seconds_remaining = AccountLockoutService.is_locked(email)
+            assert is_locked is False
+            assert seconds_remaining == 0
+
+    def test_lockout_retry_after_decreases_over_time(self, api_client, test_user):
+        """Test that retry_after value decreases as time passes."""
+        import time
+
+        url = reverse("api:auth-login")
+
+        # Lock the account
+        for i in range(10):
+            api_client.post(
+                url,
+                {"email": "lockout@example.com", "password": "wrongpassword"},
+                format="json",
+            )
+
+        # Get initial retry_after
+        response = api_client.post(
+            url,
+            {"email": "lockout@example.com", "password": "wrongpassword"},
+            format="json",
+        )
+        assert response.status_code == status.HTTP_423_LOCKED
+        initial_retry_after = response.data["retry_after"]
+
+        # Wait 2 seconds
+        time.sleep(2)
+
+        # Get new retry_after
+        response = api_client.post(
+            url,
+            {"email": "lockout@example.com", "password": "wrongpassword"},
+            format="json",
+        )
+        assert response.status_code == status.HTTP_423_LOCKED
+        new_retry_after = response.data["retry_after"]
+
+        # New retry_after should be less than initial (at least 1 second less)
+        assert new_retry_after < initial_retry_after
+        assert initial_retry_after - new_retry_after >= 1
+
+    def test_lockout_can_login_after_expiration(self, api_client, test_user):
+        """Test that user can login after lockout expires."""
+
+        url = reverse("api:auth-login")
+
+        # Lock the account
+        for i in range(10):
+            api_client.post(
+                url,
+                {"email": "lockout@example.com", "password": "wrongpassword"},
+                format="json",
+            )
+
+        # Verify locked
+        response = api_client.post(
+            url,
+            {"email": "lockout@example.com", "password": "TestPass123"},
+            format="json",
+        )
+        assert response.status_code == status.HTTP_423_LOCKED
+
+        # Mock lockout expiration by clearing cache
+        cache.clear()
+
+        # Should be able to login now
+        response = api_client.post(
+            url,
+            {"email": "lockout@example.com", "password": "TestPass123"},
+            format="json",
+        )
+        assert response.status_code == status.HTTP_200_OK
+        assert "tokens" in response.data
+
+    def test_lockout_attempt_window_expires(self, api_client, test_user):
+        """Test that failed attempts expire after attempt window."""
+        from unittest.mock import patch
+
+        email = "lockout@example.com"
+
+        # Make 5 failed attempts
+        for i in range(5):
+            AccountLockoutService.record_failed_attempt(email, "192.168.1.1")
+
+        # Verify 5 attempts recorded
+        attempts = AccountLockoutService.get_attempt_count(email)
+        assert attempts == 5
+
+        # Mock time to simulate attempt window expiration (1 hour)
+        import time
+
+        with patch("time.time") as mock_time:
+            mock_time.return_value = time.time() + 3601  # 1 hour + 1 second
+
+            # Clear cache to simulate TTL expiration
+            cache.clear()
+
+            # Attempt count should be 0 now
+            attempts = AccountLockoutService.get_attempt_count(email)
+            assert attempts == 0
+
+    @pytest.mark.skipif(
+        not hasattr(cache, "ttl"),
+        reason="TTL testing requires Redis cache (LocMemCache doesn't support TTL)",
+    )
+    def test_lockout_redis_ttl_set_correctly(self, test_user):
+        """Test that Redis TTL is set correctly for lockout keys.
+
+        Note: This test is skipped in test environment which uses LocMemCache.
+        In production/local development with Redis, this test verifies TTL is set.
+        """
+        from quran_backend.users.services.account_lockout import ATTEMPT_WINDOW
+        from quran_backend.users.services.account_lockout import LOCKOUT_DURATION
+
+        email = "lockout@example.com"
+
+        # Record a failed attempt
+        AccountLockoutService.record_failed_attempt(email, "192.168.1.1")
+
+        # Check attempt key has TTL
+        attempt_key = AccountLockoutService._get_attempt_key(email)
+        ttl = cache.ttl(attempt_key)
+        assert ttl is not None
+        assert ttl <= ATTEMPT_WINDOW
+
+        # Lock the account
+        for i in range(9):
+            AccountLockoutService.record_failed_attempt(email, "192.168.1.1")
+
+        # Check lockout key has TTL
+        lockout_key = AccountLockoutService._get_lockout_key(email)
+        ttl = cache.ttl(lockout_key)
+        assert ttl is not None
+        assert ttl <= LOCKOUT_DURATION

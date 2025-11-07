@@ -19,6 +19,18 @@ from quran_backend.users.models import User
 class TestTokenBlacklisting:
     """Test JWT token blacklisting on logout."""
 
+    @pytest.fixture(autouse=True)
+    def _disable_throttling(self):
+        """Disable throttling for these tests."""
+        from unittest.mock import patch
+
+        # Mock the throttle's allow_request method to always return True
+        with patch(
+            "quran_backend.users.api.throttling.AuthEndpointThrottle.allow_request",
+            return_value=True,
+        ):
+            yield
+
     @pytest.fixture
     def api_client(self):
         return APIClient()
@@ -106,3 +118,106 @@ class TestTokenBlacklisting:
         # Outstanding token should be created
         count_after = OutstandingToken.objects.filter(user=test_user).count()
         assert count_after == count_before + 1
+
+    def test_token_rotation_blacklists_old_token(self, api_client, test_user):
+        """Test that token rotation blacklists the old refresh token."""
+        # Generate initial token
+        refresh = RefreshToken.for_user(test_user)
+        old_refresh_token = str(refresh)
+
+        # Refresh the token
+        url = reverse("api:auth-token-refresh")
+        response = api_client.post(url, {"refresh": old_refresh_token}, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert "refresh" in response.data
+        new_refresh_token = response.data["refresh"]
+        assert new_refresh_token != old_refresh_token
+
+        # Verify old token is blacklisted
+        outstanding_token = OutstandingToken.objects.get(token=old_refresh_token)
+        assert BlacklistedToken.objects.filter(token=outstanding_token).exists()
+
+    def test_token_rotation_new_token_works(self, api_client, test_user):
+        """Test that new token from rotation can be used."""
+        # Generate and rotate token
+        refresh = RefreshToken.for_user(test_user)
+        old_refresh_token = str(refresh)
+
+        refresh_url = reverse("api:auth-token-refresh")
+        response = api_client.post(
+            refresh_url,
+            {"refresh": old_refresh_token},
+            format="json",
+        )
+        new_refresh_token = response.data["refresh"]
+        new_access_token = response.data["access"]
+
+        # New access token should work
+        me_url = reverse("api:user-me")
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {new_access_token}")
+        response = api_client.get(me_url)
+        assert response.status_code == status.HTTP_200_OK
+
+        # New refresh token should work for another rotation
+        response = api_client.post(
+            refresh_url,
+            {"refresh": new_refresh_token},
+            format="json",
+        )
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_multiple_token_rotations(self, api_client, test_user):
+        """Test that multiple token rotations work correctly."""
+        # Start with initial token
+        refresh = RefreshToken.for_user(test_user)
+        current_refresh = str(refresh)
+
+        url = reverse("api:auth-token-refresh")
+
+        # Perform 5 rotations
+        for i in range(5):
+            response = api_client.post(url, {"refresh": current_refresh}, format="json")
+            assert response.status_code == status.HTTP_200_OK
+
+            new_refresh = response.data["refresh"]
+            assert new_refresh != current_refresh
+
+            # Old token should be blacklisted
+            outstanding_token = OutstandingToken.objects.get(token=current_refresh)
+            assert BlacklistedToken.objects.filter(token=outstanding_token).exists()
+
+            # Update for next iteration
+            current_refresh = new_refresh
+
+        # Final token should still work
+        response = api_client.post(url, {"refresh": current_refresh}, format="json")
+        assert response.status_code == status.HTTP_200_OK
+
+    def test_token_rotation_prevents_replay_attacks(self, api_client, test_user):
+        """Test that old tokens cannot be replayed after rotation."""
+        # Generate initial token
+        refresh = RefreshToken.for_user(test_user)
+        token1 = str(refresh)
+
+        url = reverse("api:auth-token-refresh")
+
+        # First rotation
+        response = api_client.post(url, {"refresh": token1}, format="json")
+        token2 = response.data["refresh"]
+
+        # Second rotation
+        response = api_client.post(url, {"refresh": token2}, format="json")
+        token3 = response.data["refresh"]
+
+        # Try to use token1 (should fail - blacklisted)
+        response = api_client.post(url, {"refresh": token1}, format="json")
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+        # Try to use token2 (should fail - blacklisted)
+        response = api_client.post(url, {"refresh": token2}, format="json")
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+        # token3 should still work
+        response = api_client.post(url, {"refresh": token3}, format="json")
+        assert response.status_code == status.HTTP_200_OK

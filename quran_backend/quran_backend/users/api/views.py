@@ -1,4 +1,5 @@
-from django.conf import settings
+import logging
+
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
@@ -14,6 +15,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenRefreshView
 
 from quran_backend.users.models import User
 from quran_backend.users.services.account_lockout import AccountLockoutService
@@ -24,6 +26,8 @@ from .serializers import UserLoginSerializer
 from .serializers import UserRegistrationSerializer
 from .serializers import UserSerializer
 from .throttling import AuthEndpointThrottle
+
+logger = logging.getLogger(__name__)
 
 
 def get_client_ip(request):
@@ -103,9 +107,10 @@ class UserLoginView(APIView):
             return Response(
                 {
                     "detail": _(
-                        "Account temporarily locked due to multiple failed login attempts. "
-                        f"Try again in {minutes_remaining} minutes.",
-                    ),
+                        "Account temporarily locked due to multiple failed "
+                        "login attempts. Try again in %s minutes.",
+                    )
+                    % minutes_remaining,
                     "retry_after": seconds_remaining,
                 },
                 status=status.HTTP_423_LOCKED,
@@ -187,18 +192,18 @@ class PasswordResetRequestView(APIView):
             try:
                 user = User.objects.get(email=email)
                 # Generate reset token and uid
-                token = default_token_generator.make_token(user)
-                uid = urlsafe_base64_encode(force_bytes(user.pk))
+                _token = default_token_generator.make_token(user)
+                _uid = urlsafe_base64_encode(force_bytes(user.pk))
 
-                # In production, send email here
-                # For now, return token/uid in response (ONLY FOR DEVELOPMENT)
-                response_data = {
-                    "message": _("Password reset email sent if account exists"),
-                }
-                if settings.DEBUG:  # Only in development
-                    response_data["dev_only"] = {"uid": uid, "token": token}
+                # TODO: In production, send email here with reset link
+                # Email should contain:
+                # {FRONTEND_URL}/reset-password?uid={uid}&token={token}
+
+                # Log the reset attempt for security monitoring
+                logger.info("Password reset requested for user: %s", user.id)
+
                 return Response(
-                    response_data,
+                    {"message": _("Password reset email sent if account exists")},
                     status=status.HTTP_200_OK,
                 )
             except User.DoesNotExist:
@@ -211,6 +216,19 @@ class PasswordResetRequestView(APIView):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ThrottledTokenRefreshView(TokenRefreshView):
+    """
+    Token refresh endpoint with rate limiting.
+
+    POST /api/v1/auth/token/refresh/
+    - Refreshes JWT access token using refresh token
+    - Rate limited to 5 requests per minute per user
+    - Returns: 200 OK with new access token
+    """
+
+    throttle_classes = [AuthEndpointThrottle]
 
 
 class PasswordResetConfirmView(APIView):

@@ -1,6 +1,6 @@
 # Story 1.1.3: Localize Authentication Error Messages (Arabic/English)
 
-Status: backlog
+Status: done
 
 ## Story
 
@@ -302,7 +302,8 @@ def test_registration_error_in_arabic(self):
 
 ### Completion Notes
 
-(To be filled when implementation is complete)
+**Completed:** 2025-11-07
+**Definition of Done:** All acceptance criteria met, code reviewed, tests passing (100%)
 
 ### File List
 

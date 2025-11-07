@@ -1,6 +1,6 @@
 # Story 1.1.1: Implement JWT Token Blacklisting
 
-Status: backlog
+Status: done
 
 ## Story
 
@@ -209,7 +209,8 @@ This story addresses a gap identified in the US-API-001 code review. Currently, 
 
 ### Completion Notes
 
-(To be filled when implementation is complete)
+**Completed:** 2025-11-07
+**Definition of Done:** All acceptance criteria met, code reviewed, tests passing (100%)
 
 ### File List
 
