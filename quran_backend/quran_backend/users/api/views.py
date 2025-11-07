@@ -16,6 +16,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from quran_backend.users.models import User
+from quran_backend.users.services.account_lockout import AccountLockoutService
 
 from .serializers import PasswordResetConfirmSerializer
 from .serializers import PasswordResetRequestSerializer
@@ -23,6 +24,16 @@ from .serializers import UserLoginSerializer
 from .serializers import UserRegistrationSerializer
 from .serializers import UserSerializer
 from .throttling import AuthEndpointThrottle
+
+
+def get_client_ip(request):
+    """Extract client IP address from request."""
+    x_forwarded_for = request.headers.get("x-forwarded-for")
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(",")[0].strip()
+    else:
+        ip = request.META.get("REMOTE_ADDR")
+    return ip
 
 
 class UserViewSet(RetrieveModelMixin, ListModelMixin, UpdateModelMixin, GenericViewSet):
@@ -67,26 +78,51 @@ class UserRegistrationView(APIView):
 
 class UserLoginView(APIView):
     """
-    API endpoint for user login (AC #2, #7, #8).
+    API endpoint for user login (AC #2, #7, #8, #12).
 
     POST /api/v1/auth/login/
     - Authenticates user with email and password
     - Returns JWT access and refresh tokens
     - Requires: email, password
     - Returns: 200 OK with tokens
+    - Returns: 423 Locked if account is locked due to failed attempts
     """
 
     permission_classes = [AllowAny]
     throttle_classes = [AuthEndpointThrottle]  # Rate limit: 5/min (AC #10, #11)
 
     def post(self, request):
-        """Handle user login request."""
+        """Handle user login request with account lockout protection."""
+        email = request.data.get("email", "").lower()
+        ip_address = get_client_ip(request)
+
+        # Check if account is locked (AC #12)
+        is_locked, seconds_remaining = AccountLockoutService.is_locked(email)
+        if is_locked:
+            minutes_remaining = (seconds_remaining + 59) // 60  # Round up
+            return Response(
+                {
+                    "detail": _(
+                        "Account temporarily locked due to multiple failed login attempts. "
+                        f"Try again in {minutes_remaining} minutes.",
+                    ),
+                    "retry_after": seconds_remaining,
+                },
+                status=status.HTTP_423_LOCKED,
+            )
+
+        # Attempt authentication
         serializer = UserLoginSerializer(data=request.data)
         if serializer.is_valid():
+            # Successful login - reset attempt counter
+            AccountLockoutService.reset_attempts(email)
             return Response(
                 serializer.to_representation(serializer.validated_data),
                 status=status.HTTP_200_OK,
             )
+
+        # Failed login - record attempt
+        AccountLockoutService.record_failed_attempt(email, ip_address)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

@@ -34,5 +34,15 @@ TEMPLATES[0]["OPTIONS"]["debug"] = True  # type: ignore[index]
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#media-url
 MEDIA_URL = "http://media.testserver/"
+
+# REST FRAMEWORK
+# ------------------------------------------------------------------------------
+# Disable throttling in tests
+REST_FRAMEWORK = {
+    **globals().get("REST_FRAMEWORK", {}),
+    "DEFAULT_THROTTLE_CLASSES": [],
+    "DEFAULT_THROTTLE_RATES": {},
+}
+
 # Your stuff...
 # ------------------------------------------------------------------------------
