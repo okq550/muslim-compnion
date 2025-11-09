@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 
 from quran_backend.analytics.models import AnalyticsEvent
 from quran_backend.analytics.services import analytics_service
+from quran_backend.users.models import User
 
 from .serializers import AnalyticsConsentSerializer
 
@@ -35,15 +36,14 @@ class AnalyticsConsentView(APIView):
             consent_given = serializer.validated_data["consent_given"]
             consent_version = serializer.validated_data.get("consent_version", "1.0")
 
-            # Update user's analytics preference
-            request.user.is_analytics_enabled = consent_given
-            request.user.save()
-
             # Log consent for audit trail
             logger.info(
                 f"User {request.user.id} {'enabled' if consent_given else 'disabled'} "
                 f"analytics (version {consent_version})",
             )
+
+            # Update user's analytics preference using queryset update
+            User.objects.filter(pk=request.user.pk).update(is_analytics_enabled=consent_given)
 
             return Response(
                 {
@@ -77,18 +77,17 @@ class DeleteMyAnalyticsDataView(APIView):
             ).hexdigest()
 
             # Delete all events matching this user's hash
-            deleted_count, _ = AnalyticsEvent.objects.filter(
+            deleted_count, deleted_models = AnalyticsEvent.objects.filter(
                 user_id_hash=user_id_hash,
             ).delete()
-
-            # Disable analytics for this user
-            request.user.is_analytics_enabled = False
-            request.user.save()
 
             # Log deletion for audit trail
             logger.info(
                 f"User {request.user.id} deleted {deleted_count} analytics events",
             )
+
+            # Disable analytics for this user using queryset update
+            User.objects.filter(pk=request.user.pk).update(is_analytics_enabled=False)
 
             return Response(
                 {
@@ -98,7 +97,7 @@ class DeleteMyAnalyticsDataView(APIView):
                 status=status.HTTP_200_OK,
             )
         except Exception as e:
-            logger.error(f"Failed to delete analytics data: {e}")
+            logger.exception("Failed to delete analytics data")
             return Response(
                 {"detail": _("Failed to delete analytics data")},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,

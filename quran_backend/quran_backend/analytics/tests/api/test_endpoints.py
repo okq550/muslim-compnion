@@ -183,6 +183,11 @@ class TestUserProfileEndpoint:
 
     def test_user_can_update_analytics_preference(self, api_client, user):
         """Test user can toggle analytics via profile endpoint."""
+        from quran_backend.users.models import UserProfile
+
+        # Ensure user has a profile
+        UserProfile.objects.get_or_create(user=user)
+
         api_client.force_authenticate(user=user)
         url = reverse("api:user-profile")
 

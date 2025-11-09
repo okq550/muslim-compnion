@@ -32,7 +32,7 @@ class UserRegistrationSerializer(serializers.Serializer):
         """Validate that email is unique."""
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError(
-                _("A user with this email already exists.")
+                _("A user with this email already exists."),
             )
         return value.lower()
 
@@ -246,15 +246,18 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         """Update profile and handle analytics preference if provided."""
+        from quran_backend.users.models import User
+
         # Extract user-related data
         user_data = validated_data.pop("user", {})
 
         # Update UserProfile fields
         instance = super().update(instance, validated_data)
 
-        # Update User.is_analytics_enabled if provided
+        # Update User.is_analytics_enabled if provided using queryset update
         if "is_analytics_enabled" in user_data:
-            instance.user.is_analytics_enabled = user_data["is_analytics_enabled"]
-            instance.user.save()
+            User.objects.filter(pk=instance.user.pk).update(
+                is_analytics_enabled=user_data["is_analytics_enabled"],
+            )
 
         return instance
