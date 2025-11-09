@@ -33,10 +33,21 @@ CACHES = {
         "LOCATION": REDIS_URL,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            # Mimicking memcache behavior.
+            # Graceful degradation - don't break app if Redis is unavailable
             # https://github.com/jazzband/django-redis#memcached-exceptions-behavior
             "IGNORE_EXCEPTIONS": True,
+            # Connection pool settings
+            "CONNECTION_POOL_KWARGS": {
+                "max_connections": 50,
+                "retry_on_timeout": True,
+            },
+            # Max entries in memory before eviction
+            "MAX_ENTRIES": 10000,
         },
+        # Cache key prefix to avoid collisions
+        "KEY_PREFIX": "quran_backend",
+        # Default TTL: 7 days (604800 seconds) for static content
+        "TIMEOUT": 604800,
     },
 }
 

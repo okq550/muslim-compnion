@@ -40,6 +40,7 @@ services:
   redis:
     image: docker.io/redis:7.2
     container_name: quran_backend_local_redis
+    command: redis-server --maxmemory 500mb --maxmemory-policy allkeys-lru
     volumes:
       - quran_backend_local_redis_data:/data
 

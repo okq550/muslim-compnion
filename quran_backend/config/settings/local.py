@@ -24,12 +24,23 @@ CACHES = {
         "LOCATION": "redis://redis:6379/0",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            # Graceful degradation - don't break app if Redis is unavailable
+            "IGNORE_EXCEPTIONS": True,
             # Connection pool settings
-            "CONNECTION_POOL_KWARGS": {"max_connections": 50},
+            "CONNECTION_POOL_KWARGS": {
+                "max_connections": 50,
+                "retry_on_timeout": True,
+            },
             # Socket timeout
             "SOCKET_CONNECT_TIMEOUT": 5,
             "SOCKET_TIMEOUT": 5,
+            # Max entries in memory before eviction
+            "MAX_ENTRIES": 10000,
         },
+        # Cache key prefix to avoid collisions
+        "KEY_PREFIX": "quran_backend",
+        # Default TTL: 7 days (604800 seconds) for static content
+        "TIMEOUT": 604800,
     },
 }
 

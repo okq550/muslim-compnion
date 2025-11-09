@@ -168,6 +168,8 @@ def retry_on_cache_error(max_retries: int = 2):
     Retry decorator for Redis cache operations (graceful degradation).
 
     Uses fewer retries since cache failures should degrade gracefully.
+    Handles transient Redis connection errors but allows permanent failures
+    to fail fast with database fallback.
 
     Args:
         max_retries: Maximum retry attempts (default: 2)
@@ -177,11 +179,20 @@ def retry_on_cache_error(max_retries: int = 2):
         def get_cached_translation(verse_id, language):
             cache_key = f"translation:{verse_id}:{language}"
             return cache.get(cache_key)
+
+    Note: This is complementary to the IGNORE_EXCEPTIONS setting in cache config.
+          Use this decorator for critical cache operations that should be retried.
     """
+    import redis
     from django_redis.exceptions import ConnectionInterrupted
 
     return retry_with_exponential_backoff(
         max_retries=max_retries,
         delays=(0.5, 1.0),  # Shorter delays for cache
-        exceptions=(ConnectionInterrupted, TransientError),
+        exceptions=(
+            ConnectionInterrupted,
+            redis.exceptions.ConnectionError,
+            redis.exceptions.TimeoutError,
+            TransientError,
+        ),
     )

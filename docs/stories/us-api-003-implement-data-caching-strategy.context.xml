@@ -1,0 +1,308 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>3</storyId>
+    <title>Implement Data Caching Strategy</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-09</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/us-api-003-implement-data-caching-strategy.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>system</asA>
+    <iWant>to cache frequently accessed data efficiently</iWant>
+    <soThat>app performance is optimal, server load is reduced, and users experience fast response times</soThat>
+    <tasks>
+### Task 1: Configure Redis Caching Backend (AC #1, #4)
+- Verify Redis installed in Docker Compose
+- Configure django-redis in config/settings.py
+- Set maxmemory policy: allkeys-lru
+- Set maxmemory limit: 500mb
+
+### Task 2: Create Cache Manager Service (AC #1, #2, #3)
+- Create quran_backend/core/services/cache_manager.py
+- Implement CacheManager class with get, set, delete, delete_pattern methods
+- Add cache key generation utilities
+- Implement cache hit/miss logging
+
+### Task 3: Implement Cache Invalidation Signals (AC #3)
+- Create quran_backend/core/signals.py
+- Define signal handlers for cache invalidation
+- Connect signals to models using post_save, post_delete
+
+### Task 4: Implement Cache Decorators and Mixins (AC #2, #6)
+- Create quran_backend/core/decorators.py
+- Implement @cache_response decorator for views
+- Implement CachedModelMixin for querysets
+- Add cache warming utility function
+
+### Task 5: Integrate Caching into Existing Infrastructure (AC #1, #5)
+- Update error handling middleware to handle Redis errors gracefully
+- Update retry decorator to include Redis operations
+- Add cache health check to monitoring
+
+### Task 6: Implement Cache Warming Strategy (AC #2, #6)
+- Create Celery task warm_quran_cache
+- Create management command python manage.py warm_cache
+
+### Task 7: Add Cache Monitoring and Metrics (AC #2, #4)
+- Implement cache hit/miss tracking
+- Monitor cache memory usage
+- Add cache performance metrics to Sentry
+
+### Task 8: Comprehensive Caching Tests (AC #1-6)
+- Create quran_backend/core/tests/test_caching.py
+- Test CacheManager methods
+- Test cache invalidation signals
+- Test cache decorators
+- Test graceful degradation
+- Test cache performance
+- Test cache warming
+
+### Task 9: Document Caching Strategy (AC #1-6)
+- Update architecture.md with caching details
+- Document cache configuration in README
+- Add inline code comments
+- Update API documentation
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. **Frequently Accessed Static Content Cached**
+   - Quran text cached by surah number (key: quran:surah:{number})
+   - Reciter lists cached (key: reciters:list)
+   - Translation lists cached (key: translations:list)
+   - Cache keys follow consistent naming convention
+   - Static content TTL: 7 days (168 hours)
+
+2. **Cache Performance Targets Met**
+   - Cached data served in &lt; 100ms (p95 latency)
+   - Cache hit ratio &gt; 80% for static content after warmup
+   - Cache operations monitored via Sentry performance tracking
+   - Response time comparison: cache vs. database measured
+
+3. **Automatic Cache Invalidation on Updates**
+   - Cache automatically cleared when content is updated via admin
+   - Signal handlers trigger cache invalidation on model save/delete
+   - Selective invalidation (only affected keys cleared)
+   - Bulk updates clear entire cache namespace if needed
+
+4. **Cache Size Management**
+   - Total cache size doesn't exceed 500MB per instance
+   - Redis maxmemory policy: allkeys-lru (Least Recently Used eviction)
+   - Cache key expiration enforced via TTL
+   - Monitor cache memory usage in production
+
+5. **Graceful Cache Degradation**
+   - App works with stale cache during temporary Redis outage
+   - Database fallback when cache unavailable
+   - Retry logic for transient Redis connection errors
+   - Error logging when cache operations fail
+
+6. **Cache Hit/Miss Handling**
+   - Cache miss triggers database fetch + cache write
+   - Cache hit returns data immediately (no DB query)
+   - Cache miss logged for monitoring cache effectiveness
+   - Cache warming strategy for common queries
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: Cross-Cutting / Infrastructure Stories</title>
+        <section>Detailed Design - Cache Manager</section>
+        <snippet>Cache Manager service responsible for storing/retrieving cached data, invalidating on updates, managing TTL. Uses Redis as backend with 7-day TTL for static content, 1-hour for dynamic content. Cache hit ratio target &gt; 80% for static content.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: Cross-Cutting / Infrastructure Stories</title>
+        <section>Acceptance Criteria - Caching (AC #25-30)</section>
+        <snippet>Frequently accessed static content cached (Quran text, reciter lists). Cache hit ratio &gt; 80% for static content. Cached data served in &lt; 100ms (p95). Cache automatically invalidated when content updates. Cache size doesn't exceed 500MB per instance. App works with stale cache during temporary Redis outage.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document - Quran Backend API</title>
+        <section>Decision Summary - Cache Layer</section>
+        <snippet>Redis selected as cache layer for high-performance in-memory caching. Used for Celery broker support. Decision affects all epics. Rationale: High-performance in-memory cache, Celery broker support.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document - Quran Backend API</title>
+        <section>Technology Stack - Redis</section>
+        <snippet>Redis: In-memory cache and Celery message broker. AWS ElastiCache Redis for managed Redis cluster with replication and automatic failover.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-035: Data Caching</section>
+        <snippet>System needs intelligent caching strategy to improve performance and reduce unnecessary network requests. Frequently accessed data like Quran text, reciter lists cached appropriately for fast response times and work during temporary connectivity issues.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>EPIC: Quran Backend - First Release</title>
+        <section>US-API-003: Implement Data Caching Strategy</section>
+        <snippet>Cache frequently accessed data for optimal app performance and reduced server load. Cache static content aggressively (Quran text, metadata), dynamic content with appropriate TTL (reciter lists). Invalidate cache when content updates. Prioritize frequently accessed content.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>quran_backend/quran_backend/core/exceptions.py</path>
+        <kind>module</kind>
+        <symbol>TransientError</symbol>
+        <lines>76-84</lines>
+        <reason>Custom exception for temporary errors that should be retried - can be used for Redis connection errors</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/quran_backend/core/exceptions.py</path>
+        <kind>module</kind>
+        <symbol>NetworkError</symbol>
+        <lines>68-73</lines>
+        <reason>Custom exception for external service failures - applicable for Redis service unavailability</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/quran_backend/core/exceptions.py</path>
+        <kind>module</kind>
+        <symbol>ErrorCodes</symbol>
+        <lines>22-32</lines>
+        <reason>Standardized error codes - may need to add CACHE_ERROR code</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/quran_backend/core/utils/retry.py</path>
+        <kind>module</kind>
+        <symbol>retry_with_exponential_backoff</symbol>
+        <lines>23-107</lines>
+        <reason>Retry decorator with exponential backoff (1s, 2s, 4s) - reuse for Redis operations to handle transient connection errors</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/quran_backend/core/middleware/error_handler.py</path>
+        <kind>middleware</kind>
+        <symbol>ErrorHandlingMiddleware</symbol>
+        <lines>24-171</lines>
+        <reason>Error handling middleware - should catch RedisError exceptions and handle gracefully with database fallback</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/config/settings/base.py</path>
+        <kind>settings</kind>
+        <symbol>REDIS_URL</symbol>
+        <lines>268</lines>
+        <reason>Redis connection URL configuration - currently used for Celery, needs to be extended for django-redis cache backend</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/config/settings/base.py</path>
+        <kind>settings</kind>
+        <symbol>CELERY_BROKER_URL</symbol>
+        <lines>277</lines>
+        <reason>Celery broker using Redis - shows Redis is already configured and available in the project</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/docker-compose.local.yml</path>
+        <kind>docker-config</kind>
+        <symbol>redis service</symbol>
+        <lines>40-44</lines>
+        <reason>Redis container configuration - needs to be updated with maxmemory and maxmemory-policy settings for caching</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <python>
+        <package name="django" version="5.2.8" />
+        <package name="djangorestframework" version="3.16.1+" />
+        <package name="django-redis" version="5.4.0" note="To be installed - primary cache backend" />
+        <package name="redis" version="latest" note="Redis Python client (dependency of django-redis)" />
+        <package name="celery" version="5.3.6" note="Already configured with Redis broker" />
+        <package name="sentry-sdk" version="1.40.0" note="For cache metrics and monitoring" />
+        <package name="pytest-django" version="4.7.0" note="Testing framework" />
+      </python>
+      <docker>
+        <service name="redis" image="redis:7.2" note="Already configured in docker-compose.local.yml" />
+      </docker>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+- **Cache Backend**: Use django-redis as the Django cache backend (integrates with Django's cache framework)
+- **Cache Keys**: Follow naming convention: quran_backend:{resource_type}:{identifier}
+- **TTL Policy**: Static content (Quran, reciters, translations) = 7 days; Dynamic content (user bookmarks) = 1 hour
+- **Memory Limit**: Redis maxmemory set to 500MB with allkeys-lru eviction policy
+- **Graceful Degradation**: App must work when Redis is unavailable - fallback to database
+- **Error Handling**: Catch redis.exceptions.RedisError and handle gracefully without breaking requests
+- **Retry Logic**: Use existing retry_with_exponential_backoff decorator for transient Redis errors
+- **Signal-Based Invalidation**: Use Django signals (post_save, post_delete) for automatic cache invalidation
+- **Testing**: All cache operations must have comprehensive tests including performance benchmarks
+- **Code Organization**: Place cache manager in quran_backend/core/services/, signals in quran_backend/core/signals.py
+- **Celery Integration**: Cache warming task scheduled via Celery Beat at 1:00 AM UTC daily
+- **Monitoring**: Track cache hit/miss ratio, memory usage, operation latency via Sentry
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>CacheManager.get</name>
+      <kind>method</kind>
+      <signature>get(key: str) -&gt; Optional[Any]</signature>
+      <path>quran_backend/core/services/cache_manager.py</path>
+      <description>Retrieve value from cache by key, returns None if not found or cache unavailable</description>
+    </interface>
+    <interface>
+      <name>CacheManager.set</name>
+      <kind>method</kind>
+      <signature>set(key: str, value: Any, ttl: int = None) -&gt; bool</signature>
+      <path>quran_backend/core/services/cache_manager.py</path>
+      <description>Store value in cache with optional TTL override, returns success status</description>
+    </interface>
+    <interface>
+      <name>CacheManager.delete</name>
+      <kind>method</kind>
+      <signature>delete(key: str) -&gt; bool</signature>
+      <path>quran_backend/core/services/cache_manager.py</path>
+      <description>Remove single key from cache, returns success status</description>
+    </interface>
+    <interface>
+      <name>CacheManager.delete_pattern</name>
+      <kind>method</kind>
+      <signature>delete_pattern(pattern: str) -&gt; int</signature>
+      <path>quran_backend/core/services/cache_manager.py</path>
+      <description>Remove all keys matching pattern (e.g., "quran:*"), returns count of deleted keys</description>
+    </interface>
+    <interface>
+      <name>@cache_response</name>
+      <kind>decorator</kind>
+      <signature>cache_response(cache_key_func: Callable, ttl: int = 604800)</signature>
+      <path>quran_backend/core/decorators.py</path>
+      <description>View decorator to cache API responses based on cache_key_func</description>
+    </interface>
+    <interface>
+      <name>Django Cache Framework</name>
+      <kind>framework-integration</kind>
+      <signature>from django.core.cache import cache</signature>
+      <path>django.core.cache</path>
+      <description>Django's built-in cache framework - CacheManager wraps this for additional functionality</description>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+Use pytest-django testing framework with @pytest.mark.django_db for database tests. Follow existing test patterns from quran_backend/core/tests/test_error_handling.py. Tests should cover: unit tests for CacheManager methods, integration tests for cache decorators/signals, performance tests (cache vs DB latency), graceful degradation tests (Redis unavailable scenarios). All tests must use clear Arrange-Act-Assert structure with descriptive names following pattern: test_{feature}_{condition}_{expected_result}. Mock Redis connections for error scenario testing.
+    </standards>
+    <locations>
+quran_backend/quran_backend/core/tests/test_caching.py (new file)
+quran_backend/quran_backend/core/tests/test_cache_signals.py (optional - if signal tests are extensive)
+    </locations>
+    <ideas>
+- **AC #1**: test_cache_stores_quran_text_with_ttl() - Verify Quran text cached with 7-day TTL
+- **AC #1**: test_cache_stores_reciter_list() - Verify reciter list cached
+- **AC #1**: test_cache_key_naming_convention() - Verify key format: quran_backend:{type}:{id}
+- **AC #2**: test_cached_response_latency_under_100ms() - Measure cache hit latency
+- **AC #2**: test_cache_hit_ratio_above_80_percent() - After cache warming, verify hit ratio
+- **AC #3**: test_cache_invalidated_on_model_save() - Signal triggers cache clear
+- **AC #3**: test_cache_invalidated_on_model_delete() - Delete signal clears cache
+- **AC #4**: test_cache_memory_limit_enforced() - Verify LRU eviction when limit reached
+- **AC #5**: test_database_fallback_when_redis_down() - App works without Redis
+- **AC #5**: test_redis_error_retry_with_backoff() - Transient errors retried 3 times
+- **AC #6**: test_cache_miss_fetches_from_db_and_caches() - Cache miss → DB → cache write
+- **AC #6**: test_cache_warming_preloads_popular_content() - Celery task populates cache
+- **Performance**: test_cache_hit_5x_faster_than_db_query() - Cache vs DB comparison
+- **Integration**: test_cache_response_decorator_on_api_endpoint() - Decorator caches API responses
+    </ideas>
+  </tests>
+</story-context>

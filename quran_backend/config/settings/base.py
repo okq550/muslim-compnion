@@ -308,6 +308,16 @@ CELERY_WORKER_SEND_TASK_EVENTS = True
 CELERY_TASK_SEND_SENT_EVENT = True
 # https://docs.celeryq.dev/en/stable/userguide/configuration.html#worker-hijack-root-logger
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False
+# https://docs.celeryq.dev/en/stable/userguide/configuration.html#beat-schedule
+# Periodic task schedule for cache warming and maintenance
+CELERY_BEAT_SCHEDULE = {
+    "warm-cache-daily": {
+        "task": "quran_backend.core.warm_quran_cache",
+        "schedule": 86400.0,  # 24 hours (1 day) in seconds - runs daily
+        # Alternative: Use crontab for specific time
+        # "schedule": crontab(hour=1, minute=0),  # 1:00 AM UTC daily
+    },
+}
 # django-allauth
 # ------------------------------------------------------------------------------
 ACCOUNT_ALLOW_REGISTRATION = env.bool("DJANGO_ACCOUNT_ALLOW_REGISTRATION", True)

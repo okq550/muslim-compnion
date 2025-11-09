@@ -13,6 +13,7 @@ import uuid
 from datetime import UTC
 from datetime import datetime
 
+import redis
 import sentry_sdk
 from django.conf import settings
 from django.db import transaction
@@ -94,6 +95,26 @@ class ErrorHandlingMiddleware:
         """
         # Get request_id (should be set in __call__, but fallback just in case)
         request_id = getattr(request, "request_id", str(uuid.uuid4()))
+
+        # Special handling for Redis errors (graceful degradation - US-API-003 AC #5)
+        if isinstance(exception, redis.exceptions.RedisError):
+            logger.warning(
+                f"Redis error (graceful degradation active): {type(exception).__name__}",
+                exc_info=True,
+                extra={
+                    "request_id": request_id,
+                    "cache_operation": "unknown",
+                },
+            )
+            # Log to Sentry as warning, not error (cache failures are non-critical)
+            sentry_sdk.set_tag("error_type", "cache_error")
+            sentry_sdk.capture_message(
+                f"Redis cache unavailable: {exception}",
+                level="warning",
+            )
+            # Don't return error response - let request continue with database fallback
+            # The IGNORE_EXCEPTIONS setting in cache config handles this
+            return None
 
         # Log to Sentry with full context (AC #8)
         # Enrich context with request info
