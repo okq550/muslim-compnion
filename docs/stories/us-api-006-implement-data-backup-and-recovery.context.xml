@@ -1,0 +1,467 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1.6</storyId>
+    <title>Implement Data Backup and Recovery</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-09</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/us-api-006-implement-data-backup-and-recovery.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>system administrator</asA>
+    <iWant>to have automated backups of all system data</iWant>
+    <soThat>we can recover from data loss or corruption</soThat>
+    <tasks>
+      ### Task 1: Create Backup Service Module (AC #1, #2)
+      - Create `quran_backend/core/services/backup.py` module
+      - Implement `BackupService` class with methods for backup orchestration, compression, checksum
+      - Implement `pg_dump` execution with error handling
+      - Handle environment-specific database credentials
+
+      ### Task 2: Implement Encryption and S3 Upload (AC #3, #4)
+      - Create `quran_backend/core/services/encryption.py` module
+      - Implement `EncryptionService` class using AWS KMS
+      - Implement S3 upload in `BackupService`
+      - Verify upload integrity
+
+      ### Task 3: Create Celery Scheduled Backup Task (AC #1, #6)
+      - Create `quran_backend/core/tasks/backup_tasks.py`
+      - Implement `run_daily_backup` Celery task
+      - Configure Celery Beat schedule for daily execution at 2:00 AM UTC
+      - Add Celery task retry configuration
+
+      ### Task 4: Implement Retention Policy and Cleanup (AC #7)
+      - Create `quran_backend/core/tasks/cleanup_tasks.py`
+      - Implement `enforce_backup_retention_policy` Celery task
+      - Configure S3 lifecycle policies
+      - Schedule cleanup task weekly
+
+      ### Task 5: Create Recovery Service (AC #5, #8)
+      - Create `quran_backend/core/services/recovery.py` module
+      - Implement `RecoveryService` class with restore capabilities
+      - Implement restoration workflow with staging-first approach
+      - Create Django management command `restore_from_backup`
+
+      ### Task 6: Implement Monitoring and Alerting (AC #6)
+      - Create `BackupStatus` model in `quran_backend/core/models.py`
+      - Update backup task to record status in database
+      - Configure Sentry alerting for backup failures
+      - Create monitoring dashboard
+      - Implement weekly health report task
+
+      ### Task 7: Configure AWS Infrastructure (AC #3, #7)
+      - Create dedicated S3 bucket for backups
+      - Configure S3 bucket lifecycle policies
+      - Create KMS encryption key for backups
+      - Configure IAM role for backup service
+      - Update production settings with backup configuration
+
+      ### Task 8: Write Comprehensive Tests (AC #1-8)
+      - Test `BackupService` methods
+      - Test `EncryptionService` methods
+      - Test S3 upload and integrity verification
+      - Test Celery backup task
+      - Test retention policy enforcement
+      - Test recovery service
+      - Test monitoring and alerting
+      - Use moto library for S3/KMS mocking
+
+      ### Task 9: Document Recovery Procedures (AC #5)
+      - Create `docs/operations/backup-and-recovery.md` documentation
+      - Document backup process and schedule
+      - Document recovery procedures with step-by-step instructions
+      - Document disaster recovery scenarios
+      - Include example commands
+      - Document troubleshooting and quarterly DR drill procedure
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    1. **Automated Scheduled Backups**
+       - Daily backups run automatically at 2:00 AM UTC via Celery Beat
+       - Backup task executes `pg_dump` to create PostgreSQL database dump
+       - Backup process non-blocking to application (runs in background)
+       - Backup success/failure logged to Sentry and system logs
+
+    2. **Comprehensive Data Coverage**
+       - User data: User accounts, profiles, bookmarks, preferences, notes
+       - Content data: Quran text, recitations, translations, Tafseer (if present)
+       - Configuration: System settings, metadata, application configuration
+       - Audit logs: Authentication events, error logs, rate limit violations
+       - Database schema and migrations state
+
+    3. **Secure Encrypted Storage**
+       - Backup files compressed with gzip for storage efficiency
+       - Files encrypted with AES-256 using AWS KMS key management
+       - Encrypted backups uploaded to dedicated S3 bucket: `quran-backend-backups/`
+       - S3 bucket path structure: `{environment}/{date}/db_backup.sql.gz.enc`
+       - S3 bucket versioning enabled for redundancy
+
+    4. **Backup Integrity Verification**
+       - SHA-256 checksum calculated after compression and encryption
+       - Checksum stored in S3 metadata and separate manifest file
+       - Automated integrity check performed after each upload
+       - Failed integrity checks trigger immediate alert
+
+    5. **Documented and Tested Recovery Process**
+       - Recovery procedure documented in operations manual
+       - Recovery tested monthly in staging environment
+       - Point-in-time recovery capability (5-minute granularity via AWS RDS)
+       - Selective restoration option (restore specific tables or data)
+       - Recovery time objective (RTO): < 4 hours
+       - Recovery point objective (RPO): 24 hours (daily backups)
+
+    6. **Alerting on Backup Failures**
+       - Immediate alert to ops team if backup fails (via Sentry + PagerDuty)
+       - Alert includes: failure reason, timestamp, last successful backup date
+       - Backup status tracked in monitoring dashboard
+       - Weekly backup health report generated
+
+    7. **Retention Policy Enforcement**
+       - Daily backups retained for 30 days
+       - Weekly backups (Sunday) retained for 90 days
+       - Monthly backups (1st of month) retained for 1 year
+       - Automated cleanup removes expired backups
+       - S3 lifecycle policies configured for automatic archival
+
+    8. **Selective Restoration Capability**
+       - Ability to restore entire database or specific tables
+       - Ability to restore to specific point in time
+       - Restore to staging environment first for validation
+       - Post-restoration data integrity verification required
+       - Restoration process requires dual authorization (security requirement)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: Cross-Cutting / Infrastructure Stories</title>
+        <section>Backup Service Module</section>
+        <snippet>Backup Service: Automated database backups, verify integrity, manage retention policy. Inputs: Database snapshots, schedule config. Outputs: Backup files (encrypted), restoration capability.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: Cross-Cutting / Infrastructure Stories</title>
+        <section>Backup and Recovery Flow</section>
+        <snippet>Celery Beat schedules daily backup at 2:00 AM UTC. PostgreSQL pg_dump creates snapshot. Compress with gzip, encrypt with AES-256 (AWS KMS), upload to S3 with metadata. Retention: 30 days (daily), 90 days (weekly), 1 year (monthly). Recovery: Download, decrypt, decompress, restore to staging first, validate, then production with dual authorization.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: Cross-Cutting / Infrastructure Stories</title>
+        <section>Security - Data Protection</section>
+        <snippet>Backup encryption with AES-256 (AWS KMS key management). No sensitive user data in logs (passwords, tokens, PII). GDPR compliance for analytics.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: Cross-Cutting / Infrastructure Stories</title>
+        <section>Reliability/Availability - Database</section>
+        <snippet>PostgreSQL RDS with Multi-AZ deployment (automatic failover). Daily automated backups with 30-day retention. Point-in-time recovery capability (5-minute granularity).</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: Cross-Cutting / Infrastructure Stories</title>
+        <section>Dependencies and Integrations - External Services</section>
+        <snippet>AWS S3: Audio file storage (prepared in infrastructure). AWS KMS: Encryption key management for backups. Sentry: Error tracking and performance monitoring.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: Cross-Cutting / Infrastructure Stories</title>
+        <section>Acceptance Criteria - US-API-006</section>
+        <snippet>AC #42-48: Automated daily backups at 2:00 AM UTC. All critical data included (user, content, config). Backups encrypted with AES-256 and stored in S3. Backup integrity verified (checksum validation). Recovery tested successfully. Backup failures trigger immediate alerts. Retention policy enforced (30/90/365 days).</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic 1: Cross-Cutting / Infrastructure Stories</title>
+        <section>US-API-006: Implement Data Backup and Recovery</section>
+        <snippet>System needs robust backup and recovery mechanisms to protect against data loss. Includes user data (bookmarks, preferences), content data (Quran text, audio, translations), and configuration data. Regular automated backups ensure business continuity. Business rules: Daily critical data backups, user data continuous/frequent, content after updates, retention policy defined, point-in-time recovery, selective restoration option, recovery testing performed regularly.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>ADR-001: Cookiecutter Django Foundation</section>
+        <snippet>Production-ready Django 5.2.8 LTS foundation with Docker containerization (web, PostgreSQL 16, Redis, Celery worker). AWS cloud provider integration (S3, CloudFront, OpenSearch).</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Technology Stack</section>
+        <snippet>Python 3.14 + Django 5.2.8 LTS. PostgreSQL 16 for relational data. Redis for caching and Celery broker. Celery + Celery Beat for background jobs. pytest for testing framework.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <file>
+        <path>quran_backend/config/celery_app.py</path>
+        <kind>celery_config</kind>
+        <symbol>Celery app</symbol>
+        <lines>1-28</lines>
+        <reason>Celery application configuration for task scheduling. Use this as base for adding CELERY_BEAT_SCHEDULE with daily backup task at 2:00 AM UTC.</reason>
+      </file>
+      <file>
+        <path>quran_backend/config/settings/base.py</path>
+        <kind>django_settings</kind>
+        <symbol>CELERY_* settings</symbol>
+        <lines>N/A</lines>
+        <reason>Django base settings file. Add CELERY_BEAT_SCHEDULE here with daily backup task configuration. Also add BACKUP_S3_BUCKET, BACKUP_KMS_KEY_ID, and retention policy settings.</reason>
+      </file>
+      <file>
+        <path>quran_backend/config/settings/production.py</path>
+        <kind>django_settings</kind>
+        <symbol>Sentry configuration</symbol>
+        <lines>N/A</lines>
+        <reason>Production settings with Sentry integration. Configure backup-specific Sentry tags and alerting here. Add backup AWS infrastructure settings (S3 bucket, KMS key ID).</reason>
+      </file>
+      <file>
+        <path>quran_backend/quran_backend/core/exceptions.py</path>
+        <kind>exception_classes</kind>
+        <symbol>Custom exception classes, ErrorCodes</symbol>
+        <lines>1-92</lines>
+        <reason>Custom exception classes for error handling. Create new exceptions: BackupFailedError, EncryptionFailedError, RestoreFailedError, IntegrityCheckFailedError. Follow existing pattern with status codes and localized messages.</reason>
+      </file>
+      <file>
+        <path>quran_backend/quran_backend/core/middleware/error_handler.py</path>
+        <kind>middleware</kind>
+        <symbol>ErrorHandlingMiddleware</symbol>
+        <lines>1-171</lines>
+        <reason>Error handling middleware with Sentry logging. Use this pattern for logging backup/restore errors with full context. Reference for correlation IDs and transaction rollback patterns.</reason>
+      </file>
+      <file>
+        <path>quran_backend/quran_backend/core/utils/retry.py</path>
+        <kind>utility</kind>
+        <symbol>@retry_with_exponential_backoff, @retry_network_operation</symbol>
+        <lines>22-181</lines>
+        <reason>Retry decorators for transient errors. Apply @retry_network_operation to S3 upload and KMS encryption operations. Apply @retry_db_operation to PostgreSQL pg_dump execution.</reason>
+      </file>
+      <file>
+        <path>quran_backend/quran_backend/users/tasks.py</path>
+        <kind>celery_tasks</kind>
+        <symbol>Celery task examples</symbol>
+        <lines>N/A</lines>
+        <reason>Existing Celery task implementation patterns in the project. Reference for task structure, @shared_task decorator usage, error handling, and logging patterns.</reason>
+      </file>
+      <file>
+        <path>quran_backend/quran_backend/core/tests/test_error_handling.py</path>
+        <kind>test_file</kind>
+        <symbol>Test patterns</symbol>
+        <lines>1-410</lines>
+        <reason>Comprehensive test suite with 27 tests. Reference for test structure, mocking patterns (Sentry, external services), pytest fixtures, and assertion patterns. Use similar structure for backup/restore tests.</reason>
+      </file>
+    </code>
+    <dependencies>
+      <python>
+        <package>Django==5.2.8</package>
+        <package>djangorestframework==3.16.1</package>
+        <package>celery==5.3.6</package>
+        <package>celery-beat (included with celery)</package>
+        <package>psycopg2-binary==2.9.9</package>
+        <package>django-redis==5.4.0</package>
+        <package>boto3==1.34.0</package>
+        <package>django-storages[s3]==1.14.2</package>
+        <package>sentry-sdk==1.40.0</package>
+        <package>pytest-django==4.7.0</package>
+        <package>moto (for S3/KMS mocking in tests)</package>
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    - **Module Organization**: Create backup service in `quran_backend/core/services/backup.py`, encryption in `quran_backend/core/services/encryption.py`, recovery in `quran_backend/core/services/recovery.py`. Create tasks in `quran_backend/core/tasks/backup_tasks.py` and `quran_backend/core/tasks/cleanup_tasks.py`.
+
+    - **Error Handling**: Use existing custom exception classes from `core/exceptions.py`. Create new backup-specific exceptions following existing patterns. Log all errors to Sentry with backup metadata context.
+
+    - **Retry Logic**: Apply `@retry_network_operation` decorator from `core/utils/retry.py` to S3 and KMS operations. Apply `@retry_db_operation` to database operations.
+
+    - **Celery Patterns**: Use `@shared_task(bind=True)` for retry capability. Configure max_retries in task decorator. Log task start, success, failure with correlation IDs. Follow patterns from existing `users/tasks.py`.
+
+    - **Transaction Management**: Use `@transaction.atomic` for database restoration to ensure rollback on failure. Follow patterns from US-API-002 error handling middleware.
+
+    - **Testing**: Use pytest with pytest-django fixtures. Mock AWS services with moto library. Test all error scenarios. Write 25+ comprehensive tests covering all acceptance criteria.
+
+    - **Security**: Never log passwords, tokens, or sensitive data. Encrypt all backups with AES-256 via AWS KMS. Use IAM roles with least privilege. Require dual authorization for production restores.
+
+    - **AWS Best Practices**: Use S3 lifecycle policies for automatic archival. Enable S3 versioning for redundancy. Use separate KMS key for backups with automatic rotation. Tag all backups with metadata (date, size, DB version).
+
+    - **Documentation**: Document all recovery procedures in `docs/operations/backup-and-recovery.md`. Include step-by-step instructions, example commands, troubleshooting, and disaster recovery scenarios.
+
+    - **Monitoring**: Record all backup status in `BackupStatus` model. Generate weekly health reports. Alert immediately on failures via Sentry + PagerDuty.
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>BackupService API</name>
+      <kind>Python Class Interface</kind>
+      <signature>
+        class BackupService:
+            def create_backup() -> dict  # Returns {success, path, checksum, size}
+            def compress_backup(file_path: str) -> str  # Returns compressed file path
+            def calculate_checksum(file_path: str) -> str  # Returns SHA-256 hash
+            def get_backup_metadata() -> dict  # Returns {db_version, size, timestamp}
+            def upload_to_s3(local_file: str, s3_bucket: str, s3_key: str) -> bool
+            def verify_upload_integrity(s3_key: str, expected_checksum: str) -> bool
+      </signature>
+      <path>quran_backend/core/services/backup.py</path>
+    </interface>
+
+    <interface>
+      <name>EncryptionService API</name>
+      <kind>Python Class Interface</kind>
+      <signature>
+        class EncryptionService:
+            def encrypt_file(file_path: str, kms_key_id: str) -> str  # Returns encrypted file path
+            def decrypt_file(file_path: str, kms_key_id: str) -> str  # Returns decrypted file path
+      </signature>
+      <path>quran_backend/core/services/encryption.py</path>
+    </interface>
+
+    <interface>
+      <name>RecoveryService API</name>
+      <kind>Python Class Interface</kind>
+      <signature>
+        class RecoveryService:
+            def list_available_backups(days: int = 30) -> list  # Returns list of backups
+            def download_backup(backup_date: str, local_path: str) -> str
+            def decrypt_backup(encrypted_file: str, output_file: str) -> str
+            def decompress_backup(gz_file: str, output_file: str) -> str
+            def verify_backup_integrity(file_path: str, expected_checksum: str) -> bool
+            def restore_database(sql_file: str, target_db: str = 'staging') -> bool
+      </signature>
+      <path>quran_backend/core/services/recovery.py</path>
+    </interface>
+
+    <interface>
+      <name>Celery Backup Task</name>
+      <kind>Celery Shared Task</kind>
+      <signature>
+        @shared_task(bind=True, max_retries=1, default_retry_delay=1800)
+        def run_daily_backup(self) -> dict
+      </signature>
+      <path>quran_backend/core/tasks/backup_tasks.py</path>
+    </interface>
+
+    <interface>
+      <name>Celery Cleanup Task</name>
+      <kind>Celery Shared Task</kind>
+      <signature>
+        @shared_task(bind=True)
+        def enforce_backup_retention_policy(self) -> dict
+      </signature>
+      <path>quran_backend/core/tasks/cleanup_tasks.py</path>
+    </interface>
+
+    <interface>
+      <name>Django Management Command</name>
+      <kind>Django Management Command</kind>
+      <signature>
+        python manage.py restore_from_backup --date=YYYY-MM-DD --target=staging|production --verify [--dry-run]
+      </signature>
+      <path>quran_backend/quran_backend/core/management/commands/restore_from_backup.py</path>
+    </interface>
+
+    <interface>
+      <name>BackupStatus Model</name>
+      <kind>Django Model</kind>
+      <signature>
+        class BackupStatus(models.Model):
+            backup_date = models.DateTimeField()
+            status = models.CharField(choices=['success', 'failed', 'in_progress'])
+            file_size_mb = models.DecimalField()
+            duration_seconds = models.IntegerField()
+            checksum = models.CharField(max_length=64)
+            s3_key = models.CharField(max_length=500)
+            error_message = models.TextField(null=True, blank=True)
+            created_at = models.DateTimeField(auto_now_add=True)
+      </signature>
+      <path>quran_backend/quran_backend/core/models.py</path>
+    </interface>
+
+    <interface>
+      <name>Celery Beat Schedule</name>
+      <kind>Django Setting</kind>
+      <signature>
+        CELERY_BEAT_SCHEDULE = {
+            'daily-database-backup': {
+                'task': 'quran_backend.core.tasks.backup_tasks.run_daily_backup',
+                'schedule': crontab(hour=2, minute=0),  # 2:00 AM UTC daily
+            },
+            'weekly-backup-cleanup': {
+                'task': 'quran_backend.core.tasks.cleanup_tasks.enforce_backup_retention_policy',
+                'schedule': crontab(hour=3, minute=0, day_of_week=1),  # Monday 3:00 AM UTC
+            },
+        }
+      </signature>
+      <path>quran_backend/config/settings/base.py</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Use pytest with pytest-django for Django-specific fixtures. Mock external AWS services (S3, KMS) using moto library to avoid real AWS API calls in tests. Create separate test database for restoration tests. Follow test pattern from existing test_error_handling.py: descriptive test names (test_feature_condition_expected_result), Arrange-Act-Assert structure, proper fixtures and mocking, deterministic and fast tests. Aim for 25+ tests covering all acceptance criteria. Test coverage target: 90%+ for new code.
+    </standards>
+    <locations>
+      - quran_backend/quran_backend/core/tests/test_backup_service.py
+      - quran_backend/quran_backend/core/tests/test_encryption_service.py
+      - quran_backend/quran_backend/core/tests/test_recovery_service.py
+      - quran_backend/quran_backend/core/tests/test_backup_tasks.py
+      - quran_backend/quran_backend/core/tests/test_cleanup_tasks.py
+    </locations>
+    <ideas>
+      <test ac="1">
+        - test_daily_backup_task_scheduled_at_2am_utc - Verify Celery Beat schedule configured correctly
+        - test_backup_task_executes_pg_dump - Verify pg_dump command runs with correct parameters
+        - test_backup_runs_in_background_non_blocking - Verify Celery async execution
+        - test_backup_success_logged_to_sentry - Verify success logging with metadata
+        - test_backup_failure_logged_to_sentry_with_context - Verify failure logging with error details
+      </test>
+      <test ac="2">
+        - test_backup_includes_all_user_data - Verify User, UserProfile, bookmarks included
+        - test_backup_includes_quran_content - Verify Quran text, recitations included
+        - test_backup_includes_configuration - Verify settings and metadata included
+        - test_backup_includes_audit_logs - Verify authentication events and error logs included
+        - test_backup_includes_schema_and_migrations - Verify database schema state captured
+      </test>
+      <test ac="3">
+        - test_compress_backup_with_gzip - Verify gzip compression reduces file size by ~70%
+        - test_encrypt_backup_with_kms_aes256 - Verify KMS encryption with AES-256
+        - test_upload_to_s3_bucket - Verify encrypted backup uploaded to correct S3 path
+        - test_s3_bucket_path_structure_correct - Verify {environment}/{date}/db_backup.sql.gz.enc format
+        - test_s3_versioning_enabled - Verify S3 bucket has versioning enabled for redundancy
+      </test>
+      <test ac="4">
+        - test_calculate_sha256_checksum - Verify SHA-256 checksum calculation
+        - test_checksum_stored_in_s3_metadata - Verify checksum in S3 object metadata
+        - test_checksum_stored_in_manifest_file - Verify separate manifest file created
+        - test_automated_integrity_check_after_upload - Verify post-upload integrity verification
+        - test_integrity_check_failure_triggers_alert - Verify alert sent on checksum mismatch
+      </test>
+      <test ac="5">
+        - test_recovery_procedure_documented - Verify documentation file exists and is complete
+        - test_list_available_backups - Verify RecoveryService lists backups from S3
+        - test_download_and_decrypt_backup - Verify download and decryption process
+        - test_restore_to_staging_first - Verify restore always goes to staging for validation
+        - test_selective_restoration_specific_tables - Verify ability to restore specific tables
+      </test>
+      <test ac="6">
+        - test_backup_failure_triggers_sentry_alert - Verify Sentry alert on failure
+        - test_alert_includes_failure_reason_and_timestamp - Verify alert metadata
+        - test_backup_status_recorded_in_database - Verify BackupStatus model records
+        - test_weekly_health_report_generated - Verify weekly report task execution
+      </test>
+      <test ac="7">
+        - test_delete_daily_backups_older_than_30_days - Verify 30-day retention for daily
+        - test_keep_sunday_backups_for_90_days - Verify 90-day retention for weekly
+        - test_keep_first_of_month_backups_for_1_year - Verify 1-year retention for monthly
+        - test_automated_cleanup_removes_expired_backups - Verify cleanup task deletes old backups
+        - test_s3_lifecycle_policies_configured - Verify S3 lifecycle rules for archival
+      </test>
+      <test ac="8">
+        - test_restore_entire_database - Verify full database restore
+        - test_restore_specific_tables_only - Verify selective restoration
+        - test_restore_to_staging_before_production - Verify staging-first validation
+        - test_post_restoration_integrity_verification - Verify data integrity checks after restore
+        - test_production_restore_requires_dual_authorization - Verify security requirement
+      </test>
+    </ideas>
+  </tests>
+</story-context>

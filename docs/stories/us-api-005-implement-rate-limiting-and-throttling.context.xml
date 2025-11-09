@@ -1,0 +1,214 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>5</storyId>
+    <title>Implement Rate Limiting and Throttling</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-09</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/us-api-005-implement-rate-limiting-and-throttling.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>system administrator</asA>
+    <iWant>to implement rate limiting on API endpoints</iWant>
+    <soThat>the system is protected from abuse and remains available for all users</soThat>
+    <tasks>
+      <task id="1">Configure DRF Throttling Classes (AC #1, #2, #6)</task>
+      <task id="2">Create Custom Throttle Classes (AC #2, #5, #7)</task>
+      <task id="3">Add Rate Limit Headers to Responses (AC #5)</task>
+      <task id="4">Customize 429 Error Response (AC #3, #4)</task>
+      <task id="5">Apply Throttling to All Endpoints (AC #1)</task>
+      <task id="6">Implement Abuse Detection and Logging (AC #8)</task>
+      <task id="7">Add Rate Limit Configuration Settings (AC #7)</task>
+      <task id="8">Comprehensive Rate Limiting Tests (AC #1-9)</task>
+      <task id="9">Update API Documentation</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">Rate limits enforced on all public endpoints (excluding health checks)</criterion>
+    <criterion id="2">User-type-based rate limits: Anonymous (20 req/min per IP), Authenticated (100 req/min per user)</criterion>
+    <criterion id="3">Clear feedback when limit exceeded (429 with user-friendly localized message)</criterion>
+    <criterion id="4">Retry-After header provided in 429 responses (seconds until reset)</criterion>
+    <criterion id="5">Rate limit headers in all responses (X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset)</criterion>
+    <criterion id="6">Rate counters reset at appropriate intervals (60-second windows, Redis TTL)</criterion>
+    <criterion id="7">Legitimate users not unfairly blocked (conservative limits, whitelist mechanism)</criterion>
+    <criterion id="8">Abuse attempts detected and logged (10+ violations/hour triggers alert, temp ban option)</criterion>
+    <criterion id="9">Rate limit status visible to users (headers, error response, API docs)</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: Cross-Cutting / Infrastructure Stories</title>
+        <section>US-API-005: Rate Limiting - Acceptance Criteria #36-41</section>
+        <snippet>Rate limits enforced on all public endpoints. Authenticated users: 100 requests per minute per endpoint. Anonymous users: 20 requests per minute per endpoint. Rate limit headers included in responses (X-RateLimit-*). 429 status code returned when limit exceeded with Retry-After header.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>EPIC: Quran Backend - First Release</title>
+        <section>US-API-005: Implement Rate Limiting and Throttling</section>
+        <snippet>Business Rules: Rate Limit Tiers (Anonymous users: Lower limits, Authenticated users: Higher limits), Limit Types (Requests per minute, per hour, per day), Limit Enforcement (Clear feedback when limit exceeded, Retry-after headers provided, Temporary blocks for repeated violations).</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document - Quran Backend API</title>
+        <section>Technology Stack - Authentication</section>
+        <snippet>JWT (simplejwt) for stateless authentication, mobile-friendly. Django REST Framework for API development with throttling support. Redis for caching and distributed rate tracking.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document (PRD) - Quran Backend</title>
+        <section>Functional Requirements FR-038</section>
+        <snippet>System needs rate limiting to prevent abuse, ensure fair resource allocation, and protect against attacks. Different endpoints should have appropriate rate limits based on resource intensity and expected usage patterns.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/us-api-002-implement-error-handling-and-user-feedback.md</path>
+        <title>Story 1.2: Implement Error Handling and User Feedback</title>
+        <section>Dev Notes - Error Handling Infrastructure</section>
+        <snippet>Custom exception handler at REST_FRAMEWORK['EXCEPTION_HANDLER'], standardized error response format, Sentry integration, i18n framework for localization, correlation IDs. Error code RATE_LIMIT_EXCEEDED already defined in exceptions.py:31.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>quran_backend/quran_backend/core/exceptions.py</path>
+        <kind>module</kind>
+        <symbol>custom_exception_handler</symbol>
+        <lines>133-214</lines>
+        <reason>Custom DRF exception handler to extend for handling Throttled exceptions and generating 429 responses with standardized format</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/quran_backend/core/exceptions.py</path>
+        <kind>module</kind>
+        <symbol>RATE_LIMIT_EXCEEDED</symbol>
+        <lines>31</lines>
+        <reason>Error code constant already defined for rate limit errors (value: "RATE_LIMIT_EXCEEDED")</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/quran_backend/users/api/throttling.py</path>
+        <kind>module</kind>
+        <symbol>AuthEndpointThrottle</symbol>
+        <lines>1-14</lines>
+        <reason>Existing throttle class example for authentication endpoints (5 req/min). Pattern to follow for creating AnonRateThrottle and UserRateThrottle classes.</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/quran_backend/core/middleware/error_handler.py</path>
+        <kind>middleware</kind>
+        <symbol>ErrorHandlingMiddleware</symbol>
+        <lines>24-171</lines>
+        <reason>Error handling middleware pattern for logging violations to Sentry and managing request context</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/quran_backend/core/tests/test_error_handling.py</path>
+        <kind>test</kind>
+        <symbol>TestCustomExceptionHandler, TestErrorMiddleware</symbol>
+        <lines>1-410</lines>
+        <reason>Test patterns for error handling infrastructure. Reference for testing 429 responses, error format validation, and headers.</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/config/settings/base.py</path>
+        <kind>config</kind>
+        <symbol>REST_FRAMEWORK</symbol>
+        <lines>332-341</lines>
+        <reason>DRF settings where DEFAULT_THROTTLE_CLASSES and DEFAULT_THROTTLE_RATES must be added. EXCEPTION_HANDLER already configured.</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/config/settings/local.py</path>
+        <kind>config</kind>
+        <symbol>CACHES</symbol>
+        <lines>21-34</lines>
+        <reason>Redis cache backend already configured (django_redis.cache.RedisCache at redis://redis:6379/0). Used by DRF throttling for distributed rate tracking.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <python>
+        <package name="Django" version="5.2.8" />
+        <package name="djangorestframework" version="3.16.1+" />
+        <package name="django-redis" version="5.4.0" />
+        <package name="djangorestframework-simplejwt" version="5.3.1" />
+        <package name="sentry-sdk" version="1.40.0" />
+        <package name="redis" version="latest" />
+        <package name="pytest-django" version="4.7.0" />
+        <package name="pytest-cov" version="4.1.0" />
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>Use Django REST Framework's built-in throttling classes (AnonRateThrottle, UserRateThrottle) as base classes</constraint>
+    <constraint>Store rate limit counters in Redis cache (already configured at redis://redis:6379/0)</constraint>
+    <constraint>Extend custom_exception_handler in quran_backend/core/exceptions.py to handle Throttled exceptions</constraint>
+    <constraint>Follow standardized error response format from US-API-002 (error code, message, details, timestamp, request_id)</constraint>
+    <constraint>Use gettext_lazy for all user-facing messages to support Arabic/English localization</constraint>
+    <constraint>Log rate limit violations to Sentry with full context (user ID, IP, endpoint)</constraint>
+    <constraint>Add rate limit headers middleware AFTER error handling middleware in MIDDLEWARE stack</constraint>
+    <constraint>Maintain ATOMIC_REQUESTS=True for database integrity (already configured)</constraint>
+    <constraint>Use pytest for all tests, following patterns in test_error_handling.py</constraint>
+    <constraint>Test coverage must exceed 90% for all rate limiting code</constraint>
+    <constraint>Conservative initial limits: 20 req/min anonymous, 100 req/min authenticated</constraint>
+    <constraint>Health check endpoint (/api/v1/health/) must be exempt from throttling</constraint>
+    <constraint>Whitelist configuration via environment variables (RATE_LIMIT_WHITELIST)</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>DRF Throttle Classes</name>
+      <kind>base-class</kind>
+      <signature>class AnonRateThrottle(rest_framework.throttling.AnonRateThrottle)</signature>
+      <path>quran_backend/core/throttling.py (to be created)</path>
+      <notes>Inherit from DRF's AnonRateThrottle. Set rate = '20/minute'. Add rate limit headers to response.</notes>
+    </interface>
+    <interface>
+      <name>DRF Throttle Classes</name>
+      <kind>base-class</kind>
+      <signature>class UserRateThrottle(rest_framework.throttling.UserRateThrottle)</signature>
+      <path>quran_backend/core/throttling.py (to be created)</path>
+      <notes>Inherit from DRF's UserRateThrottle. Set rate = '100/minute'. Add rate limit headers to response.</notes>
+    </interface>
+    <interface>
+      <name>Custom Exception Handler</name>
+      <kind>function</kind>
+      <signature>def custom_exception_handler(exc, context) -> Response</signature>
+      <path>quran_backend/core/exceptions.py (line 133)</path>
+      <notes>Extend to catch rest_framework.exceptions.Throttled and transform to 429 response with Retry-After header</notes>
+    </interface>
+    <interface>
+      <name>Rate Limit Headers Middleware</name>
+      <kind>middleware</kind>
+      <signature>class RateLimitHeadersMiddleware</signature>
+      <path>quran_backend/core/middleware/rate_limit_headers.py (to be created)</path>
+      <notes>Extract throttle state from request, calculate remaining requests and reset timestamp, add X-RateLimit-* headers to response</notes>
+    </interface>
+    <interface>
+      <name>Abuse Detection Utility</name>
+      <kind>function</kind>
+      <signature>def track_rate_limit_violation(user_id_or_ip, endpoint, context)</signature>
+      <path>quran_backend/core/utils/abuse_detection.py (to be created)</path>
+      <notes>Log to Sentry, increment violation counter in Redis with 1-hour TTL, check if violations exceed threshold (10/hour) and trigger alert</notes>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Use pytest with pytest-django for all tests. Follow test patterns from test_error_handling.py: descriptive names (test_&lt;feature&gt;_&lt;condition&gt;_&lt;expected_result&gt;), Arrange-Act-Assert structure, APIClient for endpoint testing, proper fixtures and mocking. Use Redis cache (real or mock) for throttle counter testing. Coverage target: >90% for all throttling code. Test determinism is critical (no flaky tests). All 429 responses must match standardized error format from US-API-002. Test localization with HTTP_ACCEPT_LANGUAGE header (ar/en).</standards>
+    <locations>
+      <location>quran_backend/core/tests/test_rate_limiting.py (to be created)</location>
+      <location>Reference: quran_backend/core/tests/test_error_handling.py (patterns)</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Test anonymous user exceeds 20 req/min limit → verify 21st request returns 429</idea>
+      <idea ac="2">Test authenticated user exceeds 100 req/min limit → verify 101st request returns 429. Test different users have separate counters</idea>
+      <idea ac="3">Test 429 response contains clear localized message ("Too many requests...") in Arabic and English based on Accept-Language header</idea>
+      <idea ac="4">Test Retry-After header present in 429 response with correct value (seconds until reset)</idea>
+      <idea ac="5">Test X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset headers present in all responses and values accurate throughout request window</idea>
+      <idea ac="6">Test rate counter resets after 60-second window expires, allowing new requests</idea>
+      <idea ac="7">Test whitelisted users (superuser/staff) can make unlimited requests. Test legitimate burst requests handled correctly without false positives</idea>
+      <idea ac="8">Test 10+ rate limit violations in 1 hour triggers Sentry alert. Test violation counter increments and resets after 1 hour</idea>
+      <idea ac="9">Test health check endpoint (/api/v1/health/) NOT throttled. Test rate limit headers visible in API responses</idea>
+      <idea>Test concurrent requests counted accurately (simulate burst)</idea>
+      <idea>Test error response follows standardized format (error.code, error.message, error.details, error.timestamp, error.request_id)</idea>
+      <idea>Integration test: Full flow from request → throttle check → 429 response → Retry-After → successful retry after window reset</idea>
+    </ideas>
+  </tests>
+</story-context>
