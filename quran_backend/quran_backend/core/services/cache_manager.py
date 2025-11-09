@@ -147,14 +147,14 @@ class CacheManager:
 
             if not keys:
                 logger.debug(
-                    f"Cache DELETE_PATTERN: No keys found for pattern '{pattern}'"
+                    f"Cache DELETE_PATTERN: No keys found for pattern '{pattern}'",
                 )
                 return 0
 
             # Delete all matched keys
             deleted = redis_client.delete(*keys)
             logger.info(
-                f"Cache DELETE_PATTERN: Deleted {deleted} keys matching '{pattern}'"
+                f"Cache DELETE_PATTERN: Deleted {deleted} keys matching '{pattern}'",
             )
             return deleted
 

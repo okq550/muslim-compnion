@@ -30,6 +30,10 @@ class ErrorCodes:
     NETWORK_ERROR = "NETWORK_ERROR"
     SERVER_ERROR = "SERVER_ERROR"
     RATE_LIMIT_EXCEEDED = "RATE_LIMIT_EXCEEDED"
+    BACKUP_ERROR = "BACKUP_ERROR"
+    ENCRYPTION_ERROR = "ENCRYPTION_ERROR"
+    RESTORE_ERROR = "RESTORE_ERROR"
+    INTEGRITY_ERROR = "INTEGRITY_ERROR"
 
 
 # Custom Exception Classes (AC #3, #5)
@@ -92,6 +96,42 @@ class RateLimitError(APIException):
     default_code = ErrorCodes.RATE_LIMIT_EXCEEDED
 
 
+class BackupFailedError(APIException):
+    """Raised when backup operation fails."""
+
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+    default_detail = _("Backup operation failed. Please contact system administrator.")
+    default_code = ErrorCodes.BACKUP_ERROR
+
+
+class EncryptionFailedError(APIException):
+    """Raised when encryption or decryption fails."""
+
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+    default_detail = _(
+        "Encryption operation failed. Please contact system administrator."
+    )
+    default_code = ErrorCodes.ENCRYPTION_ERROR
+
+
+class RestoreFailedError(APIException):
+    """Raised when database restoration fails."""
+
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+    default_detail = _(
+        "Database restoration failed. Please contact system administrator."
+    )
+    default_code = ErrorCodes.RESTORE_ERROR
+
+
+class IntegrityCheckFailedError(APIException):
+    """Raised when backup integrity verification fails."""
+
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+    default_detail = _("Backup integrity check failed. Backup may be corrupted.")
+    default_code = ErrorCodes.INTEGRITY_ERROR
+
+
 def get_error_code_from_exception(exc):
     """
     Map exception types to standardized error codes.
@@ -132,12 +172,16 @@ def custom_exception_handler(exc, context):
     """
     Custom exception handler that returns standardized error responses.
 
-    Implements AC #1-4, #7:
+    Implements AC #1-4, #7 from US-API-002:
     - Transforms all exceptions to standardized format
     - Adds request_id (correlation ID from middleware)
     - Adds timestamp in ISO 8601 format
     - Maps exception types to error codes
     - Wraps error messages for localization
+
+    Also implements AC #3, #4 from US-API-005:
+    - Handles rate limit (429) responses with Retry-After header
+    - Provides user-friendly localized rate limit messages
 
     Returns errors in the format:
     {
@@ -150,6 +194,65 @@ def custom_exception_handler(exc, context):
         }
     }
     """
+    from rest_framework.exceptions import Throttled
+
+    # Special handling for Throttled exceptions (US-API-005, AC #3, #4, #8)
+    if isinstance(exc, Throttled):
+        # Get request from context
+        request = context.get("request")
+        request_id = getattr(request, "request_id", str(uuid.uuid4()))
+
+        # Calculate retry_after in seconds
+        retry_after = int(exc.wait) if exc.wait else 60
+
+        # Track rate limit violation and detect abuse (AC #8)
+        from quran_backend.core.utils.abuse_detection import track_rate_limit_violation
+
+        # Determine identifier (user ID or IP address)
+        if request.user and request.user.is_authenticated:
+            identifier = f"user_{request.user.id}"
+        else:
+            # Get IP address (handle X-Forwarded-For for load balancers)
+            x_forwarded_for = request.headers.get("x-forwarded-for")
+            if x_forwarded_for:
+                identifier = x_forwarded_for.split(",")[0].strip()
+            else:
+                identifier = request.META.get("REMOTE_ADDR", "unknown")
+
+        # Track violation
+        endpoint = request.path
+        track_rate_limit_violation(
+            identifier,
+            endpoint,
+            context={
+                "method": request.method,
+                "request_id": request_id,
+                "user_agent": request.headers.get("user-agent", ""),
+            },
+        )
+
+        # Build rate limit error response
+        response_data = {
+            "error": {
+                "code": ErrorCodes.RATE_LIMIT_EXCEEDED,
+                "message": _(
+                    "Too many requests. Please try again in {seconds} seconds."
+                ).format(
+                    seconds=retry_after,
+                ),
+                "details": {
+                    "retry_after": retry_after,
+                },
+                "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+                "request_id": request_id,
+            },
+        }
+
+        response = Response(response_data, status=status.HTTP_429_TOO_MANY_REQUESTS)
+        # Add Retry-After header (AC #4)
+        response["Retry-After"] = str(retry_after)
+        return response
+
     # Call DRF's default exception handler first
     response = drf_exception_handler(exc, context)
 

@@ -258,8 +258,16 @@ sentry_sdk.init(
     dsn=SENTRY_DSN,
     integrations=integrations,
     environment=env("SENTRY_ENVIRONMENT", default="production"),
-    # AC #5: 10% performance monitoring sample rate
-    traces_sample_rate=env.float("SENTRY_TRACES_SAMPLE_RATE", default=0.1),
+    release=env("RELEASE_VERSION", default="unknown"),
+    # US-API-007 AC #6, #7: Performance monitoring and profiling
+    traces_sample_rate=env.float(
+        "SENTRY_TRACES_SAMPLE_RATE",
+        default=0.1,
+    ),  # 10% transaction sampling
+    profiles_sample_rate=env.float(
+        "SENTRY_PROFILES_SAMPLE_RATE",
+        default=0.1,
+    ),  # 10% profiling
     # AC #8: Privacy-first - don't send PII by default
     send_default_pii=False,
     # AC #8: Custom data scrubbing callback

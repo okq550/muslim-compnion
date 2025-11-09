@@ -31,6 +31,9 @@ from .serializers import UserSerializer
 from .throttling import AuthEndpointThrottle
 
 logger = logging.getLogger(__name__)
+audit_logger = logging.getLogger(
+    "quran_backend.audit",
+)  # US-API-007: Separate audit logger
 
 
 def get_client_ip(request):
@@ -76,6 +79,19 @@ class UserRegistrationView(APIView):
         serializer = UserRegistrationSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
+
+            # US-API-007 AC #1: Log successful registration
+            audit_logger.info(
+                "User registration successful",
+                extra={
+                    "request_id": getattr(request, "request_id", "unknown"),
+                    "user_id": str(user.id),
+                    "email": user.email,
+                    "endpoint": "/api/v1/auth/register/",
+                    "ip_address": get_client_ip(request),
+                },
+            )
+
             return Response(
                 serializer.to_representation(user),
                 status=status.HTTP_201_CREATED,
@@ -107,6 +123,19 @@ class UserLoginView(APIView):
         is_locked, seconds_remaining = AccountLockoutService.is_locked(email)
         if is_locked:
             minutes_remaining = (seconds_remaining + 59) // 60  # Round up
+
+            # US-API-007 AC #1: Log account lockout event
+            audit_logger.warning(
+                "Account locked - login blocked",
+                extra={
+                    "request_id": getattr(request, "request_id", "unknown"),
+                    "email": email,
+                    "ip_address": ip_address,
+                    "endpoint": "/api/v1/auth/login/",
+                    "lockout_remaining_seconds": seconds_remaining,
+                },
+            )
+
             return Response(
                 {
                     "detail": _(
@@ -124,6 +153,20 @@ class UserLoginView(APIView):
         if serializer.is_valid():
             # Successful login - reset attempt counter
             AccountLockoutService.reset_attempts(email)
+
+            # US-API-007 AC #1: Log successful login
+            user = serializer.validated_data.get("user")
+            audit_logger.info(
+                "User login successful",
+                extra={
+                    "request_id": getattr(request, "request_id", "unknown"),
+                    "user_id": str(user.id) if user else "unknown",
+                    "email": email,
+                    "endpoint": "/api/v1/auth/login/",
+                    "ip_address": ip_address,
+                },
+            )
+
             return Response(
                 serializer.to_representation(serializer.validated_data),
                 status=status.HTTP_200_OK,
@@ -131,6 +174,19 @@ class UserLoginView(APIView):
 
         # Failed login - record attempt
         AccountLockoutService.record_failed_attempt(email, ip_address)
+
+        # US-API-007 AC #1: Log failed login attempt
+        audit_logger.warning(
+            "Login failed - invalid credentials",
+            extra={
+                "request_id": getattr(request, "request_id", "unknown"),
+                "email": email,
+                "ip_address": ip_address,
+                "endpoint": "/api/v1/auth/login/",
+                "reason": "invalid_credentials",
+            },
+        )
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -160,6 +216,22 @@ class UserLogoutView(APIView):
             # Decode and blacklist the refresh token
             token = RefreshToken(refresh_token)
             token.blacklist()
+
+            # US-API-007 AC #1: Log successful logout
+            user_id = None
+            if hasattr(request, "user") and request.user.is_authenticated:
+                user_id = str(request.user.id)
+
+            audit_logger.info(
+                "User logout successful",
+                extra={
+                    "request_id": getattr(request, "request_id", "unknown"),
+                    "user_id": user_id,
+                    "endpoint": "/api/v1/auth/logout/",
+                    "ip_address": get_client_ip(request),
+                },
+            )
+
         except TokenError:
             # Token is invalid or already blacklisted
             return Response(
@@ -202,8 +274,17 @@ class PasswordResetRequestView(APIView):
                 # Email should contain:
                 # {FRONTEND_URL}/reset-password?uid={uid}&token={token}
 
-                # Log the reset attempt for security monitoring
-                logger.info("Password reset requested for user: %s", user.id)
+                # US-API-007 AC #1: Log password reset request
+                audit_logger.info(
+                    "Password reset requested",
+                    extra={
+                        "request_id": getattr(request, "request_id", "unknown"),
+                        "user_id": str(user.id),
+                        "email": email,
+                        "endpoint": "/api/v1/auth/password/reset/",
+                        "ip_address": get_client_ip(request),
+                    },
+                )
 
                 return Response(
                     {"message": _("Password reset email sent if account exists")},

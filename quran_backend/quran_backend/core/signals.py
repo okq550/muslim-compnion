@@ -39,7 +39,7 @@ def invalidate_cache_by_key(cache_key: str, sender_name: str) -> None:
         logger.info(f"Cache invalidated: {cache_key} (triggered by {sender_name})")
     else:
         logger.warning(
-            f"Failed to invalidate cache: {cache_key} (triggered by {sender_name})"
+            f"Failed to invalidate cache: {cache_key} (triggered by {sender_name})",
         )
 
 
@@ -59,7 +59,7 @@ def invalidate_cache_by_pattern(pattern: str, sender_name: str) -> None:
         )
     else:
         logger.debug(
-            f"No cache keys found for pattern: {pattern} (triggered by {sender_name})"
+            f"No cache keys found for pattern: {pattern} (triggered by {sender_name})",
         )
 
 

@@ -9,6 +9,8 @@ from drf_spectacular.views import SpectacularAPIView
 from drf_spectacular.views import SpectacularSwaggerView
 from rest_framework.authtoken.views import obtain_auth_token
 
+from quran_backend.core.views import health_check  # US-API-007: Health check endpoint
+
 urlpatterns = [
     path("", TemplateView.as_view(template_name="pages/home.html"), name="home"),
     path(
@@ -29,6 +31,8 @@ urlpatterns = [
 
 # API URLS
 urlpatterns += [
+    # Health check endpoint (US-API-007)
+    path("api/v1/health/", health_check, name="health-check"),
     # API base url
     path("api/", include("config.api_router")),
     # DRF auth token

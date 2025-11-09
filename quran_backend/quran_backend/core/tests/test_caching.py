@@ -91,7 +91,7 @@ class TestCacheManager:
 
         # Act
         results = self.cache_mgr.get_many(
-            ["key1", "key2", "key4"]
+            ["key1", "key2", "key4"],
         )  # key4 doesn't exist
 
         # Assert

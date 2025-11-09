@@ -1,8 +1,8 @@
 # Architecture Document
 ## Quran Backend API - Islamic Spiritual Companion App
 
-**Version:** 1.4
-**Date:** 2025-11-06 (Updated)
+**Version:** 1.6
+**Date:** 2025-11-10 (Updated)
 **Project:** django-muslim-companion
 **Author:** Architecture Team
 
@@ -289,7 +289,7 @@ django-muslim-companion/
 │   │       └── factories.py
 │   │
 │   ├── reciters/                    # EPIC 3: Recitation Management
-│   │   ├── models.py                # Reciter, Audio models
+│   │   ├── models.py                # Riwayah, Reciter, Audio models
 │   │   ├── serializers.py
 │   │   ├── views.py
 │   │   ├── urls.py
@@ -297,8 +297,9 @@ django-muslim-companion/
 │   │   ├── storage.py               # S3 storage handlers
 │   │   ├── management/
 │   │   │   └── commands/
-│   │   │       ├── initialize_reciters.py
-│   │   │       └── import_reciter_audio.py
+│   │   │       ├── initialize_riwayat.py    # Load 20 canonical Riwayahs from CSV
+│   │   │       ├── initialize_reciters.py   # Load reciter profiles (with Riwayah mapping)
+│   │   │       └── import_reciter_audio.py  # Import audio files from Tanzil.net
 │   │   └── tests/
 │   │
 │   ├── translations/                # EPIC 4: Translation Management
@@ -389,7 +390,7 @@ django-muslim-companion/
 |------|------------|----------------|-------------------|
 | **EPIC 1: Infrastructure** | `core` | BaseModel (abstract) | `/api/v1/auth/login/`, `/api/v1/auth/refresh/` |
 | **EPIC 2: Quran Text** | `quran` | Surah, Verse, Juz, Page | `/api/v1/surahs/`, `/api/v1/verses/`, `/api/v1/juz/`, `/api/v1/pages/`, `/api/v1/search/` |
-| **EPIC 3: Reciters** | `reciters` | Reciter, Audio | `/api/v1/reciters/`, `/api/v1/audio/` |
+| **EPIC 3: Reciters** | `reciters` | Riwayah, Reciter, Audio | `/api/v1/riwayat/`, `/api/v1/reciters/`, `/api/v1/audio/` |
 | **EPIC 4: Translations** | `translations` | Translator, Translation | `/api/v1/translations/`, `/api/v1/translators/` |
 | **EPIC 5: Tafseer** | `tafseer` | Scholar, Tafseer | `/api/v1/tafseer/`, `/api/v1/scholars/` |
 | **EPIC 6: Bookmarks** | `bookmarks` | Bookmark, ReadingHistory | `/api/v1/bookmarks/`, `/api/v1/history/` |
@@ -466,22 +467,78 @@ class Page(BaseModel):
 **Epic 3: Reciters & Audio**
 
 ```python
+class Riwayah(BaseModel):
+    """
+    Canonical Quranic transmission (Riwayah) from the 10 recognized Qira'at.
+
+    Represents authenticated transmission chains of Quranic recitation.
+    All 20 canonical Riwayahs (10 Qira'at × 2 transmissions each) stored as master data.
+
+    Related FRs: FR-040 (Riwayah Master Data)
+    """
+    id = AutoField(primary_key=True)  # 1-20 for the canonical Riwayahs
+    name_arabic = CharField(max_length=200)  # e.g., "حفص عن عاصم"
+    name_english = CharField(max_length=200)  # e.g., "Hafs from 'Asim"
+    qari = CharField(max_length=100)  # Primary reader (e.g., "'Asim")
+    rawi = CharField(max_length=100)  # Transmitter (e.g., "Hafs")
+    is_active = BooleanField(default=True)  # Enable/disable for gradual rollout
+    display_order = IntegerField(default=100)  # For sorting (Hafs = 1, most common)
+
+    class Meta:
+        db_table = 'reciters_riwayah'
+        verbose_name = 'Riwayah (Quranic Transmission)'
+        verbose_name_plural = 'Riwayat (Quranic Transmissions)'
+        ordering = ['display_order', 'name_english']
+        indexes = [
+            Index(fields=['is_active', 'display_order']),
+            Index(fields=['name_english']),
+        ]
+
+    def __str__(self):
+        return f"{self.name_english} ({self.name_arabic})"
+
+    def clean(self):
+        """Validate Riwayah data integrity"""
+        if not self.name_arabic or not self.name_english:
+            raise ValidationError("Both Arabic and English names are required")
+        if not self.qari or not self.rawi:
+            raise ValidationError("Both Qari and Rawi must be specified")
+
 class Reciter(BaseModel):
-    """Quran reciter profile"""
+    """
+    Quran reciter profile with mandatory Riwayah association.
+
+    Each reciter-Riwayah combination is a unique entry (e.g., "Abdul Basit - Hafs"
+    and "Abdul Basit - Warsh" would be two separate Reciter records).
+
+    Related FRs: FR-006 (Reciter Profile Management), FR-041 (Reciter-Riwayah Association)
+    """
     id = AutoField(primary_key=True)
     slug = CharField(max_length=50, unique=True)  # Tanzil.net reciter slug (e.g., 'abdulbasit', 'afasy')
     name_arabic = CharField(max_length=200)
     name_english = CharField(max_length=200)
     biography_arabic = TextField(blank=True)
     biography_english = TextField(blank=True)
-    recitation_style = CharField(max_length=50)  # Hafs, Warsh, Mujawwad, etc.
+
+    # MANDATORY Riwayah association (replaces free-text recitation_style)
+    riwayah = ForeignKey(
+        Riwayah,
+        on_delete=PROTECT,  # Cannot delete Riwayah if reciters use it
+        related_name='reciters',
+        help_text="Canonical Quranic transmission used by this reciter"
+    )
+
     country_code = CharField(max_length=2)  # ISO 3166-1 alpha-2 (validated with pycountry)
-    photo_url = URLField(null=True)
+    birth_year = IntegerField(null=True, blank=True)
+    death_year = IntegerField(null=True, blank=True)
+    photo_url = URLField(null=True, blank=True)
     is_active = BooleanField(default=True)
 
     class Meta:
+        db_table = 'reciters_reciter'
         indexes = [
             Index(fields=['is_active', 'name_english']),
+            Index(fields=['riwayah', 'is_active']),  # Filter by Riwayah
             Index(fields=['country_code']),
             Index(fields=['slug']),
         ]
@@ -493,17 +550,41 @@ class Reciter(BaseModel):
         country = pycountry.countries.get(alpha_2=self.country_code)
         return country.name if country else self.country_code
 
+    @property
+    def display_name(self):
+        """Full display name with Riwayah"""
+        return f"{self.name_english} - {self.riwayah.name_english}"
+
     def clean(self):
-        """Validate country code using pycountry"""
+        """Validate country code and Riwayah status"""
         import pycountry
         if self.country_code and not pycountry.countries.get(alpha_2=self.country_code):
             raise ValidationError(f"Invalid country code: {self.country_code}")
 
+        # Prevent assigning inactive Riwayahs to new reciters
+        if self.riwayah and not self.riwayah.is_active and not self.pk:
+            raise ValidationError(f"Cannot assign inactive Riwayah: {self.riwayah.name_english}")
+
 class Audio(BaseModel):
-    """Audio file for a specific verse recitation"""
+    """
+    Audio file for a specific verse recitation with Riwayah traceability.
+
+    Riwayah is auto-populated from parent Reciter for data integrity and analytics.
+
+    Related FRs: FR-042 (Audio-Riwayah Traceability)
+    """
     id = AutoField(primary_key=True)
-    reciter = ForeignKey(Reciter, on_delete=CASCADE)
-    verse = ForeignKey(Verse, on_delete=CASCADE)
+    reciter = ForeignKey(Reciter, on_delete=CASCADE, related_name='audio_files')
+    verse = ForeignKey(Verse, on_delete=CASCADE, related_name='audio_files')
+
+    # Explicit Riwayah tracking for filtering and analytics
+    riwayah = ForeignKey(
+        Riwayah,
+        on_delete=PROTECT,
+        related_name='audio_files',
+        help_text="Quranic transmission used in this recitation (auto-populated from reciter)"
+    )
+
     s3_key = CharField(max_length=500)  # Path in S3 bucket
     file_size_bytes = BigIntegerField()
     duration_seconds = DecimalField(max_digits=6, decimal_places=2)
@@ -514,10 +595,27 @@ class Audio(BaseModel):
     amplitude_std = FloatField(null=True)   # Standard deviation
 
     class Meta:
+        db_table = 'reciters_audio'
         unique_together = ('reciter', 'verse')
         indexes = [
             Index(fields=['reciter', 'verse']),
+            Index(fields=['riwayah', 'verse']),  # Filter by Riwayah
+            Index(fields=['verse', 'riwayah']),  # Verse-level Riwayah lookup
         ]
+
+    def save(self, *args, **kwargs):
+        """Auto-populate Riwayah from parent Reciter on creation"""
+        if not self.riwayah_id and self.reciter_id:
+            self.riwayah = self.reciter.riwayah
+        super().save(*args, **kwargs)
+
+    def clean(self):
+        """Validate Riwayah consistency with Reciter"""
+        if self.riwayah and self.reciter and self.riwayah != self.reciter.riwayah:
+            raise ValidationError(
+                f"Audio Riwayah ({self.riwayah.name_english}) must match "
+                f"Reciter Riwayah ({self.reciter.riwayah.name_english})"
+            )
 
     def analyze_audio(self):
         """Analyze audio file statistics using numpy (optional, Phase 2)"""
@@ -675,6 +773,165 @@ class DownloadManifest(BaseModel):
     total_size_bytes = BigIntegerField()
     generated_at = DateTimeField(auto_now=True)
 ```
+
+---
+
+## Model Relationships & Data Flow
+
+### Entity Relationship Overview
+
+The data model establishes the following key relationships:
+
+**Core Quran Content Hierarchy:**
+```
+Surah (1) ─────> (N) Verse
+Juz (1) ────────> (N) Verse
+Page (1) ───────> (N) Verse
+```
+
+**Recitation & Audio with Riwayah Traceability:**
+```
+Riwayah (1) ────> (N) Reciter  [MANDATORY FK with PROTECT]
+Riwayah (1) ────> (N) Audio    [MANDATORY FK with PROTECT, auto-populated]
+Reciter (1) ────> (N) Audio    [CASCADE delete]
+Verse (1) ──────> (N) Audio    [CASCADE delete]
+
+Unique Constraint: (Reciter, Verse) - each reciter has one audio file per verse
+Data Integrity: Audio.riwayah MUST equal Audio.reciter.riwayah
+```
+
+**Translation Content:**
+```
+Translator (1) ──> (N) Translation  [CASCADE delete]
+Verse (1) ───────> (N) Translation  [CASCADE delete]
+
+Unique Constraint: (Translator, Verse) - each translator has one translation per verse
+```
+
+**Tafseer (Interpretation):**
+```
+Scholar (1) ─────> (N) Tafseer  [CASCADE delete]
+Verse (1) ───────> (N) Tafseer  [CASCADE delete]
+
+Unique Constraint: (Scholar, Verse) - each scholar has one tafseer per verse
+```
+
+**User Engagement:**
+```
+User (1) ────────> (N) Bookmark  [CASCADE delete]
+User (1) ────────> (N) ReadingHistory  [CASCADE delete]
+Verse (1) ───────> (N) Bookmark  [CASCADE delete]
+Verse (1) ───────> (N) ReadingHistory  [CASCADE delete]
+
+Unique Constraint: (User, Verse) - each user can bookmark a verse once
+```
+
+**Offline Content Management:**
+```
+Reciter (1) ─────> (N) DownloadManifest  [CASCADE delete]
+ContentVersion tracks versioning for cache invalidation
+```
+
+### Riwayah (Qira'at Transmission) Integration
+
+**Critical Design Decision (FR-040, FR-041, FR-042):**
+
+The architecture enforces **canonical Quranic transmission authenticity** through a three-tier relationship:
+
+1. **Riwayah Master Data (Reference Table)**
+   - 20 canonical entries representing authentic Quranic transmissions
+   - Immutable during runtime (seeded from `/docs/Data/Riwayah-Transmission.csv`)
+   - Cannot be deleted if referenced by Reciter or Audio (PROTECT constraint)
+
+2. **Reciter → Riwayah (Mandatory Association)**
+   - Every Reciter MUST be associated with a Riwayah
+   - Replaces free-text `recitation_style` field with referential integrity
+   - Same physical reciter reading different Riwayahs = separate Reciter records
+   - Example: "Abdul Basit - Hafs" and "Abdul Basit - Warsh" are two distinct Reciter entries
+
+3. **Audio → Riwayah (Auto-populated Traceability)**
+   - Every Audio file explicitly linked to its Riwayah
+   - `Audio.riwayah` auto-populated from `Audio.reciter.riwayah` on save
+   - Enables filtering: "Show me all Warsh recitations for this verse"
+   - Enables analytics: "How many audio files do we have for each Riwayah?"
+
+**Data Flow Example:**
+```
+1. Admin creates Reciter: "Abdul Basit" → Selects Riwayah: "Hafs from 'Asim" (ID=10)
+2. Import process creates Audio records for this Reciter
+3. Audio.save() auto-populates Audio.riwayah_id = 10 from Reciter.riwayah_id
+4. Data validation ensures Audio.riwayah == Audio.reciter.riwayah
+5. API consumers can now filter: GET /api/v1/audio/?verse_id=1&riwayah_id=10
+```
+
+**Referential Integrity Rules:**
+- **Cannot delete Riwayah** if any Reciter or Audio references it (PROTECT)
+- **Cannot assign inactive Riwayah** to new Reciters (validation in clean())
+- **Riwayah consistency enforced** between Audio and its parent Reciter (validation in clean())
+- **Auto-population on save** ensures Audio.riwayah is never null if Reciter exists
+
+### Index Strategy for Qira'at Queries
+
+**Riwayah Model Indexes:**
+```python
+Index(fields=['is_active', 'display_order'])  # Active Riwayat ordered by commonality
+Index(fields=['name_english'])                 # Alphabetical lookup
+```
+
+**Reciter Model Indexes:**
+```python
+Index(fields=['is_active', 'name_english'])    # Active reciters alphabetically
+Index(fields=['riwayah', 'is_active'])         # Filter reciters by Riwayah
+Index(fields=['country_code'])                 # Geographic filtering
+Index(fields=['slug'])                         # URL-friendly lookup
+```
+
+**Audio Model Indexes:**
+```python
+Index(fields=['reciter', 'verse'])             # Primary lookup (with unique constraint)
+Index(fields=['riwayah', 'verse'])             # Filter audio by Riwayah + verse
+Index(fields=['verse', 'riwayah'])             # Verse-level Riwayah comparison
+```
+
+**Query Performance Examples:**
+```sql
+-- Get all Hafs reciters (uses riwayah+is_active index)
+SELECT * FROM reciters_reciter
+WHERE riwayah_id = 10 AND is_active = true;
+
+-- Get all available Riwayahs for a verse (uses verse+riwayah index)
+SELECT DISTINCT riwayah_id FROM reciters_audio
+WHERE verse_id = 1;
+
+-- Compare verse across Riwayahs (uses riwayah+verse index)
+SELECT * FROM reciters_audio
+WHERE verse_id = 1 AND riwayah_id IN (10, 2);
+```
+
+### Data Migration Strategy
+
+**Migrating from recitation_style (CharField) to Riwayah (ForeignKey):**
+
+1. Create Riwayah model and populate 20 canonical entries
+2. Add nullable riwayah ForeignKey to Reciter model
+3. Run data migration:
+   ```python
+   # Map existing recitation_style values to Riwayah IDs
+   mapping = {
+       'Hafs': 10,
+       'Warsh': 2,
+       'Qalun': 1,
+       # ... all 20 mappings
+   }
+   for reciter in Reciter.objects.all():
+       riwayah_id = mapping.get(reciter.recitation_style)
+       if riwayah_id:
+           reciter.riwayah_id = riwayah_id
+           reciter.save()
+   ```
+4. Make riwayah field non-nullable (add constraint)
+5. Remove recitation_style field
+6. Auto-populate Audio.riwayah from Audio.reciter.riwayah
 
 ---
 
@@ -846,27 +1103,98 @@ Response: 200 OK
 
 ### Reciter Endpoints
 
-**GET /api/v1/reciters/**
+**GET /api/v1/riwayat/**
 ```json
 Response: 200 OK
 {
   "data": [
     {
+      "id": 10,
+      "name_arabic": "حفص عن عاصم",
+      "name_english": "Hafs from 'Asim",
+      "qari": "'Asim",
+      "rawi": "Hafs",
+      "is_active": true,
+      "display_order": 1,
+      "reciter_count": 15
+    },
+    {
+      "id": 2,
+      "name_arabic": "ورش عن نافع",
+      "name_english": "Warsh from Nafi'",
+      "qari": "Nafi'",
+      "rawi": "Warsh",
+      "is_active": true,
+      "display_order": 2,
+      "reciter_count": 3
+    },
+    ...
+  ]
+}
+```
+
+**GET /api/v1/reciters/?riwayah_id={id}**
+```json
+Request: /api/v1/reciters/?riwayah_id=10
+
+Response: 200 OK
+{
+  "data": [
+    {
       "id": 1,
+      "slug": "abdulbasit",
       "name_arabic": "عبد الباسط عبد الصمد",
       "name_english": "Abdul Basit Abdul Samad",
-      "recitation_style": "Hafs",
+      "riwayah": {
+        "id": 10,
+        "name_arabic": "حفص عن عاصم",
+        "name_english": "Hafs from 'Asim"
+      },
       "country": "Egypt",
+      "country_code": "EG",
       "photo_url": "https://cdn.../reciters/1.jpg",
       "is_active": true
     },
     ...
   ],
+  "filters": {
+    "riwayah_id": 10,
+    "country_code": null
+  },
   "pagination": {
     "page": 1,
     "page_size": 20,
-    "total_pages": 6,
-    "total_count": 114
+    "total_pages": 1,
+    "total_count": 15
+  }
+}
+```
+
+**GET /api/v1/reciters/{id}/**
+```json
+Response: 200 OK
+{
+  "data": {
+    "id": 1,
+    "slug": "abdulbasit",
+    "name_arabic": "عبد الباسط عبد الصمد",
+    "name_english": "Abdul Basit Abdul Samad",
+    "biography_arabic": "...",
+    "biography_english": "...",
+    "riwayah": {
+      "id": 10,
+      "name_arabic": "حفص عن عاصم",
+      "name_english": "Hafs from 'Asim",
+      "qari": "'Asim",
+      "rawi": "Hafs"
+    },
+    "country": "Egypt",
+    "country_code": "EG",
+    "birth_year": 1927,
+    "death_year": 1988,
+    "photo_url": "https://cdn.../reciters/1.jpg",
+    "is_active": true,
+    "audio_count": 6236
   }
 }
 ```
@@ -879,16 +1207,58 @@ Response: 200 OK
     "id": 1,
     "reciter": {
       "id": 1,
-      "name_english": "Abdul Basit Abdul Samad"
+      "name_english": "Abdul Basit Abdul Samad",
+      "riwayah": {
+        "id": 10,
+        "name_english": "Hafs from 'Asim"
+      }
     },
     "verse": {
       "id": 1,
       "surah_id": 1,
       "verse_number": 1
     },
+    "riwayah": {
+      "id": 10,
+      "name_arabic": "حفص عن عاصم",
+      "name_english": "Hafs from 'Asim"
+    },
     "url": "https://d1234567890.cloudfront.net/1/001/001.mp3",
     "file_size_bytes": 102400,
     "duration_seconds": 4.5
+  }
+}
+```
+
+**GET /api/v1/audio/?verse_id={id}&riwayah_id={id}**
+```json
+Request: /api/v1/audio/?verse_id=1&riwayah_id=10
+
+Response: 200 OK
+{
+  "data": [
+    {
+      "id": 1,
+      "reciter": {
+        "id": 1,
+        "name_english": "Abdul Basit Abdul Samad"
+      },
+      "url": "https://d1234567890.cloudfront.net/1/001/001.mp3",
+      "duration_seconds": 4.5
+    },
+    {
+      "id": 15,
+      "reciter": {
+        "id": 8,
+        "name_english": "Mishary Alafasy"
+      },
+      "url": "https://d1234567890.cloudfront.net/8/001/001.mp3",
+      "duration_seconds": 3.8
+    }
+  ],
+  "filters": {
+    "verse_id": 1,
+    "riwayah_id": 10
   }
 }
 ```
@@ -2603,9 +2973,66 @@ Option C: API Versioning
 
 ## Document Updates
 
-**Version:** 1.5
-**Update Date:** 2025-11-06
+**Version:** 1.6
+**Update Date:** 2025-11-10
 **Changes:**
+
+### Version 1.6 Updates
+
+**Qira'at/Riwayah Integration for Canonical Transmission Authenticity:**
+
+Integrated Qira'at (Quranic recitation methods) and Riwayah (transmission chains) support based on PRD updates (Version 1.2 - Nov 10, 2025) with functional requirements FR-040, FR-041, and FR-042:
+
+1. **New Riwayah Model Added (FR-040)**
+   - Created canonical reference model for 20 authenticated Quranic Riwayahs
+   - Replaces free-text recitation_style with referential integrity
+   - Fields: name_arabic, name_english, qari, rawi, is_active, display_order
+   - Seeded from `/docs/Data/Riwayah-Transmission.csv`
+   - PROTECT deletion constraint (cannot delete if referenced by Reciter or Audio)
+
+2. **Reciter Model Updated (FR-006, FR-041)**
+   - Added MANDATORY riwayah ForeignKey (replaced recitation_style CharField)
+   - Each reciter-Riwayah combination treated as unique entry
+   - Example: "Abdul Basit - Hafs" and "Abdul Basit - Warsh" are separate Reciter records
+   - Added birth_year and death_year fields for biographical completeness
+   - New index: `Index(fields=['riwayah', 'is_active'])` for Riwayah-based filtering
+   - Validation prevents assigning inactive Riwayahs to new reciters
+
+3. **Audio Model Enhanced (FR-042)**
+   - Added explicit riwayah ForeignKey for audio-level traceability
+   - Auto-populates from parent Reciter.riwayah on save()
+   - Enables filtering: "Show all Warsh recitations for this verse"
+   - Enables analytics: "How many audio files per Riwayah?"
+   - New indexes for Riwayah-based queries:
+     - `Index(fields=['riwayah', 'verse'])`
+     - `Index(fields=['verse', 'riwayah'])`
+   - Validation enforces Audio.riwayah == Audio.reciter.riwayah
+
+4. **API Endpoints Updated**
+   - New endpoint: `GET /api/v1/riwayat/` - List all canonical Riwayahs
+   - Updated: `GET /api/v1/reciters/?riwayah_id={id}` - Filter reciters by Riwayah
+   - Updated: `GET /api/v1/audio/?verse_id={id}&riwayah_id={id}` - Filter audio by Riwayah
+   - All reciter/audio responses include full Riwayah object (not just style string)
+
+5. **Data Management Commands**
+   - New: `initialize_riwayat.py` - Seed 20 canonical Riwayahs from CSV
+   - Updated: `initialize_reciters.py` - Map reciters to canonical Riwayahs
+   - Updated: `import_reciter_audio.py` - Auto-populate Audio.riwayah
+
+6. **Model Relationships Section Added**
+   - Comprehensive Entity Relationship Overview
+   - Riwayah Integration Architecture documentation
+   - Index Strategy for Qira'at Queries with SQL examples
+   - Data Migration Strategy from recitation_style to Riwayah FK
+
+7. **Epic Mapping Updated**
+   - EPIC 3 models: Riwayah, Reciter, Audio (was: Reciter, Audio)
+   - EPIC 3 endpoints: `/api/v1/riwayat/`, `/api/v1/reciters/`, `/api/v1/audio/`
+
+**Islamic Authenticity Impact:**
+This update ensures the Quran Backend maintains scholarly accuracy in representing how the Quran has been preserved and transmitted across 1400+ years through the 10 canonical Qira'at and their 20 Riwayahs.
+
+---
 
 ### Version 1.5 Updates
 

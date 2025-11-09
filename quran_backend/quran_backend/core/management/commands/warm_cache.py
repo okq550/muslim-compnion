@@ -78,7 +78,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS("✓ Cache cleared"))
             else:
                 self.stdout.write(
-                    self.style.WARNING("⚠ Cache clear failed (continuing anyway)")
+                    self.style.WARNING("⚠ Cache clear failed (continuing anyway)"),
                 )
 
         # Warm cache for each content type
@@ -100,7 +100,7 @@ class Command(BaseCommand):
                 self.style.SUCCESS("✓ Cached reciter list")
                 if cached > 0
                 else self.style.WARNING(
-                    "⚠ Reciter cache not populated (models may not exist yet)"
+                    "⚠ Reciter cache not populated (models may not exist yet)",
                 ),
             )
 
@@ -118,7 +118,7 @@ class Command(BaseCommand):
         # Summary
         self.stdout.write(
             self.style.SUCCESS(
-                f"\n🎉 Cache warming complete! {total_cached} items cached"
+                f"\n🎉 Cache warming complete! {total_cached} items cached",
             ),
         )
 
@@ -148,7 +148,7 @@ class Command(BaseCommand):
 
             if limit:
                 queryset = QuranText.objects.filter(
-                    surah_number__in=popular_surahs[:limit]
+                    surah_number__in=popular_surahs[:limit],
                 )
             else:
                 queryset = QuranText.objects.all()
@@ -202,7 +202,9 @@ class Command(BaseCommand):
             cache_key = CacheManager.generate_reciter_list_key()
 
             if cache_mgr.set(
-                cache_key, serializer.data, ttl=CacheManager.TTL_STATIC_CONTENT
+                cache_key,
+                serializer.data,
+                ttl=CacheManager.TTL_STATIC_CONTENT,
             ):
                 return 1
 
@@ -244,7 +246,9 @@ class Command(BaseCommand):
             cache_key = CacheManager.generate_translation_list_key()
 
             if cache_mgr.set(
-                cache_key, serializer.data, ttl=CacheManager.TTL_STATIC_CONTENT
+                cache_key,
+                serializer.data,
+                ttl=CacheManager.TTL_STATIC_CONTENT,
             ):
                 return 1
 
@@ -252,7 +256,7 @@ class Command(BaseCommand):
 
         except ImportError:
             logger.debug(
-                "Translation model not found - skipping translation cache warming"
+                "Translation model not found - skipping translation cache warming",
             )
             return 0
         except Exception as e:

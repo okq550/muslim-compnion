@@ -34,10 +34,11 @@ The Quran Backend embodies several unique differentiators that transform it from
 #### 1. **Uncompromising Authenticity**
 - **Othmani Script Perfection:** Every character, diacritical mark, and Tajweed indicator verified against authoritative Mushaf sources
 - **Verse-by-Verse Accuracy:** Zero tolerance for textual errors - the Quran text is sacred and must be perfect
-- **Multi-Recitation Style Support:** Not just Hafs, but Warsh and other authentic recitation styles (Qira'at)
+- **Canonical Qira'at Support:** All 20 authentic Riwayahs (transmissions) from the 10 recognized Qira'at tracked in master data, starting with Hafs from 'Asim (most common) with expansion to Warsh, Qalun, and others
+- **Reciter-Riwayah Traceability:** Every reciter and audio file explicitly linked to canonical Quranic transmissions, ensuring scholarly authenticity
 - **Scholar-Verified Content:** All translations and Tafseer reviewed by qualified Islamic scholars
 
-**Why It Matters:** Muslims trust their spiritual practice to this app. Textual accuracy isn't a feature - it's a sacred responsibility.
+**Why It Matters:** Muslims trust their spiritual practice to this app. Textual accuracy and transmission authenticity aren't features - they're sacred responsibilities.
 
 #### 2. **Holistic Quran Experience**
 - **Quality-First Audio Library:** Curated collection of 25 authenticated reciters from Tanzil.net with verified, error-free recitations - quality over quantity
@@ -281,50 +282,66 @@ The Quran Backend embodies several unique differentiators that transform it from
 
 #### FR-006: Reciter Profile Management
 **Priority:** P0 (Critical - MVP Core)
-**Description:** System shall store and manage comprehensive reciter profiles, with each reciter-style combination treated as a unique entry.
+**Description:** System shall store and manage comprehensive reciter profiles, with each reciter-Riwayah combination treated as a unique entry, ensuring association with canonical Quranic transmissions.
 
 **Acceptance Criteria:**
 - Reciter names stored in both English and Arabic
 - Biography stored in both English and Arabic
 - Profile photos are supported
-- Recitation style is associated with each reciter entry
-- Each reciter-style combination is a unique entry
+- Reciter must be associated with a canonical Riwayah from master data (FR-040)
+- Riwayah association is mandatory (foreign key constraint, cannot be null)
+- Admin interface provides dropdown selection of available Riwayahs (not free-text input)
+- Riwayah displayed with both Arabic name and English transliteration
+- Each reciter-Riwayah combination is a unique entry (e.g., "Abdul Basit - Hafs" and "Abdul Basit - Warsh" as separate reciter records)
 - Active/inactive status can be set
 - Country and biographical information (birth/death years) are stored
+- API responses include full Riwayah object with Arabic/English names
 
 **Related User Stories:** US-RC-001
+
+**Note:** This requirement depends on FR-040 (Riwayah Master Data) being implemented first.
 
 ---
 
 #### FR-007: Reciter Data Import
 **Priority:** P0 (Critical - MVP Core)
-**Description:** System shall support bulk import of reciter profiles and audio files from external authenticated sources, with data validation and integrity checks.
+**Description:** System shall support bulk import of reciter profiles and audio files from external authenticated sources, with data validation, Riwayah mapping, and integrity checks.
 
 **Acceptance Criteria:**
 - Bulk import of reciter profiles from external source
-- Audio files imported and associated with correct reciters
+- Import process maps recitation styles to canonical Riwayah entries from master data
+- Validation fails if recitation style cannot be mapped to known Riwayah (requires manual intervention)
+- Audio files imported and associated with correct reciters and Riwayahs
 - Duplicate detection and handling
 - Data completeness validation
 - Import progress tracking and error logging
+- Import log reports Riwayah distribution statistics (e.g., "15 Hafs reciters, 3 Warsh reciters imported")
 - Rollback capability for failed imports
+- Default Riwayah assignment option (e.g., unmapped styles default to Hafs from 'Asim)
 
 **Related User Stories:** US-RC-002
+
+**Note:** This requirement depends on FR-040 (Riwayah Master Data) being implemented first.
 
 ---
 
 #### FR-008: Reciter Browsing and Selection
 **Priority:** P0 (Critical - MVP Core)
-**Description:** System shall provide paginated listing of active reciters with comprehensive information, supporting filtering and sorting.
+**Description:** System shall provide paginated listing of active reciters with comprehensive information, supporting filtering by canonical Riwayah and sorting.
 
 **Acceptance Criteria:**
 - Paginated list of reciters with configurable items per page
-- Reciter information includes name (English & Arabic), photo, biography, recitation style, country
-- Filtering by recitation style and country
+- Reciter information includes name (English & Arabic), photo, biography, Riwayah (with Arabic and English names), country
+- Filtering by canonical Riwayah (from master data, not free-text) and country
+- Riwayah filter displays both Arabic name and English transliteration
 - Sorting by name (alphabetical), popularity, and date added
 - Only active reciters are displayed
 - Default sorting is alphabetical by name
+- API responses include full Riwayah object (not just style name string)
 
 **Related User Stories:** US-RC-003
+
+**Note:** This requirement depends on FR-040 (Riwayah Master Data) and FR-041 (Reciter-Riwayah Association) being implemented first.
 
 ---
 
@@ -391,6 +408,69 @@ The Quran Backend embodies several unique differentiators that transform it from
 - Smooth quality transitions without interrupting playback
 
 **Related User Stories:** US-RC-007
+
+---
+
+#### FR-040: Riwayah (Qira'at Transmission) Master Data
+**Priority:** P0 (Critical - MVP Core)
+**Description:** System shall maintain a canonical reference table of authenticated Quranic Riwayahs (transmissions) based on the 10 recognized Qira'at, ensuring standardization and Islamic authenticity across all reciter and audio data.
+
+**Acceptance Criteria:**
+- All 20 canonical Riwayahs stored with Arabic and English names
+- Riwayah data includes Qari (primary reader) and Rawi (transmitter) lineage information
+- Each Riwayah has unique identifier mapping to Islamic scholarly tradition
+- Riwayah names stored in both Arabic (e.g., "حفص عن عاصم") and transliterated English (e.g., "Hafs from 'Asim")
+- Master data is manageable through Django admin interface
+- Riwayahs can be activated/deactivated for gradual feature rollout
+- Default display ordering prioritizes most common Riwayahs (Hafs from 'Asim first)
+- Data sourced from verified Islamic scholarly references
+- Referential integrity enforced (cannot delete Riwayah if linked to reciters/audio)
+
+**Related User Stories:** US-RC-001A (new), US-RC-001
+
+**Islamic Context:**
+The 10 canonical Qira'at (recitation methods) each have 2 Riwayahs (transmission chains), totaling 20 authentic transmissions. This ensures the Quran Backend maintains scholarly accuracy in representing how the Quran has been preserved and transmitted across generations.
+
+---
+
+#### FR-041: Reciter-Riwayah Association
+**Priority:** P0 (Critical - MVP Core)
+**Description:** System shall enforce that each reciter profile is explicitly associated with an authenticated Riwayah from the canonical master data, replacing the previous free-text recitation style field with referential integrity.
+
+**Acceptance Criteria:**
+- Every Reciter must have a Riwayah assignment (database foreign key constraint)
+- Reciter-Riwayah association is mandatory (cannot create reciter without Riwayah)
+- Admin interface provides dropdown selection of available Riwayahs (not free-text input)
+- Riwayah display includes both Arabic name and English transliteration
+- Each reciter-Riwayah combination treated as unique entry per existing PRD pattern
+- Migration strategy from existing "recitation_style" CharField to Riwayah foreign key
+- Validation prevents assigning inactive Riwayahs to new reciters
+- Reciter filtering and browsing updated to use canonical Riwayah data
+- API responses include full Riwayah object (not just style name string)
+
+**Related User Stories:** US-RC-001, US-RC-002, US-RC-003
+
+**Data Migration:** Existing reciters with recitation_style values like "Hafs", "Warsh" will be mapped to corresponding canonical Riwayah entries during migration.
+
+---
+
+#### FR-042: Audio-Riwayah Traceability
+**Priority:** P1 (Important - MVP Core)
+**Description:** System shall track the specific Riwayah transmission used in each audio file to enable filtering, analytics, and authenticity verification of Quranic recitations.
+
+**Acceptance Criteria:**
+- Every Audio record explicitly linked to a Riwayah (foreign key relationship)
+- Riwayah auto-populated from parent Reciter's Riwayah on audio file creation
+- Ability to filter audio files by specific Riwayah transmission
+- Analytics queries can report audio library coverage by Riwayah (e.g., "How many Warsh recitations available?")
+- Data integrity validation ensures Audio.riwayah matches Audio.reciter.riwayah
+- API endpoints support filtering verses by available Riwayahs
+- Search functionality can include Riwayah as filter dimension
+- Admin interface displays Riwayah information for each audio file
+
+**Related User Stories:** US-RC-004, US-RC-005, US-RC-006
+
+**Rationale:** Explicit Riwayah tracking on audio files enables future features like "Compare this verse across different Riwayahs" and ensures full traceability of recitation authenticity.
 
 ---
 
@@ -921,23 +1001,44 @@ The Quran Backend embodies several unique differentiators that transform it from
 ### Platform and Technology
 
 **Backend Technology:**
-- Django 4.x (Python web framework)
-- Django REST Framework for API development
-- PostgreSQL for relational data storage
-- Redis for caching layer
-- Celery for asynchronous task processing
+- **Django 5.2.8 LTS** (Python 3.14) - Web framework with ORM, admin, authentication (LTS until 2028)
+- **Django REST Framework 3.16.1+** - API framework with serialization, viewsets, browsable API
+- **PostgreSQL 16** - Primary relational database for all structured data
+- **Redis (latest)** - In-memory cache and Celery message broker
+- **Celery 5.x + Celery Beat** - Distributed task queue and periodic scheduler for async processing
+- **Elasticsearch (AWS OpenSearch)** - Full-text search engine for Arabic Quran text with fuzzy matching
 
-**Infrastructure:**
-- Cloud-hosted infrastructure (AWS, GCP, or Azure)
-- CDN for global audio delivery (CloudFront, Cloudflare)
-- Object storage for audio files (S3, Cloud Storage)
-- Container-based deployment (Docker, Kubernetes)
+**Infrastructure (AWS):**
+- **AWS RDS PostgreSQL 16** - Managed database with Multi-AZ for high availability
+- **AWS ElastiCache Redis** - Managed Redis cluster for caching and Celery broker
+- **AWS OpenSearch Service** - Managed Elasticsearch cluster for full-text search
+- **AWS S3** - Object storage for 156K+ audio files (25 reciters × 6,236 verses)
+- **AWS CloudFront** - Global CDN with 400+ edge locations for <2s audio startup worldwide
+- **AWS ECS Fargate or EKS** - Containerized Django application deployment
+- **Docker + Docker Compose** - Container-based development and deployment
+
+**Authentication & Security:**
+- **djangorestframework-simplejwt** - JWT token authentication (OAuth 2.0 standard naming)
+- Access tokens: 30-minute lifetime
+- Refresh tokens: 14-day lifetime
+- TLS 1.3+ enforced on all API endpoints
+- RDS/S3/ElastiCache encryption at rest and in transit
+
+**Monitoring & Quality:**
+- **Sentry** - Real-time error tracking and performance monitoring (critical for zero-error tolerance)
+- **AWS CloudWatch** - Logs, metrics, and alarms
+- **pytest** - Testing framework with >80% code coverage requirement
+
+**Internationalization:**
+- **Django i18n (built-in)** - Arabic as default language with bilingual support (Arabic/English)
+- **Django Admin** - Content management in Arabic with RTL layout
 
 **Integration Points:**
-- External reciter data sources (everyayah.com or similar)
-- Translation databases (tanzil.net or similar)
-- Mobile applications (iOS, Android) as API consumers
-- Wearable devices (Apple Watch, Wear OS)
+- **Tanzil.net** - Primary audio source (https://tanzil.net/res/audio/) for all 25 reciters
+- **Tanzil.net** - Quran text source (Uthmani script v1.1)
+- Translation databases (multiple authenticated sources)
+- Mobile applications (iOS, Android) as API consumers via HTTPS
+- Wearable devices (Apple Watch, Wear OS) as secondary consumers
 
 ---
 
@@ -946,16 +1047,26 @@ The Quran Backend embodies several unique differentiators that transform it from
 ### External Dependencies
 
 **Data Sources:**
-- Authenticated Quran text source (Tanzil.net or similar)
-- Reciter audio database (EveryAyah.com or similar)
-- Translation databases (multiple sources)
-- Tafseer content (classical scholarly sources)
+- **Tanzil.net** - Primary authenticated Quran text source (Uthmani script v1.1, XML format)
+- **Tanzil.net** - Primary reciter audio database (https://tanzil.net/res/audio/)
+  - All 25 reciters with 156,590 MP3 files
+  - Consistent URL format: `{reciter_slug}/{surah:003d}{verse:003d}.mp3`
+- **Translation databases** - Multiple authenticated sources for 20+ language translations
+- **Tafseer content** - Classical scholarly sources (Ibn Kathir, Al-Jalalayn)
+
+**AWS Services (Required):**
+- **AWS S3** - Object storage for audio files and static content
+- **AWS CloudFront** - CDN for global audio delivery with edge caching
+- **AWS RDS PostgreSQL 16** - Managed database with Multi-AZ
+- **AWS ElastiCache Redis** - Managed Redis cluster for caching and Celery broker
+- **AWS OpenSearch Service** - Managed Elasticsearch for full-text search
+- **AWS ECS/EKS** - Container orchestration for Django application
+- **AWS CloudWatch** - Logs, metrics, and monitoring
 
 **Third-Party Services:**
-- CDN provider for audio delivery
-- Cloud infrastructure provider
-- SMS/email service for authentication
-- Analytics and monitoring services
+- **Sentry** - Real-time error tracking and performance monitoring (critical for zero-error tolerance)
+- **Email service** - For authentication (password reset, account verification)
+- **SMS service** (optional) - For two-factor authentication (Phase 2+)
 
 ### Assumptions
 
@@ -1022,13 +1133,23 @@ The Quran Backend embodies several unique differentiators that transform it from
    - King Fahd Complex for the Printing of the Holy Quran
 
 7. **Audio Sources:**
-   - EveryAyah.com (Reciter audio database)
-   - Verse By Verse (alternative source)
+   - **Tanzil.net** (Primary source) - https://tanzil.net/res/audio/
+     - All 25 authenticated reciters with complete Quran recitations
+     - URL format: `https://tanzil.net/res/audio/{reciter_slug}/{surah:003d}{verse:003d}.mp3`
+     - Total files: 156,590 (25 reciters × 6,236 verses + basmallahs)
+     - Consistent MP3 format across all reciters
+     - Includes popular reciters: AbdulBasit (Murattal & Mujawwad), Al-Afasy, Al-Ghamadi, Al-Husary, Al-Sudais, etc.
+     - Storage strategy: Download from Tanzil.net → Upload to AWS S3 → Deliver via CloudFront CDN
 
 8. **Islamic Scholarly Sources:**
    - Tafseer Ibn Kathir
    - Tafseer Al-Jalalayn
    - Various authenticated translation sources
+
+9. **Qira'at and Riwayah Data:**
+   - `/docs/Data/Riwayah-Transmission.csv` - Canonical list of 20 authentic Riwayahs from the 10 recognized Qira'at
+   - Islamic scholarly references on Quranic transmission chains
+   - Verification against classical Qira'at literature
 
 ---
 
@@ -1040,6 +1161,8 @@ The Quran Backend embodies several unique differentiators that transform it from
 |---------|------|--------|---------|
 | 1.0 | Nov 5, 2025 | Product Management | Initial PRD creation with FR definitions |
 | 1.1 | Nov 6, 2025 | Product Management | Added Surah revelation order to FR-002 and Product Magic section |
+| 1.2 | Nov 10, 2025 | Product Management | Added Qira'at/Riwayah support: FR-040 (Riwayah Master Data), FR-041 (Reciter-Riwayah Association), FR-042 (Audio-Riwayah Traceability). Updated FR-006, FR-007, FR-008 for canonical Riwayah integration. Enhanced Product Magic section with Riwayah traceability. Added Riwayah-Transmission.csv data source reference. |
+| 1.3 | Nov 10, 2025 | Product Management | Updated Technical Constraints with approved tech stack: Django 5.2.8 LTS + Python 3.14, PostgreSQL 16, Redis, Celery, AWS infrastructure (S3, CloudFront, RDS, ElastiCache, OpenSearch), Sentry monitoring, djangorestframework-simplejwt authentication. Clarified Tanzil.net as primary audio source with 25 reciters (156,590 files). Updated Dependencies with specific AWS services and Tanzil.net details. |
 
 **Approval:**
 

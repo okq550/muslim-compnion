@@ -1,0 +1,175 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>7</storyId>
+    <title>Implement Logging and Monitoring</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-09</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/us-api-007-implement-logging-and-monitoring.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>system administrator</asA>
+    <iWant>to have comprehensive logging and monitoring</iWant>
+    <soThat>I can detect issues, troubleshoot problems, and ensure system health</soThat>
+    <tasks>
+### Task 1: Configure Structured JSON Logging (AC #1, #2, #3)
+- Install python-json-logger package
+- Create quran_backend/core/logging module with StructuredJsonFormatter and SensitiveDataFilter
+- Configure Django LOGGING in config/settings/base.py with JSON formatters, rotating file handlers (100MB, 90 backups)
+- Create logs/ directory
+- Update error handling middleware to attach correlation ID
+
+### Task 2: Implement Request/Response Logging Middleware (AC #1, #2)
+- Create RequestLoggingMiddleware in core/middleware/request_logger.py
+- Log all incoming requests and responses with correlation IDs
+- Log slow requests (>500ms) as WARNING
+- Exclude health check endpoint from logging
+- Add to MIDDLEWARE after ErrorHandlingMiddleware
+
+### Task 3: Add Critical Event Logging (AC #1)
+- Add authentication event logging (login, logout, password reset, account lockout)
+- Add authorization failure logging (403 errors)
+- Add Celery task logging (start, success, failure)
+- Add cache performance logging (optional)
+- Add database slow query logging (>200ms)
+
+### Task 4: Implement Health Check Endpoint (AC #5)
+- Create health_check view in core/views.py
+- Check PostgreSQL, Redis, Celery worker, disk space
+- Return JSON response with status and latencies
+- Return 200 OK if healthy, 503 if unhealthy
+- Exclude from authentication and rate limiting
+- Complete checks in <1 second
+
+### Task 5: Configure Sentry Performance Monitoring and Alerts (AC #6, #7)
+- Enable Sentry performance monitoring (traces_sample_rate=0.1)
+- Add RedisIntegration to Sentry
+- Add custom instrumentation for critical operations
+- Configure Sentry alert rules (critical and warning alerts)
+- Test Sentry alerts
+
+### Task 6: Implement Log Rotation and Retention (AC #4)
+- Configure RotatingFileHandler (100MB, 90 days)
+- Create separate audit log handler (1 year retention)
+- Configure audit logger for authentication events
+- Create Celery Beat task for old log cleanup
+- Add log compression script
+- Test log rotation
+
+### Task 7: Create Monitoring Dashboard Configuration (AC #7)
+- Configure Sentry performance dashboard
+- Add widgets for key metrics
+- Create custom queries for domain metrics
+- Share dashboard with team
+- Document dashboard access
+
+### Task 8: Comprehensive Logging and Monitoring Tests (AC #1-7)
+- Test structured JSON logging format
+- Test sensitive data filtering
+- Test request/response logging middleware
+- Test critical event logging
+- Test health check endpoint (all scenarios)
+- Test log rotation
+- Test Sentry integration
+- Integration test under load
+
+### Task 9: Update Documentation
+- Document logging best practices
+- Document structured logging usage
+- Document log levels and events
+- Document sensitive data policy
+- Document health check endpoint
+- Document Sentry dashboard
+- Document alert response procedures
+- Document log rotation policies
+- Update API documentation
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. **All Critical Events Logged**: Application errors, auth events, authorization failures, rate limits, Celery tasks, cache performance, import jobs, slow queries (>200ms), all with correlation IDs
+
+2. **Structured JSON Logging Format**: JSON output with timestamp, level, logger, message, request_id, user_id, endpoint, method, ip_address, context. Log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+
+3. **No Sensitive Data in Logs**: Never log passwords, JWT tokens, Authorization headers, PII (except hashed user IDs), email only in auth events. Implement log scrubbing
+
+4. **Log Rotation and Retention Policy**: Daily rotation or 100MB max. Application logs: 90 days. Audit logs: 1 year. Gzip compression. Automatic cleanup
+
+5. **Continuous System Health Monitoring**: GET /api/v1/health/ endpoint. Monitors PostgreSQL, Redis, Celery workers, disk space. JSON response with status and latencies. 503 if unhealthy. <1s completion. Excluded from auth and rate limiting
+
+6. **Alerts on Critical Issues**: Sentry alerts for error rate >5% (5min), Quran errors, DB failures, Redis down, Celery failures, API p95 >1s, disk <10%, auth failures. Email, Slack, PagerDuty channels. Alert throttling (max 1 per 5min)
+
+7. **Monitoring Dashboard Provides Real-Time Visibility**: Sentry dashboard with request rate, response times (p50, p95, p99), error rates, cache hit/miss, DB pool, Celery queue, memory/CPU. 30-day historical data. Real-time updates (<1min delay)
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic 1 Technical Specification</title>
+        <section>Acceptance Criteria (AC #49-55)</section>
+        <snippet>Defines logging requirements: all critical events logged, structured JSON format with correlation IDs, no sensitive data in logs, 90-day log retention, continuous health monitoring (DB/Redis/Celery/disk), alerts on critical issues, monitoring dashboard with real-time visibility</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic 1 Technical Specification</title>
+        <section>Detailed Design - Services and Modules</section>
+        <snippet>Logging Service: Structured logging (JSON), correlation IDs, log rotation, secure storage. Monitoring Dashboard: System health metrics, performance tracking, alerting on critical issues</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic 1 Technical Specification</title>
+        <section>Non-Functional Requirements - Observability</section>
+        <snippet>Structured JSON logging, correlation IDs for request tracing, no sensitive data logged. Monitoring metrics via Sentry and CloudWatch: request rate, response time distribution, error rate, cache hit/miss, DB pool, Celery queue. Alert on error rate >5% (5min), p95 >1s, DB failures, backup failures</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>ADR-010: Sentry for Error Tracking and Performance Monitoring</section>
+        <snippet>Sentry integration for zero-error tolerance (NFR-037), performance monitoring (<200ms target), contextual debugging, release tracking. Configuration: DjangoIntegration, CeleryIntegration, RedisIntegration, traces_sample_rate=0.1, profiles_sample_rate=0.1, send_default_pii=False, before_send scrubbing. Alert rules: critical (Quran errors, DB failures, error rate >5%), warning (p95 >1s, error rate >1%)</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Logging Strategy</section>
+        <snippet>What to log: API requests (endpoint, user, timestamp), errors with full context, auth events, import job progress, performance metrics (slow queries, cache misses). What NOT to log: passwords, tokens, PII, full request/response bodies. Log format: structured logging with context using logger.error/info with extra={} parameter</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Coding Standards - Logging</section>
+        <snippet>Use structured logging with extra={} for context. Example: logger.info("Verse retrieved", extra={"surah_id": 1, "verse_number": 1, "user_id": request.user.id, "endpoint": "/api/v1/verses/"})</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-039: Logging and Monitoring</section>
+        <snippet>Comprehensive logging and monitoring for system reliability. Logs capture important events, errors, user actions (privacy-respecting). Monitoring alerts on critical issues. Required for 99.9% uptime (NFR-037)</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epics Document</title>
+        <section>US-API-007: Implement Logging and Monitoring</section>
+        <snippet>System administrator wants comprehensive logging and monitoring to detect issues and ensure system health. Logging scope: application errors, security events, performance metrics, anonymized user actions. Log management: structured format, appropriate levels, rotation/retention, no sensitive data. Monitoring: system health, performance, error rates, alerts, dashboard visibility</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/us-api-002-implement-error-handling-and-user-feedback.md</path>
+        <title>Story US-API-002 (Completed)</title>
+        <section>Implementation Details</section>
+        <snippet>Sentry integration already configured with DjangoIntegration, CeleryIntegration, send_default_pii=False, before_send callback for PII scrubbing. ErrorHandlingMiddleware generates request_id (correlation ID) for all requests. Custom exception handler logs all errors to Sentry. Files: core/middleware/error_handler.py, config/settings/production.py (Sentry config)</snippet>
+      </doc>
+    </docs>
+    <code></code>
+    <dependencies></dependencies>
+  </artifacts>
+
+  <constraints></constraints>
+  <interfaces></interfaces>
+  <tests>
+    <standards></standards>
+    <locations></locations>
+    <ideas></ideas>
+  </tests>
+</story-context>

@@ -6,6 +6,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+from celery.schedules import crontab
 from django.utils.translation import gettext_lazy as _
 
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent.parent
@@ -88,6 +89,7 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
+    "quran_backend.core",  # Core infrastructure (backup, caching, monitoring)
     "quran_backend.users",
     "quran_backend.analytics",
     "quran_backend.legal",
@@ -144,6 +146,8 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "quran_backend.core.middleware.error_handler.ErrorHandlingMiddleware",
+    "quran_backend.core.middleware.request_logger.RequestLoggingMiddleware",  # US-API-007: Request/response logging
+    "quran_backend.core.middleware.rate_limit_headers.RateLimitHeadersMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -249,22 +253,69 @@ DJANGO_ADMIN_FORCE_ALLAUTH = env.bool("DJANGO_ADMIN_FORCE_ALLAUTH", default=Fals
 # https://docs.djangoproject.com/en/dev/ref/settings/#logging
 # See https://docs.djangoproject.com/en/dev/topics/logging for
 # more details on how to customize your logging configuration.
+# US-API-007: Structured JSON logging with correlation IDs and sensitive data filtering
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
+        "json": {
+            "()": "quran_backend.core.logging.StructuredJsonFormatter",
+        },
         "verbose": {
             "format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s",
         },
     },
-    "handlers": {
-        "console": {
-            "level": "DEBUG",
-            "class": "logging.StreamHandler",
-            "formatter": "verbose",
+    "filters": {
+        "sensitive_data_filter": {
+            "()": "quran_backend.core.logging.SensitiveDataFilter",
         },
     },
-    "root": {"level": "INFO", "handlers": ["console"]},
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+            "filters": ["sensitive_data_filter"],
+        },
+        "file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(BASE_DIR / "logs" / "quran_backend.log"),
+            "maxBytes": 100 * 1024 * 1024,  # 100MB
+            "backupCount": 90,  # 90 days retention
+            "formatter": "json",
+            "filters": ["sensitive_data_filter"],
+        },
+        "audit": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(BASE_DIR / "logs" / "audit.log"),
+            "maxBytes": 100 * 1024 * 1024,  # 100MB
+            "backupCount": 365,  # 1 year retention for audit logs
+            "formatter": "json",
+            "filters": ["sensitive_data_filter"],
+        },
+    },
+    "loggers": {
+        "quran_backend": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "quran_backend.audit": {
+            "handlers": ["audit"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django": {
+            "handlers": ["console", "file"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "celery": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    },
+    "root": {"level": "INFO", "handlers": ["console", "file"]},
 }
 
 REDIS_URL = env("REDIS_URL", default="redis://redis:6379/0")
@@ -325,7 +376,26 @@ CELERY_BEAT_SCHEDULE = {
         # Alternative: Use crontab for specific time (Sunday at 3 AM)
         # "schedule": crontab(hour=3, minute=0, day_of_week='sunday'),
     },
+    # US-API-006: Automated Database Backups
+    "daily-database-backup": {
+        "task": "quran_backend.core.run_daily_backup",
+        "schedule": crontab(hour=2, minute=0),  # 2:00 AM UTC daily
+    },
+    "weekly-backup-cleanup": {
+        "task": "quran_backend.core.enforce_backup_retention_policy",
+        "schedule": crontab(hour=3, minute=0, day_of_week=1),  # Monday 3:00 AM UTC
+    },
 }
+
+# Backup Configuration (US-API-006)
+# ------------------------------------------------------------------------------
+BACKUP_S3_BUCKET = env("BACKUP_S3_BUCKET", default="quran-backend-backups-production")
+BACKUP_KMS_KEY_ID = env("BACKUP_KMS_KEY_ID", default="alias/quran-backend-backup-key")
+BACKUP_RETENTION_DAYS_DAILY = 30
+BACKUP_RETENTION_DAYS_WEEKLY = 90
+BACKUP_RETENTION_DAYS_MONTHLY = 365
+ENVIRONMENT_NAME = env("ENVIRONMENT_NAME", default="production")
+
 # django-allauth
 # ------------------------------------------------------------------------------
 ACCOUNT_ALLOW_REGISTRATION = env.bool("DJANGO_ACCOUNT_ALLOW_REGISTRATION", True)
@@ -356,6 +426,14 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "quran_backend.core.exceptions.custom_exception_handler",
+    "DEFAULT_THROTTLE_CLASSES": [
+        "quran_backend.core.throttling.AnonRateThrottle",
+        "quran_backend.core.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "20/minute",
+        "user": "100/minute",
+    },
 }
 
 # djangorestframework-simplejwt
@@ -387,5 +465,17 @@ SPECTACULAR_SETTINGS = {
     "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
     "SCHEMA_PATH_PREFIX": "/api/",
 }
+# Rate Limiting Configuration (US-API-005)
+# ------------------------------------------------------------------------------
+RATE_LIMIT_ABUSE_THRESHOLD = env.int(
+    "RATE_LIMIT_ABUSE_THRESHOLD",
+    default=10,
+)  # Violations per hour before alert
+RATE_LIMIT_BAN_DURATION = env.int(
+    "RATE_LIMIT_BAN_DURATION",
+    default=1800,
+)  # Temporary ban duration (30 minutes)
+RATE_LIMIT_WHITELIST = env.list("RATE_LIMIT_WHITELIST", default=[])
+
 # Your stuff...
 # ------------------------------------------------------------------------------
