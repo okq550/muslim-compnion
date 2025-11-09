@@ -98,12 +98,12 @@ class CacheMetrics:
                 sentry_sdk.set_measurement("cache_hit_ratio", hit_ratio)
                 logger.warning(
                     f"Cache hit ratio below target: {hit_ratio:.2%} "
-                    f"(hits: {hits}, misses: {misses})"
+                    f"(hits: {hits}, misses: {misses})",
                 )
             elif total > 100:
                 # Log successful metrics periodically
                 logger.info(
-                    f"Cache hit ratio: {hit_ratio:.2%} " f"(hits: {hits}, misses: {misses})"
+                    f"Cache hit ratio: {hit_ratio:.2%} (hits: {hits}, misses: {misses})",
                 )
 
             return metrics
@@ -165,7 +165,9 @@ class CacheMetrics:
 
             # Convert to MB
             used_memory_mb = used_memory / (1024 * 1024)
-            maxmemory_mb = maxmemory / (1024 * 1024) if maxmemory > 0 else 500.0  # Default
+            maxmemory_mb = (
+                maxmemory / (1024 * 1024) if maxmemory > 0 else 500.0
+            )  # Default
 
             usage_percent = (used_memory / maxmemory * 100) if maxmemory > 0 else 0.0
             evicted_keys = stats.get("evicted_keys", 0)
@@ -182,20 +184,20 @@ class CacheMetrics:
                 sentry_sdk.set_measurement("cache_memory_usage_percent", usage_percent)
                 logger.error(
                     f"Cache memory critically high: {usage_percent:.2f}% "
-                    f"({used_memory_mb:.2f} MB / {maxmemory_mb:.2f} MB)"
+                    f"({used_memory_mb:.2f} MB / {maxmemory_mb:.2f} MB)",
                 )
             elif usage_percent > 80:
                 sentry_sdk.set_measurement("cache_memory_usage_percent", usage_percent)
                 logger.warning(
                     f"Cache memory usage high: {usage_percent:.2f}% "
-                    f"({used_memory_mb:.2f} MB / {maxmemory_mb:.2f} MB)"
+                    f"({used_memory_mb:.2f} MB / {maxmemory_mb:.2f} MB)",
                 )
 
             # Alert if eviction is happening frequently
             if evicted_keys > 1000:
                 logger.warning(
                     f"High cache eviction rate: {evicted_keys} keys evicted. "
-                    f"Consider increasing cache size."
+                    f"Consider increasing cache size.",
                 )
 
             return metrics
@@ -263,5 +265,5 @@ class CacheMetrics:
         logger.info(
             f"Cache metrics: Hit ratio: {metrics['hit_ratio']['hit_ratio']:.2%}, "
             f"Memory: {metrics['memory']['used_memory_mb']:.2f} MB "
-            f"({metrics['memory']['usage_percent']:.2f}%)"
+            f"({metrics['memory']['usage_percent']:.2f}%)",
         )

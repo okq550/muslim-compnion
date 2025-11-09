@@ -31,7 +31,9 @@ class UserRegistrationSerializer(serializers.Serializer):
     def validate_email(self, value):
         """Validate that email is unique."""
         if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError(_("A user with this email already exists."))
+            raise serializers.ValidationError(
+                _("A user with this email already exists.")
+            )
         return value.lower()
 
     def validate_password(self, value):
@@ -226,3 +228,33 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
 
         attrs["user"] = user
         return attrs
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    """Serializer for user profile including analytics preferences."""
+
+    is_analytics_enabled = serializers.BooleanField(
+        source="user.is_analytics_enabled",
+        required=False,
+        help_text=_("User consent for usage analytics tracking"),
+    )
+
+    class Meta:
+        model = UserProfile
+        fields = ["preferred_language", "timezone", "is_analytics_enabled"]
+        read_only_fields = []
+
+    def update(self, instance, validated_data):
+        """Update profile and handle analytics preference if provided."""
+        # Extract user-related data
+        user_data = validated_data.pop("user", {})
+
+        # Update UserProfile fields
+        instance = super().update(instance, validated_data)
+
+        # Update User.is_analytics_enabled if provided
+        if "is_analytics_enabled" in user_data:
+            instance.user.is_analytics_enabled = user_data["is_analytics_enabled"]
+            instance.user.save()
+
+        return instance

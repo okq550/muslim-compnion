@@ -153,7 +153,9 @@ def get_overall_health() -> dict[str, Any]:
         and database_health["status"] == "available"
     ):
         # Cache degraded is OK (graceful degradation)
-        overall_status = "healthy" if cache_health["status"] == "available" else "degraded"
+        overall_status = (
+            "healthy" if cache_health["status"] == "available" else "degraded"
+        )
     elif database_health["status"] == "unavailable":
         # Database down is critical
         overall_status = "unhealthy"

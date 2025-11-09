@@ -1,0 +1,425 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1.4</storyId>
+    <title>Implement Analytics and Usage Tracking</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-09</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/us-api-004-implement-analytics-and-usage-tracking.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>product manager</asA>
+    <iWant>to track how users interact with the app</iWant>
+    <soThat>we can improve the user experience and make data-driven decisions</soThat>
+    <tasks>
+### Task 1: Create AnalyticsEvent Model and Migrations (AC #6)
+- Create quran_backend/analytics/ Django app
+- Define AnalyticsEvent model with event_type, event_data (JSONField), user_id_hash, session_id, timestamp, country_code
+- Add database indexes on event_type+timestamp and timestamp
+- Register model in Django admin (read-only)
+
+### Task 2: Implement Analytics Service (AC #1, #2, #7)
+- Create quran_backend/analytics/services.py with AnalyticsService class
+- Implement track_event(user, event_type, event_data, request) - checks is_analytics_enabled, hashes user ID
+- Implement aggregation methods: get_popular_features(), get_most_read_surahs(), get_error_rates()
+
+### Task 3: Add User Opt-In/Opt-Out API (AC #2, #4)
+- Update UserProfile model with is_analytics_enabled (BooleanField, default=False) **ALREADY DONE IN USER MODEL**
+- Create UserProfileSerializer and UserProfileViewSet
+- Add URL route: /api/v1/users/profile/
+
+### Task 4: Integrate Analytics Tracking into Existing Views (AC #7)
+- Identify views to instrument (future epics: Quran text, recitations, translations, bookmarks, search)
+- Add analytics_service.track_event() calls after successful operations
+- Ensure tracking failures don't break user functionality (try/except)
+
+### Task 5: Create Privacy Policy Endpoint (AC #5)
+- Create quran_backend/legal/ Django app
+- Create PrivacyPolicy model or static content
+- Create endpoint: GET /api/v1/legal/privacy-policy/
+- Draft privacy policy content with legal/compliance team
+
+### Task 6: Implement Consent Request Mechanism (AC #4)
+- Create AnalyticsConsent model (optional) or use UserProfile field
+- Create endpoint: POST /api/v1/analytics/consent/
+- Updates UserProfile.is_analytics_enabled
+
+### Task 7: Implement Data Retention and Cleanup (AC #9)
+- Create Celery task: cleanup_old_analytics_events() - deletes events older than 90 days
+- Schedule task in Celery Beat (weekly at 3 AM Sunday)
+
+### Task 8: Create User Data Deletion Endpoint (AC #9)
+- Create endpoint: DELETE /api/v1/analytics/delete-my-data/
+- Deletes all AnalyticsEvent records matching user's hashed ID
+- Sets is_analytics_enabled=False
+
+### Task 9: Implement Analytics Aggregation Queries (AC #1, #7)
+- Create analytics/api/views.py with viewsets for product team
+- Endpoints: popular-features, popular-surahs, error-rates, session-duration
+- Permissions: IsAdminUser only
+- Cache results for 1 hour (Redis)
+
+### Task 10: Integrate with Sentry for Performance Metrics (AC #8)
+- Verify Sentry Performance Monitoring enabled (already configured in US-API-002)
+- Add custom Sentry tags for analytics features
+
+### Task 11: Comprehensive Analytics Tests (AC #1-5, #9)
+- Test AnalyticsEvent model creation
+- Test AnalyticsService tracking when enabled/disabled
+- Test user ID hashing consistency
+- Test opt-in/opt-out API
+- Test consent request
+- Test privacy policy endpoint
+- Test data retention cleanup (Celery task)
+- Test user data deletion endpoint
+- Test aggregation queries with admin permissions
+- Test privacy compliance (no PII in events)
+
+### Task 12: Update API Documentation
+- Document analytics endpoints in OpenAPI/Swagger
+- Add privacy policy section
+- Document event types tracked
+- Provide integration examples for frontend developers
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. **Anonymous Feature Usage Tracking**
+   - System tracks feature usage events without collecting PII
+   - Events captured: Surah viewed, reciter played, translation selected, bookmark created
+   - All user identification hashed with SHA-256 (irreversible)
+   - Session-based tracking with anonymous session IDs
+   - Event data includes only non-sensitive metadata
+
+2. **User Opt-Out Mechanism**
+   - User can opt-out of analytics via profile setting (is_analytics_enabled)
+   - Opt-out preference persists across sessions
+   - When opted out, no events tracked or stored
+   - Default state: opted-out (privacy-first)
+   - Toggle available in user profile API endpoint
+
+3. **No Personally Identifiable Information**
+   - User emails, names, IP addresses NOT collected in analytics
+   - User IDs hashed before storage (SHA-256 with salt)
+   - Location data limited to country-level (no city/GPS coordinates)
+   - Device info generic (platform, OS version only - no device serial numbers)
+   - No tracking cookies or persistent identifiers
+
+4. **Consent Request on First Use**
+   - Analytics consent modal displayed on first API interaction
+   - Clear explanation of what data is collected
+   - Easy opt-in/opt-out toggle
+   - Consent choice saved to UserProfile
+   - Re-request consent if privacy policy changes
+
+5. **Transparent Privacy Policy**
+   - Privacy policy endpoint: /api/v1/legal/privacy-policy/
+   - Clearly explains what analytics data is collected
+   - Lists specific event types tracked
+   - Describes data retention policy (90 days for analytics)
+   - Links to GDPR/CCPA compliance statements
+
+6. **AnalyticsEvent Model**
+   - Stores event type, event data (JSON), user_id_hash, session_id, timestamp
+   - Indexed by event_type and timestamp for efficient queries
+   - No foreign keys to User model (privacy separation)
+   - PostgreSQL JSONB for flexible event metadata
+
+7. **Event Types Tracked**
+   - surah_viewed, reciter_played, translation_viewed, bookmark_created, search_performed, error_occurred
+
+8. **Performance Metrics**
+   - API response times tracked via Sentry
+   - Error rates by endpoint
+   - Cache hit/miss ratios
+
+9. **Privacy-Compliant Data Retention**
+   - Analytics events automatically purged after 90 days
+   - Celery scheduled task runs weekly
+   - Aggregate metrics retained indefinitely (no user linkage)
+   - User can request full analytics data deletion
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic Technical Specification: Cross-Cutting / Infrastructure Stories</title>
+        <section>Detailed Design - Analytics Service</section>
+        <snippet>Epic 1 establishes foundational infrastructure including analytics and usage tracking (US-API-004). Privacy-first design with anonymous data only, 90-day retention, and GDPR compliance. AnalyticsEvent model tracks feature usage with hashed user IDs.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>US-API-004: Implement Analytics and Usage Tracking</section>
+        <snippet>Track anonymous usage data to understand feature adoption, user flows, and identify popular features. Privacy-first with user consent, opt-out option, and no PII collection. Metrics include most used features, most read Surahs, session duration, error rates.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document - Quran Backend API</title>
+        <section>Technology Stack - Monitoring & Error Tracking</section>
+        <snippet>Sentry configured for application monitoring, error tracking, and performance monitoring. Real-time alerts, release tracking, user context. Performance monitoring with traces_sample_rate=0.1 (10% sampling).</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/us-api-002-implement-error-handling-and-user-feedback.md</path>
+        <title>Story 1.2: Implement Error Handling and User Feedback</title>
+        <section>Dev Notes - Sentry Integration</section>
+        <snippet>Sentry SDK already configured in config/settings/production.py with Performance Monitoring enabled (traces_sample_rate=0.1), before_send callback for PII scrubbing, Django and Celery integrations active. Reuse patterns for analytics error tracking.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <artifact>
+        <path>quran_backend/quran_backend/users/models.py</path>
+        <kind>model</kind>
+        <symbol>User.is_analytics_enabled</symbol>
+        <lines>35-39</lines>
+        <reason>Analytics consent field ALREADY EXISTS in User model (BooleanField, default=False). This field controls whether analytics events are tracked for the user.</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/quran_backend/users/models.py</path>
+        <kind>model</kind>
+        <symbol>UserProfile</symbol>
+        <lines>55-89</lines>
+        <reason>User profile model with preferred_language and timezone fields. Can be extended with analytics consent tracking or used as-is with User.is_analytics_enabled.</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/quran_backend/core/exceptions.py</path>
+        <kind>service</kind>
+        <symbol>custom_exception_handler</symbol>
+        <lines>1-214</lines>
+        <reason>Existing error handling infrastructure from US-API-002. Analytics can track error_occurred events by integrating with this exception handler.</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/quran_backend/core/middleware/error_handler.py</path>
+        <kind>middleware</kind>
+        <symbol>ErrorHandlingMiddleware</symbol>
+        <lines>24-171</lines>
+        <reason>Error handling middleware that could be extended to track analytics events for errors. Already logs to Sentry.</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/quran_backend/core/tests/test_error_handling.py</path>
+        <kind>test</kind>
+        <symbol>TestCustomExceptionHandler</symbol>
+        <lines>1-410</lines>
+        <reason>Comprehensive test patterns from US-API-002. Follow similar testing approach for analytics tests (APIClient, mocking, assertions).</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/config/settings/base.py</path>
+        <kind>config</kind>
+        <symbol>INSTALLED_APPS</symbol>
+        <lines>64-95</lines>
+        <reason>Django apps configuration. Need to add 'quran_backend.analytics' and 'quran_backend.legal' to LOCAL_APPS.</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/config/settings/base.py</path>
+        <kind>config</kind>
+        <symbol>CELERY Configuration</symbol>
+        <lines>82</lines>
+        <reason>django_celery_beat is already installed for scheduled tasks. Use Celery Beat to schedule weekly analytics cleanup task.</reason>
+      </artifact>
+      <artifact>
+        <path>quran_backend/config/settings/production.py</path>
+        <kind>config</kind>
+        <symbol>Sentry Integration</symbol>
+        <lines>216-256</lines>
+        <reason>Sentry SDK configured with Performance Monitoring (traces_sample_rate=0.1), before_send callback for PII scrubbing. Reuse for analytics performance metrics.</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <python>
+        <package name="Django" version="5.2.8" />
+        <package name="djangorestframework" version="3.16.1+" />
+        <package name="psycopg2-binary" version="2.9.9" />
+        <package name="celery" version="5.3.6" />
+        <package name="django-celery-beat" version="latest" />
+        <package name="django-redis" version="5.4.0" />
+        <package name="sentry-sdk" version="1.40.0" />
+        <package name="pytest-django" version="4.7.0" />
+        <package name="pytest-cov" version="4.1.0" />
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+1. **Privacy-First Design**: Default is_analytics_enabled=False (opt-in, not opt-out)
+2. **No PII Collection**: User IDs must be hashed (SHA-256 with SECRET_KEY salt), no emails/names/IPs in AnalyticsEvent
+3. **GDPR Compliance**: 90-day data retention (automated cleanup), user data deletion endpoint, transparent privacy policy
+4. **Non-Blocking**: Analytics tracking failures must never break user requests (try/except blocks required)
+5. **Performance**: Analytics tracking overhead must be &lt;15ms per event; aggregation queries cached for 1 hour
+6. **Testing**: Comprehensive test coverage including privacy compliance tests (no PII verification)
+7. **Django Patterns**: Follow Django ORM best practices, use PostgreSQL JSONB for event_data
+8. **Celery Integration**: Use Celery Beat for scheduled cleanup task (weekly at 3 AM Sunday)
+9. **DRF Integration**: Use DRF serializers, viewsets, permissions (IsAuthenticated, IsAdminUser)
+10. **Existing Infrastructure**: Reuse Sentry for performance metrics (custom tags), reuse error handling patterns
+11. **Database Indexing**: Index on (event_type, timestamp) and (timestamp) for efficient queries and cleanup
+12. **Security**: Admin-only access to analytics aggregation endpoints (IsAdminUser permission)
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>AnalyticsService.track_event</name>
+      <kind>service method</kind>
+      <signature>
+def track_event(user: User, event_type: str, event_data: dict, request: HttpRequest) -> None:
+    """
+    Track an analytics event if user has opted in.
+
+    Args:
+        user: User object
+        event_type: Event type (e.g., 'surah_viewed', 'reciter_played')
+        event_data: Event metadata (dict - no PII allowed)
+        request: HttpRequest object for session/country extraction
+
+    Returns:
+        None (fails gracefully on errors)
+    """
+      </signature>
+      <path>quran_backend/analytics/services.py (to be created)</path>
+    </interface>
+
+    <interface>
+      <name>User.is_analytics_enabled</name>
+      <kind>model field</kind>
+      <signature>
+is_analytics_enabled = BooleanField(
+    _("Analytics Enabled"),
+    default=False,
+    help_text=_("User has consented to usage analytics tracking."),
+)
+      </signature>
+      <path>quran_backend/quran_backend/users/models.py (line 35-39, ALREADY EXISTS)</path>
+    </interface>
+
+    <interface>
+      <name>POST /api/v1/analytics/consent/</name>
+      <kind>REST endpoint</kind>
+      <signature>
+Request: {"consent_given": true, "consent_version": "1.0"}
+Response: {"message": "Analytics preference updated"}
+Permissions: IsAuthenticated
+      </signature>
+      <path>quran_backend/analytics/api/views.py (to be created)</path>
+    </interface>
+
+    <interface>
+      <name>GET /api/v1/legal/privacy-policy/</name>
+      <kind>REST endpoint</kind>
+      <signature>
+Request: None
+Response: {"content": "...", "version": "1.0", "effective_date": "2025-11-01"}
+Permissions: AllowAny (public)
+      </signature>
+      <path>quran_backend/legal/api/views.py (to be created)</path>
+    </interface>
+
+    <interface>
+      <name>DELETE /api/v1/analytics/delete-my-data/</name>
+      <kind>REST endpoint</kind>
+      <signature>
+Request: None
+Response: {"message": "All your analytics data has been deleted"}
+Permissions: IsAuthenticated
+      </signature>
+      <path>quran_backend/analytics/api/views.py (to be created)</path>
+    </interface>
+
+    <interface>
+      <name>GET /api/v1/analytics/popular-features/</name>
+      <kind>REST endpoint</kind>
+      <signature>
+Request: None
+Response: [{"event_type": "surah_viewed", "count": 1234}, ...]
+Permissions: IsAdminUser
+      </signature>
+      <path>quran_backend/analytics/api/views.py (to be created)</path>
+    </interface>
+
+    <interface>
+      <name>cleanup_old_analytics_events</name>
+      <kind>Celery task</kind>
+      <signature>
+@shared_task
+def cleanup_old_analytics_events() -> str:
+    """Delete analytics events older than 90 days (GDPR compliance)."""
+    retention_period = timedelta(days=90)
+    cutoff_date = timezone.now() - retention_period
+    deleted_count, _ = AnalyticsEvent.objects.filter(timestamp__lt=cutoff_date).delete()
+    return f"Deleted {deleted_count} analytics events older than {cutoff_date}"
+      </signature>
+      <path>quran_backend/analytics/tasks.py (to be created)</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+Follow pytest-django testing patterns from US-API-002. Use APIClient for endpoint testing, APITestCase for API tests. Mock external services (Sentry). Test both success and failure scenarios. Ensure all analytics tracking failures are graceful (no exceptions raised to user). Privacy compliance tests: verify no PII in AnalyticsEvent records, verify user ID hashing consistency, verify data deletion completeness. Performance tests: verify analytics overhead &lt;15ms. Test coverage target: &gt;90% for all analytics code.
+    </standards>
+
+    <locations>
+quran_backend/quran_backend/analytics/tests/test_analytics.py
+quran_backend/quran_backend/analytics/tests/test_models.py
+quran_backend/quran_backend/analytics/tests/test_services.py
+quran_backend/quran_backend/analytics/tests/api/test_consent.py
+quran_backend/quran_backend/analytics/tests/api/test_privacy.py
+quran_backend/quran_backend/analytics/tests/api/test_aggregation.py
+quran_backend/quran_backend/analytics/tests/test_tasks.py
+    </locations>
+
+    <ideas>
+**AC #1 - Anonymous Feature Usage Tracking:**
+- test_analytics_event_creation_with_hashed_user_id: Verify AnalyticsEvent created with SHA-256 hashed user ID
+- test_track_event_when_analytics_enabled: Verify event tracked when is_analytics_enabled=True
+- test_event_data_stored_as_json: Verify event_data stored in PostgreSQL JSONB format
+- test_session_id_extracted_from_request: Verify session_id captured from HttpRequest
+
+**AC #2 - User Opt-Out Mechanism:**
+- test_track_event_not_called_when_disabled: Verify NO event created when is_analytics_enabled=False
+- test_analytics_preference_persists_across_sessions: Update profile, logout, login, verify setting persists
+- test_default_analytics_disabled: Verify new users have is_analytics_enabled=False by default
+
+**AC #3 - No PII:**
+- test_no_email_in_analytics_event: Verify user.email NOT stored in AnalyticsEvent
+- test_no_ip_address_in_analytics_event: Verify request.META['REMOTE_ADDR'] NOT stored
+- test_user_id_hashed_not_plaintext: Verify user_id_hash != str(user.id)
+- test_country_code_only_no_city: Verify only 2-letter country code stored (if location tracked)
+
+**AC #4 - Consent Request:**
+- test_consent_endpoint_updates_user_profile: POST to /api/v1/analytics/consent/ updates is_analytics_enabled
+- test_consent_version_tracked: Verify consent_version saved in AnalyticsConsent model
+- test_consent_requires_authentication: Verify 401 for unauthenticated requests
+
+**AC #5 - Privacy Policy:**
+- test_privacy_policy_endpoint_public: Verify GET /api/v1/legal/privacy-policy/ accessible without auth
+- test_privacy_policy_contains_required_sections: Verify content includes data collection, retention, GDPR info
+
+**AC #6 - AnalyticsEvent Model:**
+- test_analytics_event_model_fields: Verify all fields exist (event_type, event_data, user_id_hash, session_id, timestamp, country_code)
+- test_analytics_event_indexes: Verify database indexes on event_type+timestamp and timestamp
+
+**AC #7 - Event Types:**
+- test_track_surah_viewed_event: Track event_type='surah_viewed' with metadata
+- test_track_reciter_played_event: Track event_type='reciter_played'
+- test_track_translation_viewed_event: Track event_type='translation_viewed'
+- test_track_bookmark_created_event: Track event_type='bookmark_created'
+
+**AC #8 - Performance Metrics:**
+- test_sentry_custom_tags_added: Verify custom tags set for analytics features
+- test_analytics_tracking_overhead_under_15ms: Benchmark analytics_service.track_event() performance
+
+**AC #9 - Data Retention:**
+- test_cleanup_task_deletes_old_events: Create events &gt;90 days old, run task, verify deleted
+- test_cleanup_task_keeps_recent_events: Create events &lt;90 days old, run task, verify NOT deleted
+- test_user_data_deletion_endpoint: DELETE /api/v1/analytics/delete-my-data/ removes all user's events
+- test_user_data_deletion_sets_analytics_disabled: Verify is_analytics_enabled=False after deletion
+
+**Integration Tests:**
+- test_analytics_tracking_graceful_failure: Mock AnalyticsEvent.objects.create() to raise exception, verify user request succeeds
+- test_popular_features_aggregation: Create multiple events, verify GET /api/v1/analytics/popular-features/ returns correct counts
+- test_admin_only_access_to_aggregation: Verify non-admin users get 403 for analytics aggregation endpoints
+    </ideas>
+  </tests>
+</story-context>

@@ -35,7 +35,9 @@ class CacheManager:
     """
 
     # Default TTL values (in seconds)
-    TTL_STATIC_CONTENT = 604800  # 7 days for static content (Quran, reciters, translations)
+    TTL_STATIC_CONTENT = (
+        604800  # 7 days for static content (Quran, reciters, translations)
+    )
     TTL_DYNAMIC_CONTENT = 3600  # 1 hour for dynamic content (user bookmarks)
     TTL_SHORT = 300  # 5 minutes for very dynamic content
 
@@ -144,12 +146,16 @@ class CacheManager:
             keys = redis_client.keys(full_pattern)
 
             if not keys:
-                logger.debug(f"Cache DELETE_PATTERN: No keys found for pattern '{pattern}'")
+                logger.debug(
+                    f"Cache DELETE_PATTERN: No keys found for pattern '{pattern}'"
+                )
                 return 0
 
             # Delete all matched keys
             deleted = redis_client.delete(*keys)
-            logger.info(f"Cache DELETE_PATTERN: Deleted {deleted} keys matching '{pattern}'")
+            logger.info(
+                f"Cache DELETE_PATTERN: Deleted {deleted} keys matching '{pattern}'"
+            )
             return deleted
 
         except redis.exceptions.RedisError as e:

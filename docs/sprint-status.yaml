@@ -45,7 +45,7 @@ development_status:
   us-api-001.3-localize-authentication-error-messages: done
   us-api-002-implement-error-handling-and-user-feedback: done
   us-api-003-implement-data-caching-strategy: review
-  us-api-004-implement-analytics-and-usage-tracking: ready-for-dev
+  us-api-004-implement-analytics-and-usage-tracking: review
   us-api-005-implement-rate-limiting-and-throttling: ready-for-dev
   us-api-006-implement-data-backup-and-recovery: ready-for-dev
   us-api-007-implement-logging-and-monitoring: backlog

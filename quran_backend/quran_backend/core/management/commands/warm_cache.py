@@ -77,7 +77,9 @@ class Command(BaseCommand):
             if cache_mgr.clear_all():
                 self.stdout.write(self.style.SUCCESS("✓ Cache cleared"))
             else:
-                self.stdout.write(self.style.WARNING("⚠ Cache clear failed (continuing anyway)"))
+                self.stdout.write(
+                    self.style.WARNING("⚠ Cache clear failed (continuing anyway)")
+                )
 
         # Warm cache for each content type
         total_cached = 0
@@ -88,32 +90,36 @@ class Command(BaseCommand):
             self.stdout.write(
                 self.style.SUCCESS(f"✓ Cached {cached} Quran surahs")
                 if cached > 0
-                else self.style.WARNING("⚠ No Quran data cached")
+                else self.style.WARNING("⚠ No Quran data cached"),
             )
 
         if "reciters" in content_types:
             cached = self._warm_reciter_cache(limit)
             total_cached += cached
             self.stdout.write(
-                self.style.SUCCESS(f"✓ Cached reciter list")
+                self.style.SUCCESS("✓ Cached reciter list")
                 if cached > 0
-                else self.style.WARNING("⚠ Reciter cache not populated (models may not exist yet)")
+                else self.style.WARNING(
+                    "⚠ Reciter cache not populated (models may not exist yet)"
+                ),
             )
 
         if "translations" in content_types:
             cached = self._warm_translation_cache(limit)
             total_cached += cached
             self.stdout.write(
-                self.style.SUCCESS(f"✓ Cached translation list")
+                self.style.SUCCESS("✓ Cached translation list")
                 if cached > 0
                 else self.style.WARNING(
-                    "⚠ Translation cache not populated (models may not exist yet)"
-                )
+                    "⚠ Translation cache not populated (models may not exist yet)",
+                ),
             )
 
         # Summary
         self.stdout.write(
-            self.style.SUCCESS(f"\n🎉 Cache warming complete! {total_cached} items cached")
+            self.style.SUCCESS(
+                f"\n🎉 Cache warming complete! {total_cached} items cached"
+            ),
         )
 
     def _warm_quran_cache(self, limit: int | None = None) -> int:
@@ -127,7 +133,9 @@ class Command(BaseCommand):
         """
         try:
             # Import here to avoid errors if models don't exist yet
-            from quran_backend.quran.models import QuranText  # type: ignore[import-not-found]
+            from quran_backend.quran.models import (
+                QuranText,  # type: ignore[import-not-found]
+            )
             from quran_backend.quran.serializers import (  # type: ignore[import-not-found]
                 QuranSerializer,
             )
@@ -139,7 +147,9 @@ class Command(BaseCommand):
             popular_surahs = [1, 2, 36, 55, 67, 112, 113, 114]
 
             if limit:
-                queryset = QuranText.objects.filter(surah_number__in=popular_surahs[:limit])
+                queryset = QuranText.objects.filter(
+                    surah_number__in=popular_surahs[:limit]
+                )
             else:
                 queryset = QuranText.objects.all()
 
@@ -148,7 +158,9 @@ class Command(BaseCommand):
                 cache_key = CacheManager.generate_quran_key(surah.surah_number)
                 serializer = QuranSerializer(surah)
                 if cache_mgr.set(
-                    cache_key, serializer.data, ttl=CacheManager.TTL_STATIC_CONTENT
+                    cache_key,
+                    serializer.data,
+                    ttl=CacheManager.TTL_STATIC_CONTENT,
                 ):
                     cached_count += 1
 
@@ -172,7 +184,9 @@ class Command(BaseCommand):
         """
         try:
             # Import here to avoid errors if models don't exist yet
-            from quran_backend.recitation.models import Reciter  # type: ignore[import-not-found]
+            from quran_backend.recitation.models import (
+                Reciter,  # type: ignore[import-not-found]
+            )
             from quran_backend.recitation.serializers import (  # type: ignore[import-not-found]
                 ReciterSerializer,
             )
@@ -187,7 +201,9 @@ class Command(BaseCommand):
             serializer = ReciterSerializer(queryset, many=True)
             cache_key = CacheManager.generate_reciter_list_key()
 
-            if cache_mgr.set(cache_key, serializer.data, ttl=CacheManager.TTL_STATIC_CONTENT):
+            if cache_mgr.set(
+                cache_key, serializer.data, ttl=CacheManager.TTL_STATIC_CONTENT
+            ):
                 return 1
 
             return 0
@@ -227,13 +243,17 @@ class Command(BaseCommand):
             serializer = TranslationSerializer(queryset, many=True)
             cache_key = CacheManager.generate_translation_list_key()
 
-            if cache_mgr.set(cache_key, serializer.data, ttl=CacheManager.TTL_STATIC_CONTENT):
+            if cache_mgr.set(
+                cache_key, serializer.data, ttl=CacheManager.TTL_STATIC_CONTENT
+            ):
                 return 1
 
             return 0
 
         except ImportError:
-            logger.debug("Translation model not found - skipping translation cache warming")
+            logger.debug(
+                "Translation model not found - skipping translation cache warming"
+            )
             return 0
         except Exception as e:
             logger.error(f"Error warming translation cache: {e}", exc_info=True)

@@ -90,7 +90,9 @@ class TestCacheManager:
         self.cache_mgr.set("key3", "value3")
 
         # Act
-        results = self.cache_mgr.get_many(["key1", "key2", "key4"])  # key4 doesn't exist
+        results = self.cache_mgr.get_many(
+            ["key1", "key2", "key4"]
+        )  # key4 doesn't exist
 
         # Assert
         assert "key1" in results
@@ -140,7 +142,10 @@ class TestCacheManager:
         assert CacheManager.generate_quran_key(114) == "quran:surah:114"
         assert CacheManager.generate_reciter_list_key() == "reciters:list"
         assert CacheManager.generate_translation_list_key() == "translations:list"
-        assert CacheManager.generate_user_bookmark_key("user123") == "user:user123:bookmarks"
+        assert (
+            CacheManager.generate_user_bookmark_key("user123")
+            == "user:user123:bookmarks"
+        )
 
 
 @pytest.mark.django_db
@@ -217,6 +222,7 @@ class TestCacheDecorators:
 
     def test_cache_response_decorator_miss(self):
         """Test decorator caches response on miss (AC #6)."""
+
         # Arrange
         def cache_key_func(request, *args, **kwargs):
             return "test:cache:miss"

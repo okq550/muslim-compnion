@@ -89,6 +89,8 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     "quran_backend.users",
+    "quran_backend.analytics",
+    "quran_backend.legal",
     # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
@@ -316,6 +318,12 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": 86400.0,  # 24 hours (1 day) in seconds - runs daily
         # Alternative: Use crontab for specific time
         # "schedule": crontab(hour=1, minute=0),  # 1:00 AM UTC daily
+    },
+    "cleanup-analytics-weekly": {
+        "task": "quran_backend.analytics.tasks.cleanup_old_analytics_events",
+        "schedule": 604800.0,  # 7 days (1 week) in seconds
+        # Alternative: Use crontab for specific time (Sunday at 3 AM)
+        # "schedule": crontab(hour=3, minute=0, day_of_week='sunday'),
     },
 }
 # django-allauth

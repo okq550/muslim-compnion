@@ -88,7 +88,9 @@ def cache_response(
 
             if cached_data is not None:
                 # Cache HIT - return cached response
-                logger.debug(f"Cache HIT: Returning cached response for key '{cache_key}'")
+                logger.debug(
+                    f"Cache HIT: Returning cached response for key '{cache_key}'"
+                )
                 return Response(cached_data)
 
             # Cache MISS - execute view and cache result

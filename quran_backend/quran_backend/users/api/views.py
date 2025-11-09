@@ -19,11 +19,13 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from quran_backend.users.models import User
+from quran_backend.users.models import UserProfile
 from quran_backend.users.services.account_lockout import AccountLockoutService
 
 from .serializers import PasswordResetConfirmSerializer
 from .serializers import PasswordResetRequestSerializer
 from .serializers import UserLoginSerializer
+from .serializers import UserProfileSerializer
 from .serializers import UserRegistrationSerializer
 from .serializers import UserSerializer
 from .throttling import AuthEndpointThrottle
@@ -221,30 +223,30 @@ class PasswordResetRequestView(APIView):
 
 class ThrottledTokenRefreshView(TokenRefreshView):
     """
-      Token refresh endpoint with rate limiting.
+    Token refresh endpoint with rate limiting.
 
-      POST /api/v1/auth/token/refresh/
-      - Refreshes JWT access token using refresh token
-      - Rate limited to 5 requests per minute per user
-      - Returns: 200 OK with new access token
-      """
+    POST /api/v1/auth/token/refresh/
+    - Refreshes JWT access token using refresh token
+    - Rate limited to 5 requests per minute per user
+    - Returns: 200 OK with new access token
+    """
 
     throttle_classes = [AuthEndpointThrottle]
 
     def post(self, request, *args, **kwargs):
         """Override to use OAuth 2.0 standard parameter names (ADR-012)."""
         # Accept both 'refresh_token' (OAuth 2.0) and 'refresh' (SimpleJWT default)
-        if 'refresh_token' in request.data and 'refresh' not in request.data:
-            request.data['refresh'] = request.data['refresh_token']
+        if "refresh_token" in request.data and "refresh" not in request.data:
+            request.data["refresh"] = request.data["refresh_token"]
 
         response = super().post(request, *args, **kwargs)
 
         # Rename response keys for OAuth 2.0 compliance (ADR-012)
         if response.status_code == 200:
-            if 'access' in response.data:
-                response.data['access_token'] = response.data.pop('access')
-            if 'refresh' in response.data:
-                response.data['refresh_token'] = response.data.pop('refresh')
+            if "access" in response.data:
+                response.data["access_token"] = response.data.pop("access")
+            if "refresh" in response.data:
+                response.data["refresh_token"] = response.data.pop("refresh")
 
         return response
 
@@ -276,3 +278,33 @@ class PasswordResetConfirmView(APIView):
             )
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserProfileViewSet(RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
+    """
+    API endpoint for user profile management including analytics preferences.
+
+    GET /api/v1/users/profile/ - Retrieve current user's profile
+    PATCH /api/v1/users/profile/ - Update current user's profile (including is_analytics_enabled)
+    """
+
+    serializer_class = UserProfileSerializer
+    queryset = UserProfile.objects.all()
+
+    def get_object(self):
+        """Return the current user's profile."""
+        return self.request.user.profile
+
+    def retrieve(self, request, *args, **kwargs):
+        """Retrieve current user's profile."""
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        """Update current user's profile (PATCH)."""
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)

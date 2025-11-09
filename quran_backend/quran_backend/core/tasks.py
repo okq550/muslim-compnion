@@ -65,7 +65,7 @@ def warm_quran_cache(self) -> dict[str, any]:
         except self.MaxRetriesExceededError:
             logger.error(
                 "Cache warming task failed after maximum retries. "
-                "Manual intervention may be required."
+                "Manual intervention may be required.",
             )
             return {
                 "status": "failed",
@@ -91,13 +91,13 @@ def check_cache_health_task() -> dict[str, any]:
         if health_status["status"] == "degraded":
             logger.warning(
                 f"Cache health degraded: {health_status['details']}, "
-                f"latency: {health_status['latency_ms']}ms"
+                f"latency: {health_status['latency_ms']}ms",
             )
         elif health_status["status"] == "unavailable":
             logger.error(f"Cache unavailable: {health_status['details']}")
         else:
             logger.info(
-                f"Cache health check passed (latency: {health_status['latency_ms']}ms)"
+                f"Cache health check passed (latency: {health_status['latency_ms']}ms)",
             )
 
         return health_status
@@ -132,7 +132,7 @@ def log_cache_metrics_task() -> dict[str, any]:
         logger.info(
             f"Cache metrics logged: "
             f"Hit ratio: {metrics['hit_ratio']['hit_ratio']:.2%}, "
-            f"Memory: {metrics['memory']['usage_percent']:.2f}%"
+            f"Memory: {metrics['memory']['usage_percent']:.2f}%",
         )
 
         return {
