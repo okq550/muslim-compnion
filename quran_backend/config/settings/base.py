@@ -367,10 +367,14 @@ CELERY_BEAT_SCHEDULE = {
     "warm-cache-daily": {
         "task": "quran_backend.core.warm_quran_cache",
         "schedule": 86400.0,  # 24 hours (1 day) in seconds - runs daily
+        # Alternative: Use crontab for specific time
+        # "schedule": crontab(hour=1, minute=0),  # 1:00 AM UTC daily
     },
     "cleanup-analytics-weekly": {
         "task": "quran_backend.analytics.tasks.cleanup_old_analytics_events",
         "schedule": 604800.0,  # 7 days (1 week) in seconds
+        # Alternative: Use crontab for specific time (Sunday at 3 AM)
+        # "schedule": crontab(hour=3, minute=0, day_of_week='sunday'),
     },
     # US-API-006: Automated Database Backups
     "daily-database-backup": {
