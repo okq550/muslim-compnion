@@ -54,6 +54,10 @@ License: MIT
 6. **Access the application:**
    - Django Admin: http://localhost:8000/admin
    - DRF Browsable API: http://localhost:8000/api/
+   - API Documentation (Swagger UI): http://localhost:8000/api/docs/
+   - API Documentation (ReDoc): http://localhost:8000/api/redoc/
+   - OpenAPI Schema: http://localhost:8000/api/schema/
+   - Health Check: http://localhost:8000/api/v1/health/
    - Flower (Celery monitoring): http://localhost:5555
 
 ### Environment Configuration
@@ -94,6 +98,65 @@ docker compose -f docker-compose.local.yml exec django pytest
 ```bash
 docker compose -f docker-compose.local.yml down
 ```
+
+## API Documentation
+
+The Quran Backend API provides comprehensive, interactive documentation powered by OpenAPI 3.0 and drf-spectacular.
+
+### Accessing API Documentation
+
+- **Swagger UI**: http://localhost:8000/api/docs/
+  - Interactive "try it out" interface
+  - Test endpoints directly from your browser
+  - Authentication support with JWT tokens
+
+- **ReDoc**: http://localhost:8000/api/redoc/
+  - Clean, readable documentation
+  - Easy navigation and search
+  - Mobile-friendly interface
+
+- **OpenAPI Schema**: http://localhost:8000/api/schema/
+  - Raw OpenAPI 3.0 JSON specification
+  - Can be imported into Postman, Insomnia, etc.
+
+### Authentication
+
+The API uses JWT (JSON Web Token) authentication:
+
+1. **Register**: `POST /api/v1/auth/register/`
+2. **Login**: `POST /api/v1/auth/login/` → Returns `access_token` and `refresh_token`
+3. **Use Token**: Include `Authorization: Bearer <access_token>` in request headers
+4. **Refresh Token**: `POST /api/v1/auth/token/refresh/` with `refresh_token`
+
+**Token Expiration:**
+- Access Token: 30 minutes
+- Refresh Token: 14 days
+
+**Rate Limits:**
+- Authenticated users: 100 requests/minute
+- Anonymous users: 20 requests/minute
+- Documentation endpoints: No rate limit
+
+### Error Responses
+
+All API errors follow a standard format:
+```json
+{
+  "error": "ERROR_CODE",
+  "message": "Human-readable error message",
+  "request_id": "correlation-id-for-troubleshooting",
+  "details": [
+    {"field": "field_name", "message": "Field-specific error"}
+  ]
+}
+```
+
+### Health Monitoring
+
+Check system health: `GET /api/v1/health/`
+- Returns 200 OK if all services are healthy
+- Returns 503 Service Unavailable if any service is down
+- Monitors: PostgreSQL, Redis, Celery, Disk Space
 
 ## Settings
 

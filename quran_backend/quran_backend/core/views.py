@@ -23,10 +23,58 @@ from django.http import JsonResponse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
+from drf_spectacular.utils import OpenApiExample
+from drf_spectacular.utils import extend_schema
 
 logger = logging.getLogger(__name__)
 
 
+@extend_schema(
+    operation_id="health_check",
+    summary="System Health Check",
+    description="""
+    Health check endpoint for monitoring system components.
+
+    **Monitors:**
+    - PostgreSQL database connectivity and query execution
+    - Redis cache connectivity and read/write operations
+    - Celery worker status (at least one worker alive)
+    - Disk space availability (warn if < 20% free)
+
+    **Performance:** All checks complete in < 1 second
+
+    **Access:** Public endpoint (no authentication required, not rate limited)
+    """,
+    responses={
+        200: OpenApiExample(
+            "Healthy System",
+            value={
+                "status": "healthy",
+                "timestamp": "2025-11-09T10:30:00Z",
+                "checks": {
+                    "database": {"status": "up", "latency_ms": 15},
+                    "cache": {"status": "up", "latency_ms": 2},
+                    "celery": {"status": "up", "workers": 2},
+                    "disk": {"status": "ok", "free_percent": 45},
+                },
+            },
+        ),
+        503: OpenApiExample(
+            "Unhealthy System",
+            value={
+                "status": "unhealthy",
+                "timestamp": "2025-11-09T10:30:00Z",
+                "checks": {
+                    "database": {"status": "down", "latency_ms": 0},
+                    "cache": {"status": "up", "latency_ms": 2},
+                    "celery": {"status": "down", "workers": 0},
+                    "disk": {"status": "ok", "free_percent": 45},
+                },
+            },
+        ),
+    },
+    tags=["Health"],
+)
 @csrf_exempt
 @never_cache
 @require_http_methods(["GET"])
@@ -123,8 +171,8 @@ def _check_database():
             cursor.fetchone()
         latency_ms = (time.time() - start_time) * 1000
         return ("up", round(latency_ms, 2))
-    except Exception as e:
-        logger.error(f"Database health check failed: {e}", exc_info=True)
+    except Exception:
+        logger.exception("Database health check failed")
         return ("down", 0.0)
 
 
@@ -152,11 +200,12 @@ def _check_cache():
 
         if result == cache_value:
             return ("up", round(latency_ms, 2))
-        logger.warning("Cache read/write mismatch in health check")
-        return ("down", 0.0)
+        else:
+            logger.warning("Cache read/write mismatch in health check")
+            return ("down", 0.0)
 
-    except Exception as e:
-        logger.error(f"Cache health check failed: {e}", exc_info=True)
+    except Exception:
+        logger.exception("Cache health check failed")
         return ("down", 0.0)
 
 
@@ -176,11 +225,12 @@ def _check_celery():
 
         if worker_count > 0:
             return ("up", worker_count)
-        logger.warning("No active Celery workers found")
-        return ("down", 0)
+        else:
+            logger.warning("No active Celery workers found")
+            return ("down", 0)
 
-    except Exception as e:
-        logger.error(f"Celery health check failed: {e}", exc_info=True)
+    except Exception:
+        logger.exception("Celery health check failed")
         return ("down", 0)
 
 
@@ -197,14 +247,17 @@ def _check_disk():
         stat = shutil.disk_usage("/")
         free_percent = (stat.free / stat.total) * 100
 
-        if free_percent < 10:
-            logger.critical(f"Critical disk space: {free_percent:.1f}% free")
+        critical_threshold = 10
+        low_threshold = 20
+
+        if free_percent < critical_threshold:
+            logger.critical("Critical disk space: %.1f%% free", free_percent)
             return ("critical", round(free_percent, 1))
-        if free_percent < 20:
-            logger.warning(f"Low disk space: {free_percent:.1f}% free")
+        if free_percent < low_threshold:
+            logger.warning("Low disk space: %.1f%% free", free_percent)
             return ("low", round(free_percent, 1))
         return ("ok", round(free_percent, 1))
 
-    except Exception as e:
-        logger.error(f"Disk space check failed: {e}", exc_info=True)
+    except Exception:
+        logger.exception("Disk space check failed")
         return ("unknown", 0.0)

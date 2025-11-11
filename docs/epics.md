@@ -986,6 +986,139 @@ issues.
 - Monitor disk space for logs
 
 - Include correlation IDs for tracing requests
+
+### US-API-008: Create Comprehensive API Documentation
+
+**As a** frontend developer and API consumer
+**I want to** have comprehensive, accurate, and up-to-date API documentation
+**So that** I can easily understand and integrate with the backend APIs
+
+#### User Story Details:
+
+**Epic:** Quran Backend - First Release
+**Module:** Infrastructure / Cross-Cutting
+**Priority:** High (Technical Debt - Phase 1)
+**Functional Requirements:** FR-041 (Documentation & Support)
+**Dependencies:**
+
+- US-API-000 through US-API-007 (all Epic 1 APIs must be implemented)
+
+#### Description:
+
+The backend APIs implemented in Epic 1 require comprehensive documentation to enable efficient frontend development and third-party integration. Documentation should include endpoint specifications, request/response formats, authentication requirements, error codes, rate limiting rules, and usage examples. This addresses technical debt identified during Epic 1 implementation.
+
+#### Business Rules:
+
+1.  **Documentation Scope:**
+
+    - All implemented REST API endpoints from Epic 1
+
+    - Authentication and authorization flows (JWT, token refresh, blacklisting)
+
+    - Request/response schemas with field descriptions
+
+    - Error codes and error response formats
+
+    - Rate limiting and throttling rules
+
+    - Caching behavior and headers
+
+    - Pagination standards
+
+    - Localization/i18n parameters
+
+2.  **Documentation Standards:**
+
+    - OpenAPI 3.0 specification format
+
+    - Interactive API documentation (Swagger UI / ReDoc)
+
+    - Code examples in multiple languages (cURL, Python, JavaScript)
+
+    - Authentication examples with sample tokens
+
+    - Comprehensive error scenario documentation
+
+3.  **Content Requirements:**
+
+    - Getting started guide
+
+    - Authentication setup instructions
+
+    - Common integration patterns
+
+    - Best practices for API usage
+
+    - Troubleshooting guide
+
+    - Changelog for API versions
+
+#### Acceptance Criteria:
+
+✅ OpenAPI 3.0 specification generated for all Epic 1 endpoints
+✅ Interactive API documentation accessible at /api/docs/
+✅ All endpoints include request/response examples
+✅ Authentication flow documented with examples
+✅ Error codes documented with descriptions and resolution steps
+✅ Rate limiting rules clearly documented
+✅ Code examples provided in cURL, Python, and JavaScript
+✅ Getting started guide for API consumers
+✅ Documentation auto-generated from code (DRF schema + drf-spectacular)
+✅ Versioning strategy documented
+✅ Postman/Insomnia collection exported
+
+#### Out of Scope:
+
+- Frontend-specific documentation
+- Mobile SDK documentation
+- Websocket/realtime API documentation (if not yet implemented)
+- Admin API documentation (internal only)
+- Performance optimization guides
+
+#### Definition of Done:
+
+- All acceptance criteria tested and passing
+
+- Documentation accessible in development and staging environments
+
+- Technical Writer has reviewed and approved documentation
+
+- Frontend team confirms documentation is complete and accurate
+
+- Postman collection tested and validated
+
+- Product Owner has approved
+
+- Ready for frontend integration
+
+#### Test Data Requirements:
+
+- Sample API requests for all endpoints
+
+- Valid and invalid authentication tokens
+
+- Error scenario examples
+
+- Rate limiting demonstration data
+
+#### Notes for Development Team:
+
+- Use drf-spectacular for OpenAPI schema generation
+
+- Integrate Swagger UI and ReDoc for interactive docs
+
+- Document all custom authentication headers
+
+- Include pagination parameters in all list endpoints
+
+- Add schema descriptions to all serializers
+
+- Use docstrings in viewsets for endpoint descriptions
+
+- Test documentation with frontend team before finalizing
+
+- Keep documentation in sync with code changes
+
 ## EPIC 2: Quran Text & Content Management
 
 ### US-QT-001: Retrieve Quran Text by Surah

@@ -14,6 +14,12 @@ class AnonRateThrottle(DRFAnonRateThrottle):
 
     Cache key format: throttle_anon_{ip_address}
     Rate: 20 requests per minute per IP
+
+    Exempted paths (US-API-008):
+    - /api/docs/ (Swagger UI)
+    - /api/redoc/ (ReDoc documentation)
+    - /api/schema/ (OpenAPI schema)
+    - /api/v1/health/ (Health check)
     """
 
     scope = "anon"
@@ -22,8 +28,14 @@ class AnonRateThrottle(DRFAnonRateThrottle):
         """
         Check if request should be allowed based on rate limit.
 
-        Also checks whitelist for bypassing rate limits.
+        Also checks whitelist and documentation endpoints for bypassing rate limits.
         """
+        # Exempt documentation endpoints from rate limiting (US-API-008 AC #2)
+        if request.path.startswith(
+            ("/api/docs/", "/api/redoc/", "/api/schema/", "/api/v1/health/"),
+        ):
+            return True
+
         # Check if IP is whitelisted (AC #7)
         ip_address = self.get_ident(request)
         if ip_address in settings.RATE_LIMIT_WHITELIST:
@@ -41,6 +53,12 @@ class UserRateThrottle(DRFUserRateThrottle):
 
     Cache key format: throttle_user_{user_id}
     Rate: 100 requests per minute per user
+
+    Exempted paths (US-API-008):
+    - /api/docs/ (Swagger UI)
+    - /api/redoc/ (ReDoc documentation)
+    - /api/schema/ (OpenAPI schema)
+    - /api/v1/health/ (Health check)
     """
 
     scope = "user"
@@ -49,8 +67,14 @@ class UserRateThrottle(DRFUserRateThrottle):
         """
         Check if request should be allowed based on rate limit.
 
-        Also checks whitelist and admin bypass.
+        Also checks whitelist, admin bypass, and documentation endpoints.
         """
+        # Exempt documentation endpoints from rate limiting (US-API-008 AC #2)
+        if request.path.startswith(
+            ("/api/docs/", "/api/redoc/", "/api/schema/", "/api/v1/health/"),
+        ):
+            return True
+
         # Check if user is staff/superuser (AC #7)
         if request.user and request.user.is_authenticated:
             if request.user.is_staff or request.user.is_superuser:

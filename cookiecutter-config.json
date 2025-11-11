@@ -1,7 +1,7 @@
 {
   "project_name": "django-muslim-companion",
   "project_slug": "quran_backend",
-  "description": "Quran Backend API for Islamic Spiritual Companion App",
+  "description": "Muslim Spiritual Companion App Backend API ",
   "author_name": "Development Team",
   "domain_name": "example.com",
   "email": "dev@example.com",

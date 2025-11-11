@@ -49,6 +49,7 @@ development_status:
   us-api-005-implement-rate-limiting-and-throttling: done
   us-api-006-implement-data-backup-and-recovery: done
   us-api-007-implement-logging-and-monitoring: done
+  us-api-008-create-comprehensive-api-documentation: in-progress
   epic-1-retrospective: optional
 
   # EPIC 2: Quran Text & Content Management

@@ -1,0 +1,278 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/us-api-008" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>8</storyId>
+    <title>Create Comprehensive API Documentation</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-11</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/us-api-008-create-comprehensive-api-documentation.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>frontend developer and API consumer</asA>
+    <iWant>to have comprehensive, accurate, and up-to-date API documentation</iWant>
+    <soThat>I can easily understand and integrate with the backend APIs</soThat>
+    <tasks>
+      <task id="1">Configure drf-spectacular for OpenAPI Schema Generation (AC #1, #9)</task>
+      <task id="2">Enhance Serializers with Documentation (AC #1, #9)</task>
+      <task id="3">Enhance ViewSets with Documentation (AC #1, #3, #9)</task>
+      <task id="4">Document Authentication and JWT Configuration (AC #4)</task>
+      <task id="5">Document Error Handling and Responses (AC #5)</task>
+      <task id="6">Document Rate Limiting (AC #6)</task>
+      <task id="7">Create Getting Started Guide (AC #8)</task>
+      <task id="8">Generate Code Examples (AC #7)</task>
+      <task id="9">Document API Versioning (AC #10)</task>
+      <task id="10">Generate and Test Postman Collection (AC #11)</task>
+      <task id="11">Exclude Documentation Endpoints from Rate Limiting (AC #2)</task>
+      <task id="12">Comprehensive API Documentation Tests (AC #1-11)</task>
+      <task id="13">Update Project Documentation</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="1">OpenAPI 3.0 Specification Generated - Auto-generated schema covers all Epic 1 endpoints with complete request/response schemas, authentication requirements, error formats, and validation against OpenAPI 3.0 spec</criterion>
+    <criterion id="2">Interactive API Documentation Accessible - Swagger UI at /api/docs/ and ReDoc at /api/redoc/ with try-it-out functionality, JWT authentication support, and public access without authentication</criterion>
+    <criterion id="3">Request/Response Examples Provided - All endpoints include JSON examples for requests, successful responses, and error responses (400, 401, 403, 429, 500) with code examples in cURL, Python, and JavaScript</criterion>
+    <criterion id="4">Authentication Flow Documented - Complete JWT flow documentation including login, token usage, refresh, blacklisting, password reset, account lockout, and token expiration times</criterion>
+    <criterion id="5">Error Codes and Responses Documented - Standard error response format with all error codes from core/exceptions.py, descriptions, resolution steps, and correlation ID explanation</criterion>
+    <criterion id="6">Rate Limiting Rules Documented - Rate limits (100/min auth, 20/min anon), headers (X-RateLimit-*), 429 responses, and exempted endpoints documented</criterion>
+    <criterion id="7">Code Examples in Multiple Languages - Copy-paste ready examples in cURL, Python (requests library), and JavaScript (fetch API) with authentication headers and error handling</criterion>
+    <criterion id="8">Getting Started Guide - Overview, base URLs, authentication setup, credential acquisition, first authenticated request, integration patterns, and troubleshooting</criterion>
+    <criterion id="9">Documentation Auto-Generated from Code - Uses drf-spectacular with serializer help_text, ViewSet docstrings, @extend_schema decorators, automatic updates on code changes</criterion>
+    <criterion id="10">API Versioning Strategy Documented - Current version (v1), URL path versioning approach, deprecation policy, backward compatibility, and migration guides</criterion>
+    <criterion id="11">Postman/Insomnia Collection Exported - Collection generated from OpenAPI schema with all Epic 1 endpoints, JWT token management scripts, environment variables, tested and downloadable</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-038: RESTful API Design</section>
+        <snippet>System shall provide well-designed RESTful API with consistent patterns, proper HTTP methods, and comprehensive documentation. Requirements include RESTful endpoint design, consistent request/response formats, proper HTTP status codes, API versioning strategy, comprehensive API documentation, and OpenAPI/Swagger specification.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-NFR-029: API Documentation</section>
+        <snippet>API documentation shall be comprehensive and up-to-date. This non-functional requirement ensures all API endpoints are properly documented for frontend and third-party integrations.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-NFR-041: Integration Tests</section>
+        <snippet>All API endpoints shall have integration tests. Testing requirement ensures comprehensive test coverage for all documented APIs.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>System Architecture Document</title>
+        <section>API Documentation Generation</section>
+        <snippet>Initialize Sphinx for API documentation generation. Project uses sphinx==7.2.6 and sphinx-rtd-theme==2.0.0 for documentation. Documentation generation command: docker-compose exec django sphinx-build -b html docs/source docs/build. OpenAPI specification stored at docs/api/openapi.yaml.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>System Architecture Document</title>
+        <section>Python Backend Libraries</section>
+        <snippet>drf-spectacular is not explicitly mentioned in architecture, but sphinx (7.2.6) and sphinx-rtd-theme (2.0.0) are listed for API documentation generation. This story will leverage drf-spectacular which is already installed in pyproject.toml.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>US-API-008: Create Comprehensive API Documentation</section>
+        <snippet>Epic 1 story addressing technical debt for API documentation. Requires comprehensive documentation for all backend endpoints covering authentication flows, request/response formats, error handling, rate limiting, caching behavior, and localization. Uses OpenAPI 3.0 specification format with interactive Swagger UI and ReDoc interfaces.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/us-api-001-implement-user-authentication-and-authorization.md</path>
+        <title>Story 1.1: User Authentication and Authorization</title>
+        <section>JWT Authentication Implementation</section>
+        <snippet>JWT authentication implemented with access tokens (15-minute expiration) and refresh tokens (7-day expiration). Token blacklisting on logout, account lockout after 10 failed attempts for 30 minutes. Authentication endpoints: /api/v1/auth/login/, /api/v1/auth/logout/, /api/v1/auth/token/refresh/, /api/v1/auth/password/reset/. All endpoints must be documented in API docs.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/us-api-002-implement-error-handling-and-user-feedback.md</path>
+        <title>Story 1.2: Error Handling and User Feedback</title>
+        <section>Error Response Format</section>
+        <snippet>Standardized error response format includes: error code (from core/exceptions.py), human-readable message, request_id (correlation ID), and optional details array with field-level errors. Error codes: VALIDATION_ERROR, AUTHENTICATION_ERROR, AUTHORIZATION_ERROR, NOT_FOUND, RATE_LIMIT_EXCEEDED, INTERNAL_ERROR. All error formats must be documented in API docs.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/us-api-005-implement-rate-limiting-and-throttling.md</path>
+        <title>Story 1.5: Rate Limiting and Throttling</title>
+        <section>Rate Limiting Configuration</section>
+        <snippet>Rate limits: 100 requests/minute for authenticated users, 20 requests/minute for anonymous users. Custom headers: X-RateLimit-Limit (total allowed), X-RateLimit-Remaining (remaining in window), X-RateLimit-Reset (Unix timestamp when limit resets). 429 response when exceeded. Health check endpoint exempted from rate limiting.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/us-api-007-implement-logging-and-monitoring.md</path>
+        <title>Story 1.7: Logging and Monitoring</title>
+        <section>Health Check Endpoint</section>
+        <snippet>Health check endpoint at /api/v1/health/ monitors PostgreSQL, Redis, Celery, and disk space. Returns 200 OK when healthy, 503 when unhealthy. JSON response includes status and latency per component. Excluded from authentication and rate limiting. Must be documented in API docs.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <file>
+        <path>quran_backend/pyproject.toml</path>
+        <kind>dependency-manifest</kind>
+        <symbol>drf-spectacular</symbol>
+        <lines>195</lines>
+        <reason>drf-spectacular==0.29.0 already installed - use for OpenAPI schema generation</reason>
+      </file>
+      <file>
+        <path>quran_backend/config/settings/base.py</path>
+        <kind>settings</kind>
+        <symbol>INSTALLED_APPS, REST_FRAMEWORK</symbol>
+        <lines>1-100</lines>
+        <reason>Add drf_spectacular to INSTALLED_APPS and configure DEFAULT_SCHEMA_CLASS and SPECTACULAR_SETTINGS</reason>
+      </file>
+      <file>
+        <path>quran_backend/config/urls.py</path>
+        <kind>url-config</kind>
+        <symbol>urlpatterns</symbol>
+        <lines>1-50</lines>
+        <reason>Add schema, Swagger UI, and ReDoc URL routes using SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView</reason>
+      </file>
+      <file>
+        <path>quran_backend/quran_backend/users/api/serializers.py</path>
+        <kind>serializers</kind>
+        <symbol>UserSerializer, LoginSerializer, TokenSerializer, RegisterSerializer</symbol>
+        <lines>1-200</lines>
+        <reason>Add help_text to all serializer fields, add docstrings to serializers for documentation generation</reason>
+      </file>
+      <file>
+        <path>quran_backend/quran_backend/users/api/views.py</path>
+        <kind>views</kind>
+        <symbol>LoginView, LogoutView, TokenRefreshView, RegisterView, UserProfileView</symbol>
+        <lines>1-400</lines>
+        <reason>Add comprehensive docstrings to all ViewSets, use @extend_schema decorator for detailed endpoint documentation</reason>
+      </file>
+      <file>
+        <path>quran_backend/quran_backend/core/views.py</path>
+        <kind>views</kind>
+        <symbol>health_check</symbol>
+        <lines>1-100</lines>
+        <reason>Document health check endpoint with @extend_schema showing response format and monitoring details</reason>
+      </file>
+      <file>
+        <path>quran_backend/quran_backend/core/exceptions.py</path>
+        <kind>exceptions</kind>
+        <symbol>ERROR_CODES</symbol>
+        <lines>1-100</lines>
+        <reason>Reference all error codes for error response documentation in OpenAPI schema</reason>
+      </file>
+      <file>
+        <path>quran_backend/quran_backend/users/api/throttling.py</path>
+        <kind>throttling</kind>
+        <symbol>UserRateThrottle, AnonRateThrottle</symbol>
+        <lines>1-50</lines>
+        <reason>Create SmartThrottle class to exempt documentation endpoints (/api/docs/, /api/redoc/, /api/schema/) from rate limiting</reason>
+      </file>
+      <file>
+        <path>quran_backend/quran_backend/core/middleware/error_handler.py</path>
+        <kind>middleware</kind>
+        <symbol>ErrorHandlingMiddleware</symbol>
+        <lines>1-100</lines>
+        <reason>Reference request_id (correlation ID) generation for error response documentation</reason>
+      </file>
+    </code>
+    <dependencies>
+      <python>
+        <package name="djangorestframework" version="3.16.1" />
+        <package name="djangorestframework-simplejwt" version="5.3.1" />
+        <package name="drf-spectacular" version="0.29.0" />
+        <package name="sphinx" version="7.2.6" />
+        <package name="sphinx-rtd-theme" version="2.0.0" />
+        <package name="django" version="5.2.8" />
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>All serializer fields must include help_text for automatic documentation generation</constraint>
+    <constraint>All ViewSet methods must have comprehensive docstrings describing endpoint behavior</constraint>
+    <constraint>Use @extend_schema decorator from drf_spectacular.utils for complex endpoints with examples</constraint>
+    <constraint>Documentation endpoints (/api/docs/, /api/redoc/, /api/schema/) must be excluded from rate limiting</constraint>
+    <constraint>Documentation must be accessible without authentication (public access)</constraint>
+    <constraint>OpenAPI schema must validate against OpenAPI 3.0 specification</constraint>
+    <constraint>All paths in documentation must use project-relative format (not absolute paths)</constraint>
+    <constraint>Error response serializers must match core/exceptions.py error format</constraint>
+    <constraint>JWT authentication security scheme must be configured in SPECTACULAR_SETTINGS</constraint>
+    <constraint>Code examples must be tested and copy-paste ready (cURL, Python, JavaScript)</constraint>
+    <constraint>Postman collection must be generated from OpenAPI schema and tested</constraint>
+    <constraint>Documentation must auto-update when code changes (no manual YAML editing)</constraint>
+  </constraints>
+
+  <interfaces>
+    <api>
+      <name>OpenAPI Schema Endpoint</name>
+      <kind>REST</kind>
+      <signature>GET /api/schema/ - Returns OpenAPI 3.0 JSON specification</signature>
+      <path>config/urls.py</path>
+    </api>
+    <api>
+      <name>Swagger UI Endpoint</name>
+      <kind>REST</kind>
+      <signature>GET /api/docs/ - Interactive Swagger UI documentation interface</signature>
+      <path>config/urls.py</path>
+    </api>
+    <api>
+      <name>ReDoc Endpoint</name>
+      <kind>REST</kind>
+      <signature>GET /api/redoc/ - Clean ReDoc documentation interface</signature>
+      <path>config/urls.py</path>
+    </api>
+    <api>
+      <name>Authentication Endpoints</name>
+      <kind>REST</kind>
+      <signature>POST /api/v1/auth/login/, /api/v1/auth/logout/, /api/v1/auth/token/refresh/, /api/v1/auth/password/reset/</signature>
+      <path>quran_backend/users/api/views.py</path>
+    </api>
+    <api>
+      <name>User Management Endpoints</name>
+      <kind>REST</kind>
+      <signature>GET /api/v1/users/me/, POST /api/v1/users/register/</signature>
+      <path>quran_backend/users/api/views.py</path>
+    </api>
+    <api>
+      <name>Health Check Endpoint</name>
+      <kind>REST</kind>
+      <signature>GET /api/v1/health/ - System health monitoring</signature>
+      <path>quran_backend/core/views.py</path>
+    </api>
+    <interface>
+      <name>ErrorResponseSerializer</name>
+      <kind>DRF Serializer</kind>
+      <signature>Serializer for standardized error responses with error code, message, request_id, and details fields</signature>
+      <path>quran_backend/core/api/serializers.py (to be created)</path>
+    </interface>
+    <interface>
+      <name>SmartThrottle</name>
+      <kind>DRF Throttle Class</kind>
+      <signature>Custom throttle class that exempts documentation endpoints from rate limiting</signature>
+      <path>quran_backend/core/throttling.py (to be created)</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Use pytest-django with APIClient for endpoint testing. Test OpenAPI schema generation and validation against OpenAPI 3.0 specification. Test Swagger UI and ReDoc accessibility without authentication. Verify serializer fields have help_text. Verify ViewSet docstrings are comprehensive. Test try-it-out functionality with JWT authentication. Test documentation endpoints are not rate limited. Manual testing required for code examples (cURL, Python, JavaScript) and Postman collection import.
+    </standards>
+    <locations>
+      quran_backend/quran_backend/core/tests/test_api_documentation.py (new file)
+    </locations>
+    <ideas>
+      <idea ac="1">Test OpenAPI schema is generated successfully with valid JSON format</idea>
+      <idea ac="1">Test schema validates against OpenAPI 3.0 specification using openapi-spec-validator</idea>
+      <idea ac="1">Test all Epic 1 endpoints are included in schema (/api/v1/auth/*, /api/v1/users/*, /api/v1/health/)</idea>
+      <idea ac="1">Test JWT security scheme is defined in schema components</idea>
+      <idea ac="2">Test Swagger UI endpoint returns 200 OK at /api/docs/</idea>
+      <idea ac="2">Test ReDoc endpoint returns 200 OK at /api/redoc/</idea>
+      <idea ac="2">Test schema endpoint returns valid JSON at /api/schema/</idea>
+      <idea ac="2">Test documentation accessible without authentication (no 401 errors)</idea>
+      <idea ac="3">Test serializer fields include help_text descriptions</idea>
+      <idea ac="3">Test ViewSet methods have docstrings</idea>
+      <idea ac="4">Test JWT token format and expiration times documented in schema</idea>
+      <idea ac="5">Test ErrorResponseSerializer defined with correct fields</idea>
+      <idea ac="5">Test all error codes from core/exceptions.py documented in responses</idea>
+      <idea ac="11">Test documentation endpoints (/api/docs/, /api/redoc/, /api/schema/) not rate limited - make 105+ requests, verify no 429 responses</idea>
+      <idea ac="11">Test Postman collection JSON file exports successfully and imports into Postman</idea>
+    </ideas>
+  </tests>
+</story-context>

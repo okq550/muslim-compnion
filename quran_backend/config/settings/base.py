@@ -367,14 +367,10 @@ CELERY_BEAT_SCHEDULE = {
     "warm-cache-daily": {
         "task": "quran_backend.core.warm_quran_cache",
         "schedule": 86400.0,  # 24 hours (1 day) in seconds - runs daily
-        # Alternative: Use crontab for specific time
-        # "schedule": crontab(hour=1, minute=0),  # 1:00 AM UTC daily
     },
     "cleanup-analytics-weekly": {
         "task": "quran_backend.analytics.tasks.cleanup_old_analytics_events",
         "schedule": 604800.0,  # 7 days (1 week) in seconds
-        # Alternative: Use crontab for specific time (Sunday at 3 AM)
-        # "schedule": crontab(hour=3, minute=0, day_of_week='sunday'),
     },
     # US-API-006: Automated Database Backups
     "daily-database-backup": {
@@ -456,14 +452,34 @@ SIMPLE_JWT = {
 # django-cors-headers - https://github.com/adamchainz/django-cors-headers#setup
 CORS_URLS_REGEX = r"^/api/.*$"
 
-# By Default swagger ui is available only to admin user(s). You can change permission classes to change that
+# drf-spectacular - OpenAPI 3.0 Schema Generation (US-API-008)
 # See more configuration options at https://drf-spectacular.readthedocs.io/en/latest/settings.html#settings
 SPECTACULAR_SETTINGS = {
-    "TITLE": "django-muslim-companion API",
-    "DESCRIPTION": "Documentation of API endpoints of django-muslim-companion",
+    "TITLE": "Quran Backend API",
+    "DESCRIPTION": "RESTful API for Quran reading, recitation, translation, tafseer, and bookmarks",
     "VERSION": "1.0.0",
-    "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
-    "SCHEMA_PATH_PREFIX": "/api/",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SERVE_PERMISSIONS": [
+        "rest_framework.permissions.AllowAny",
+    ],  # Public documentation access
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "persistAuthorization": True,
+        "displayOperationId": True,
+    },
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SCHEMA_PATH_PREFIX": r"/api/v1",
+    # JWT Authentication security scheme
+    "APPEND_COMPONENTS": {
+        "securitySchemes": {
+            "jwtAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            },
+        },
+    },
+    "SECURITY": [{"jwtAuth": []}],
 }
 # Rate Limiting Configuration (US-API-005)
 # ------------------------------------------------------------------------------

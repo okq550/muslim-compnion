@@ -3,6 +3,9 @@ import logging
 
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
+from drf_spectacular.utils import OpenApiExample
+from drf_spectacular.utils import OpenApiResponse
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAdminUser
 from rest_framework.permissions import IsAuthenticated
@@ -29,6 +32,38 @@ class AnalyticsConsentView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        operation_id="analytics_consent",
+        summary="Update Analytics Consent",
+        description="Enable or disable analytics tracking for the authenticated user.",
+        request=AnalyticsConsentSerializer,
+        responses={
+            200: OpenApiResponse(
+                description="Consent Updated Successfully",
+                examples=[
+                    OpenApiExample(
+                        name="success",
+                        value={
+                            "message": "Analytics preference updated",
+                            "is_analytics_enabled": True,
+                        },
+                    ),
+                ],
+            ),
+            400: OpenApiResponse(
+                description="Validation Error",
+                examples=[
+                    OpenApiExample(
+                        name="validation_error",
+                        value={
+                            "consent_given": ["This field is required."],
+                        },
+                    ),
+                ],
+            ),
+        },
+        tags=["Analytics"],
+    )
     def post(self, request):
         """Handle analytics consent request."""
         serializer = AnalyticsConsentSerializer(data=request.data)
@@ -38,12 +73,16 @@ class AnalyticsConsentView(APIView):
 
             # Log consent for audit trail
             logger.info(
-                f"User {request.user.id} {'enabled' if consent_given else 'disabled'} "
-                f"analytics (version {consent_version})",
+                "User %s %s analytics (version %s)",
+                request.user.id,
+                "enabled" if consent_given else "disabled",
+                consent_version,
             )
 
             # Update user's analytics preference using queryset update
-            User.objects.filter(pk=request.user.pk).update(is_analytics_enabled=consent_given)
+            User.objects.filter(pk=request.user.pk).update(
+                is_analytics_enabled=consent_given,
+            )
 
             return Response(
                 {
@@ -68,6 +107,40 @@ class DeleteMyAnalyticsDataView(APIView):
 
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        operation_id="delete_my_analytics_data",
+        summary="Delete My Analytics Data",
+        description=(
+            "Delete all analytics data for the authenticated user "
+            "(GDPR Right to Erasure)."
+        ),
+        responses={
+            200: OpenApiResponse(
+                description="Analytics Data Deleted",
+                examples=[
+                    OpenApiExample(
+                        name="success",
+                        value={
+                            "message": "All your analytics data has been deleted",
+                            "events_deleted": 42,
+                        },
+                    ),
+                ],
+            ),
+            500: OpenApiResponse(
+                description="Internal Server Error",
+                examples=[
+                    OpenApiExample(
+                        name="error",
+                        value={
+                            "detail": "Failed to delete analytics data",
+                        },
+                    ),
+                ],
+            ),
+        },
+        tags=["Analytics"],
+    )
     def delete(self, request):
         """Delete all analytics data for current user."""
         try:
@@ -77,13 +150,15 @@ class DeleteMyAnalyticsDataView(APIView):
             ).hexdigest()
 
             # Delete all events matching this user's hash
-            deleted_count, deleted_models = AnalyticsEvent.objects.filter(
+            deleted_count, _deleted_models = AnalyticsEvent.objects.filter(
                 user_id_hash=user_id_hash,
             ).delete()
 
             # Log deletion for audit trail
             logger.info(
-                f"User {request.user.id} deleted {deleted_count} analytics events",
+                "User %s deleted %s analytics events",
+                request.user.id,
+                deleted_count,
             )
 
             # Disable analytics for this user using queryset update
@@ -96,7 +171,7 @@ class DeleteMyAnalyticsDataView(APIView):
                 },
                 status=status.HTTP_200_OK,
             )
-        except Exception as e:
+        except Exception:
             logger.exception("Failed to delete analytics data")
             return Response(
                 {"detail": _("Failed to delete analytics data")},
@@ -115,6 +190,40 @@ class PopularFeaturesView(APIView):
 
     permission_classes = [IsAdminUser]
 
+    @extend_schema(
+        operation_id="popular_features",
+        summary="Get Popular Features",
+        description="Retrieve top 10 features by event count (admin-only).",
+        responses={
+            200: OpenApiResponse(
+                description="Popular Features",
+                examples=[
+                    OpenApiExample(
+                        name="success",
+                        value={
+                            "popular_features": [
+                                {"event_type": "surah_viewed", "count": 1523},
+                                {"event_type": "ayah_bookmarked", "count": 892},
+                                {"event_type": "reciter_played", "count": 654},
+                            ],
+                        },
+                    ),
+                ],
+            ),
+            500: OpenApiResponse(
+                description="Internal Server Error",
+                examples=[
+                    OpenApiExample(
+                        name="error",
+                        value={
+                            "detail": "Failed to retrieve analytics",
+                        },
+                    ),
+                ],
+            ),
+        },
+        tags=["Analytics"],
+    )
     def get(self, request):
         """Get popular features by event count."""
         try:
@@ -123,8 +232,8 @@ class PopularFeaturesView(APIView):
                 {"popular_features": features},
                 status=status.HTTP_200_OK,
             )
-        except Exception as e:
-            logger.error(f"Failed to get popular features: {e}")
+        except Exception:
+            logger.exception("Failed to get popular features")
             return Response(
                 {"detail": _("Failed to retrieve analytics")},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -142,6 +251,48 @@ class PopularSurahsView(APIView):
 
     permission_classes = [IsAdminUser]
 
+    @extend_schema(
+        operation_id="popular_surahs",
+        summary="Get Popular Surahs",
+        description="Retrieve top 10 most viewed Surahs (admin-only).",
+        responses={
+            200: OpenApiResponse(
+                description="Popular Surahs",
+                examples=[
+                    OpenApiExample(
+                        name="success",
+                        value={
+                            "popular_surahs": [
+                                {
+                                    "surah_number": 1,
+                                    "name": "Al-Fatihah",
+                                    "views": 2341,
+                                },
+                                {"surah_number": 36, "name": "Yasin", "views": 1876},
+                                {
+                                    "surah_number": 2,
+                                    "name": "Al-Baqarah",
+                                    "views": 1543,
+                                },
+                            ],
+                        },
+                    ),
+                ],
+            ),
+            500: OpenApiResponse(
+                description="Internal Server Error",
+                examples=[
+                    OpenApiExample(
+                        name="error",
+                        value={
+                            "detail": "Failed to retrieve analytics",
+                        },
+                    ),
+                ],
+            ),
+        },
+        tags=["Analytics"],
+    )
     def get(self, request):
         """Get most read Surahs."""
         try:
@@ -150,8 +301,8 @@ class PopularSurahsView(APIView):
                 {"popular_surahs": surahs},
                 status=status.HTTP_200_OK,
             )
-        except Exception as e:
-            logger.error(f"Failed to get popular surahs: {e}")
+        except Exception:
+            logger.exception("Failed to get popular surahs")
             return Response(
                 {"detail": _("Failed to retrieve analytics")},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -169,6 +320,40 @@ class ErrorRatesView(APIView):
 
     permission_classes = [IsAdminUser]
 
+    @extend_schema(
+        operation_id="error_rates",
+        summary="Get Error Rates",
+        description="Retrieve error counts by endpoint (admin-only).",
+        responses={
+            200: OpenApiResponse(
+                description="Error Rates",
+                examples=[
+                    OpenApiExample(
+                        name="success",
+                        value={
+                            "error_rates": [
+                                {"endpoint": "/api/v1/quran/surahs/", "errors": 23},
+                                {"endpoint": "/api/v1/auth/login/", "errors": 12},
+                                {"endpoint": "/api/v1/quran/ayahs/", "errors": 8},
+                            ],
+                        },
+                    ),
+                ],
+            ),
+            500: OpenApiResponse(
+                description="Internal Server Error",
+                examples=[
+                    OpenApiExample(
+                        name="error",
+                        value={
+                            "detail": "Failed to retrieve analytics",
+                        },
+                    ),
+                ],
+            ),
+        },
+        tags=["Analytics"],
+    )
     def get(self, request):
         """Get error rates by endpoint."""
         try:
@@ -177,8 +362,8 @@ class ErrorRatesView(APIView):
                 {"error_rates": errors},
                 status=status.HTTP_200_OK,
             )
-        except Exception as e:
-            logger.error(f"Failed to get error rates: {e}")
+        except Exception:
+            logger.exception("Failed to get error rates")
             return Response(
                 {"detail": _("Failed to retrieve analytics")},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
