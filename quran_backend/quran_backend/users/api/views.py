@@ -5,6 +5,9 @@ from django.db import transaction
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.utils.translation import gettext_lazy as _
+from drf_spectacular.utils import OpenApiExample
+from drf_spectacular.utils import OpenApiResponse
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.mixins import ListModelMixin
@@ -24,6 +27,8 @@ from quran_backend.users.services.account_lockout import AccountLockoutService
 
 from .serializers import PasswordResetConfirmSerializer
 from .serializers import PasswordResetRequestSerializer
+from .serializers import TokenRefreshRequestSerializer
+from .serializers import TokenRefreshResponseSerializer
 from .serializers import UserLoginSerializer
 from .serializers import UserProfileSerializer
 from .serializers import UserRegistrationSerializer
@@ -63,17 +68,77 @@ class UserViewSet(RetrieveModelMixin, ListModelMixin, UpdateModelMixin, GenericV
 
 class UserRegistrationView(APIView):
     """
-    API endpoint for user registration (AC #1, #6, #13, #14, #15).
+    User Registration Endpoint
 
-    POST /api/v1/auth/register/
-    - Creates new user with email and password
-    - Returns user data with JWT tokens
-    - Requires: email, password, password_confirm
-    - Returns: 201 Created with user and tokens
+    Register a new user account with email and password.
+    Returns JWT access and refresh tokens upon successful registration.
+
+    **Password Requirements:**
+    - Minimum 8 characters
+    - At least one uppercase letter
+    - At least one lowercase letter
+    - At least one digit
+
+    **Rate Limit:** Subject to default API rate limits (100/min authenticated, 20/min anonymous)
     """
 
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        operation_id="user_register",
+        summary="User Registration",
+        description="Create a new user account with email and password. Returns JWT tokens.",
+        request=UserRegistrationSerializer,
+        responses={
+            201: UserRegistrationSerializer,
+            400: OpenApiResponse(
+                description="Validation Error",
+                examples=[
+                    OpenApiExample(
+                        name="validation_error",
+                        value={
+                            "error": "VALIDATION_ERROR",
+                            "message": "Invalid input data",
+                            "request_id": "550e8400-e29b-41d4-a716-446655440000",
+                            "details": [
+                                {"field": "email", "message": "A user with this email already exists"},
+                            ],
+                        },
+                    ),
+                ],
+            ),
+        },
+        tags=["Authentication"],
+        examples=[
+            OpenApiExample(
+                name="valid_registration_request",
+                summary="Valid Registration Request",
+                value={
+                    "email": "user@example.com",
+                    "password": "SecurePass123",
+                    "password_confirm": "SecurePass123",
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                name="successful_registration_response",
+                summary="Successful Registration Response",
+                value={
+                    "user": {
+                        "id": "550e8400-e29b-41d4-a716-446655440000",
+                        "email": "user@example.com",
+                        "username": "user",
+                    },
+                    "tokens": {
+                        "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+                        "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+                    },
+                },
+                response_only=True,
+                status_codes=["201"],
+            ),
+        ],
+    )
     def post(self, request):
         """Handle user registration request."""
         serializer = UserRegistrationSerializer(data=request.data)
@@ -101,19 +166,91 @@ class UserRegistrationView(APIView):
 
 class UserLoginView(APIView):
     """
-    API endpoint for user login (AC #2, #7, #8, #12).
+    User Login Endpoint
 
-    POST /api/v1/auth/login/
-    - Authenticates user with email and password
-    - Returns JWT access and refresh tokens
-    - Requires: email, password
-    - Returns: 200 OK with tokens
-    - Returns: 423 Locked if account is locked due to failed attempts
+    Authenticate user with email and password and receive JWT tokens.
+
+    **Token Expiration:**
+    - Access Token: 30 minutes
+    - Refresh Token: 14 days
+
+    **Account Lockout Policy:**
+    - 10 failed login attempts result in a 30-minute account lockout
+
+    **Rate Limit:** 5 requests per minute per IP address
     """
 
     permission_classes = [AllowAny]
     throttle_classes = [AuthEndpointThrottle]  # Rate limit: 5/min (AC #10, #11)
 
+    @extend_schema(
+        operation_id="user_login",
+        summary="User Login",
+        description="Authenticate user and receive JWT access and refresh tokens.",
+        request=UserLoginSerializer,
+        responses={
+            200: UserLoginSerializer,
+            400: OpenApiResponse(
+                description="Invalid Credentials",
+                examples=[
+                    OpenApiExample(
+                        name="invalid_credentials",
+                        value={
+                            "error": "AUTHENTICATION_ERROR",
+                            "message": "Invalid email or password",
+                            "request_id": "550e8400-e29b-41d4-a716-446655440000",
+                        },
+                    ),
+                ],
+            ),
+            423: OpenApiResponse(
+                description="Account Locked",
+                examples=[
+                    OpenApiExample(
+                        name="account_locked",
+                        value={
+                            "detail": "Account temporarily locked due to multiple failed login attempts. Try again in 30 minutes.",
+                            "retry_after": 1800,
+                        },
+                    ),
+                ],
+            ),
+            429: OpenApiResponse(
+                description="Rate Limit Exceeded",
+                examples=[
+                    OpenApiExample(
+                        name="rate_limit_exceeded",
+                        value={
+                            "error": "RATE_LIMIT_EXCEEDED",
+                            "message": "Too many login attempts. Please try again later.",
+                            "request_id": "550e8400-e29b-41d4-a716-446655440000",
+                        },
+                    ),
+                ],
+            ),
+        },
+        tags=["Authentication"],
+        examples=[
+            OpenApiExample(
+                name="valid_login_request",
+                summary="Valid Login Request",
+                value={"email": "user@example.com", "password": "SecurePass123"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                name="successful_login_response",
+                summary="Successful Login Response",
+                value={
+                    "tokens": {
+                        "access_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+                        "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
+                    },
+                },
+                response_only=True,
+                status_codes=["200"],
+            ),
+        ],
+    )
     def post(self, request):
         """Handle user login request with account lockout protection."""
         email = request.data.get("email", "").lower()
@@ -192,16 +329,63 @@ class UserLoginView(APIView):
 
 class UserLogoutView(APIView):
     """
-    API endpoint for user logout (AC #3).
+    User Logout Endpoint
 
-    POST /api/v1/auth/logout/
-    - Blacklists refresh token immediately
-    - Requires: refresh token in body
-    - Returns: 200 OK with success message
+    Logout user by blacklisting their refresh token.
+    Once blacklisted, the refresh token cannot be used to obtain new access tokens.
+
+    **Note:** Access tokens remain valid until expiration (30 minutes).
+    For immediate access revocation, implement token revocation checks in middleware.
     """
 
     permission_classes = [AllowAny]  # Allow any since we're just accepting token
 
+    @extend_schema(
+        operation_id="user_logout",
+        summary="User Logout",
+        description="Blacklist refresh token to prevent further token refreshes.",
+        request={
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "refresh_token": {
+                        "type": "string",
+                        "description": "JWT refresh token to blacklist",
+                    },
+                },
+                "required": ["refresh_token"],
+            },
+        },
+        responses={
+            200: OpenApiResponse(
+                description="Successful Logout",
+                examples=[
+                    OpenApiExample(
+                        name="successful_logout",
+                        value={"message": "Successfully logged out"},
+                    ),
+                ],
+            ),
+            400: OpenApiResponse(
+                description="Invalid Token",
+                examples=[
+                    OpenApiExample(
+                        name="invalid_token",
+                        value={"detail": "Invalid or expired token."},
+                    ),
+                ],
+            ),
+        },
+        tags=["Authentication"],
+        examples=[
+            OpenApiExample(
+                name="logout_request",
+                summary="Logout Request",
+                value={"refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGc..."},
+                request_only=True,
+            ),
+        ],
+    )
     def post(self, request):
         """Handle user logout request and blacklist token."""
         refresh_token = request.data.get("refresh_token")
@@ -247,17 +431,57 @@ class UserLogoutView(APIView):
 
 class PasswordResetRequestView(APIView):
     """
-    API endpoint for password reset request (AC #4).
+    Password Reset Request Endpoint
 
-    POST /api/v1/auth/password/reset/
-    - Sends reset email with token link
-    - Requires: email
-    - Returns: 200 OK (always, for security)
+    Initiate password reset by sending reset instructions to user's email.
+
+    **Security:** For security reasons, the API always returns success
+    regardless of whether the email exists in the system.
+
+    **Rate Limit:** 5 requests per minute per IP address
     """
 
     permission_classes = [AllowAny]
     throttle_classes = [AuthEndpointThrottle]  # Rate limit: 5/min (AC #10, #12)
 
+    @extend_schema(
+        operation_id="password_reset_request",
+        summary="Request Password Reset",
+        description="Send password reset email if account exists. Always returns success for security.",
+        request=PasswordResetRequestSerializer,
+        responses={
+            200: OpenApiResponse(
+                description="Success Response",
+                examples=[
+                    OpenApiExample(
+                        name="success",
+                        value={"message": "Password reset email sent if account exists"},
+                    ),
+                ],
+            ),
+            429: OpenApiResponse(
+                description="Rate Limit Exceeded",
+                examples=[
+                    OpenApiExample(
+                        name="rate_limit_exceeded",
+                        value={
+                            "error": "RATE_LIMIT_EXCEEDED",
+                            "message": "Too many password reset requests. Please try again later.",
+                        },
+                    ),
+                ],
+            ),
+        },
+        tags=["Authentication"],
+        examples=[
+            OpenApiExample(
+                name="password_reset_request",
+                summary="Password Reset Request",
+                value={"email": "user@example.com"},
+                request_only=True,
+            ),
+        ],
+    )
     def post(self, request):
         """Handle password reset request."""
         serializer = PasswordResetRequestSerializer(data=request.data)
@@ -314,6 +538,84 @@ class ThrottledTokenRefreshView(TokenRefreshView):
 
     throttle_classes = [AuthEndpointThrottle]
 
+    @extend_schema(
+        operation_id="token_refresh",
+        summary="Refresh Access Token",
+        description=(
+            "Exchange a valid refresh token for a new access token. "
+            "The refresh token must be valid and not blacklisted. "
+            "Supports both OAuth 2.0 standard 'refresh_token' parameter "
+            "and SimpleJWT 'refresh' parameter. "
+            "Rate limited to 5 requests per minute."
+        ),
+        request=TokenRefreshRequestSerializer,
+        responses={
+            200: TokenRefreshResponseSerializer,
+            400: OpenApiResponse(
+                description="Invalid Token",
+                examples=[
+                    OpenApiExample(
+                        name="invalid_token",
+                        value={
+                            "error": "INVALID_TOKEN",
+                            "message": "Token is invalid or expired",
+                            "request_id": "550e8400-e29b-41d4-a716-446655440000",
+                        },
+                    ),
+                ],
+            ),
+            401: OpenApiResponse(
+                description="Token Blacklisted",
+                examples=[
+                    OpenApiExample(
+                        name="token_blacklisted",
+                        value={
+                            "error": "TOKEN_BLACKLISTED",
+                            "message": "Token has been blacklisted",
+                            "request_id": "550e8400-e29b-41d4-a716-446655440000",
+                        },
+                    ),
+                ],
+            ),
+            429: OpenApiResponse(
+                description="Rate Limit Exceeded",
+                examples=[
+                    OpenApiExample(
+                        name="rate_limit_exceeded",
+                        value={
+                            "error": "RATE_LIMIT_EXCEEDED",
+                            "message": (
+                                "Too many token refresh attempts. "
+                                "Please try again later."
+                            ),
+                            "request_id": "550e8400-e29b-41d4-a716-446655440000",
+                        },
+                    ),
+                ],
+            ),
+        },
+        tags=["Authentication"],
+        examples=[
+            OpenApiExample(
+                name="valid_refresh_request",
+                summary="Valid Token Refresh Request",
+                value={
+                    "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                name="successful_refresh_response",
+                summary="Successful Token Refresh Response",
+                value={
+                    "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+                    "refresh_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+                },
+                response_only=True,
+                status_codes=["200"],
+            ),
+        ],
+    )
     def post(self, request, *args, **kwargs):
         """Override to use OAuth 2.0 standard parameter names (ADR-012)."""
         # Accept both 'refresh_token' (OAuth 2.0) and 'refresh' (SimpleJWT default)
@@ -323,7 +625,7 @@ class ThrottledTokenRefreshView(TokenRefreshView):
         response = super().post(request, *args, **kwargs)
 
         # Rename response keys for OAuth 2.0 compliance (ADR-012)
-        if response.status_code == 200:
+        if response.status_code == status.HTTP_200_OK:
             if "access" in response.data:
                 response.data["access_token"] = response.data.pop("access")
             if "refresh" in response.data:
@@ -334,16 +636,63 @@ class ThrottledTokenRefreshView(TokenRefreshView):
 
 class PasswordResetConfirmView(APIView):
     """
-    API endpoint for password reset confirmation (AC #5).
+    Password Reset Confirmation Endpoint
 
-    POST /api/v1/auth/password/reset/confirm/
-    - Validates token and resets password
-    - Requires: uid, token, new_password, new_password_confirm
-    - Returns: 200 OK with success message
+    Complete password reset by providing the reset token and new password.
+
+    **Password Requirements:**
+    - Minimum 8 characters
+    - At least one uppercase letter
+    - At least one lowercase letter
+    - At least one digit
     """
 
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        operation_id="password_reset_confirm",
+        summary="Confirm Password Reset",
+        description="Validate reset token and set new password.",
+        request=PasswordResetConfirmSerializer,
+        responses={
+            200: OpenApiResponse(
+                description="Success Response",
+                examples=[
+                    OpenApiExample(
+                        name="success",
+                        value={"message": "Password has been reset successfully"},
+                    ),
+                ],
+            ),
+            400: OpenApiResponse(
+                description="Invalid Token or Password",
+                examples=[
+                    OpenApiExample(
+                        name="invalid_token",
+                        value={
+                            "error": "VALIDATION_ERROR",
+                            "message": "Invalid or expired reset link",
+                            "details": [{"field": "token", "message": "Invalid or expired reset link."}],
+                        },
+                    ),
+                ],
+            ),
+        },
+        tags=["Authentication"],
+        examples=[
+            OpenApiExample(
+                name="password_reset_confirmation",
+                summary="Password Reset Confirmation",
+                value={
+                    "uid": "MQ",
+                    "token": "abc123-def456",
+                    "new_password": "NewSecurePass123",
+                    "new_password_confirm": "NewSecurePass123",
+                },
+                request_only=True,
+            ),
+        ],
+    )
     @transaction.atomic
     def post(self, request):
         """Handle password reset confirmation with transaction protection (AC #6)."""

@@ -12,21 +12,58 @@ from quran_backend.users.models import UserProfile
 
 
 class UserSerializer(serializers.ModelSerializer[User]):
+    """
+    Serializer for user data.
+
+    Provides basic user information including username, name, and profile URL.
+    Used for user profile retrieval and updates.
+    """
+
     class Meta:
         model = User
         fields = ["username", "name", "url"]
 
         extra_kwargs = {
-            "url": {"view_name": "api:user-detail", "lookup_field": "username"},
+            "url": {
+                "view_name": "api:user-detail",
+                "lookup_field": "username",
+                "help_text": _("API endpoint URL for this user's profile"),
+            },
         }
 
 
 class UserRegistrationSerializer(serializers.Serializer):
-    """Serializer for user registration with email and password."""
+    """
+    Serializer for user registration with email and password.
 
-    email = serializers.EmailField(required=True)
-    password = serializers.CharField(write_only=True, required=True, min_length=8)
-    password_confirm = serializers.CharField(write_only=True, required=True)
+    Validates email uniqueness and password strength requirements:
+    - Minimum 8 characters
+    - At least one uppercase letter
+    - At least one lowercase letter
+    - At least one digit
+
+    Returns JWT access and refresh tokens upon successful registration.
+    """
+
+    email = serializers.EmailField(
+        required=True,
+        help_text=_("User's email address (used for authentication and notifications)"),
+    )
+    password = serializers.CharField(
+        write_only=True,
+        required=True,
+        min_length=8,
+        style={"input_type": "password"},
+        help_text=_(
+            "User password (min 8 characters, must include uppercase, lowercase, and digit)",
+        ),
+    )
+    password_confirm = serializers.CharField(
+        write_only=True,
+        required=True,
+        style={"input_type": "password"},
+        help_text=_("Password confirmation (must match password)"),
+    )
 
     def validate_email(self, value):
         """Validate that email is unique."""
@@ -117,10 +154,27 @@ class UserRegistrationSerializer(serializers.Serializer):
 
 
 class UserLoginSerializer(serializers.Serializer):
-    """Serializer for user login with email and password."""
+    """
+    Serializer for user login with email and password.
 
-    email = serializers.EmailField(required=True)
-    password = serializers.CharField(write_only=True, required=True)
+    Authenticates user credentials and returns JWT access and refresh tokens.
+    Account lockout policy: 10 failed attempts result in a 30-minute lockout.
+
+    Returns:
+    - access_token: JWT access token (valid for 30 minutes)
+    - refresh_token: JWT refresh token (valid for 14 days)
+    """
+
+    email = serializers.EmailField(
+        required=True,
+        help_text=_("User's email address (used for authentication)"),
+    )
+    password = serializers.CharField(
+        write_only=True,
+        required=True,
+        style={"input_type": "password"},
+        help_text=_("User's password"),
+    )
 
     def validate(self, attrs):
         """Authenticate user and return user object (AC #2)."""
@@ -158,9 +212,19 @@ class UserLoginSerializer(serializers.Serializer):
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
-    """Serializer for password reset request (AC #4)."""
+    """
+    Serializer for password reset request.
 
-    email = serializers.EmailField(required=True)
+    Initiates password reset flow by sending reset email to the user.
+    For security, the response does not reveal whether the email exists in the system.
+    """
+
+    email = serializers.EmailField(
+        required=True,
+        help_text=_(
+            "Email address associated with the account (reset instructions will be sent here)",
+        ),
+    )
 
     def validate_email(self, value):
         """Validate that email exists."""
@@ -171,12 +235,36 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
-    """Serializer for password reset confirmation (AC #5)."""
+    """
+    Serializer for password reset confirmation.
 
-    token = serializers.CharField(required=True)
-    uid = serializers.CharField(required=True)
-    new_password = serializers.CharField(write_only=True, required=True, min_length=8)
-    new_password_confirm = serializers.CharField(write_only=True, required=True)
+    Validates the password reset token and sets the new password.
+    Requires the same password strength requirements as registration.
+    """
+
+    token = serializers.CharField(
+        required=True,
+        help_text=_("Password reset token received via email"),
+    )
+    uid = serializers.CharField(
+        required=True,
+        help_text=_("User identifier (base64-encoded) received via email"),
+    )
+    new_password = serializers.CharField(
+        write_only=True,
+        required=True,
+        min_length=8,
+        style={"input_type": "password"},
+        help_text=_(
+            "New password (min 8 characters, must include uppercase, lowercase, and digit)",
+        ),
+    )
+    new_password_confirm = serializers.CharField(
+        write_only=True,
+        required=True,
+        style={"input_type": "password"},
+        help_text=_("New password confirmation (must match new_password)"),
+    )
 
     def validate_new_password(self, value):
         """Validate password strength (AC #6)."""
@@ -230,19 +318,67 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         return attrs
 
 
+class TokenRefreshRequestSerializer(serializers.Serializer):
+    """
+    Serializer for token refresh request (OAuth 2.0 compliant).
+
+    Accepts refresh token and returns a new access token.
+    Supports both 'refresh_token' (OAuth 2.0 standard) and 'refresh' (SimpleJWT default).
+    """
+
+    refresh_token = serializers.CharField(
+        required=True,
+        write_only=True,
+        help_text=_("JWT refresh token (valid for 14 days)"),
+    )
+
+
+class TokenRefreshResponseSerializer(serializers.Serializer):
+    """
+    Serializer for token refresh response (OAuth 2.0 compliant).
+
+    Returns new access token and optionally a new refresh token.
+    """
+
+    access_token = serializers.CharField(
+        read_only=True,
+        help_text=_("New JWT access token (valid for 30 minutes)"),
+    )
+    refresh_token = serializers.CharField(
+        read_only=True,
+        required=False,
+        help_text=_("New JWT refresh token (only if rotation is enabled)"),
+    )
+
+
 class UserProfileSerializer(serializers.ModelSerializer):
-    """Serializer for user profile including analytics preferences."""
+    """
+    Serializer for user profile including analytics preferences.
+
+    Allows users to manage their profile settings including:
+    - Preferred language (Arabic or English)
+    - Timezone for localized date/time display
+    - Analytics consent (opt-in/opt-out for usage tracking)
+    """
 
     is_analytics_enabled = serializers.BooleanField(
         source="user.is_analytics_enabled",
         required=False,
-        help_text=_("User consent for usage analytics tracking"),
+        help_text=_("User consent for usage analytics tracking (true to opt-in, false to opt-out)"),
     )
 
     class Meta:
         model = UserProfile
         fields = ["preferred_language", "timezone", "is_analytics_enabled"]
         read_only_fields = []
+        extra_kwargs = {
+            "preferred_language": {
+                "help_text": _("Preferred language for API responses (ar for Arabic, en for English)"),
+            },
+            "timezone": {
+                "help_text": _("User's timezone for localized date/time display (e.g., 'UTC', 'Asia/Riyadh')"),
+            },
+        }
 
     def update(self, instance, validated_data):
         """Update profile and handle analytics preference if provided."""
