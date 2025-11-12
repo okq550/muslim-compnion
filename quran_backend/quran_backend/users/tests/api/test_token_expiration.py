@@ -85,7 +85,9 @@ class TestTokenExpiration:
 
         assert response.status_code == status.HTTP_200_OK
         assert "access_token" in response.data
-        assert "refresh_token" in response.data  # Should get new refresh token (rotation)
+        assert (
+            "refresh_token" in response.data
+        )  # Should get new refresh token (rotation)
 
         # Verify new access token works
         new_access_token = response.data["access_token"]
@@ -105,7 +107,11 @@ class TestTokenExpiration:
             expired_refresh = str(refresh)
 
         url = reverse("api:auth-token-refresh")
-        response = api_client.post(url, {"refresh_token": expired_refresh}, format="json")
+        response = api_client.post(
+            url,
+            {"refresh_token": expired_refresh},
+            format="json",
+        )
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -137,14 +143,22 @@ class TestTokenExpiration:
 
         # Refresh to get new tokens
         url = reverse("api:auth-token-refresh")
-        response = api_client.post(url, {"refresh_token": old_refresh_token}, format="json")
+        response = api_client.post(
+            url,
+            {"refresh_token": old_refresh_token},
+            format="json",
+        )
         assert response.status_code == status.HTTP_200_OK
 
         new_refresh_token = response.data["refresh_token"]
         assert new_refresh_token != old_refresh_token
 
         # Try to use old refresh token again - should fail because it's blacklisted
-        response = api_client.post(url, {"refresh_token": old_refresh_token}, format="json")
+        response = api_client.post(
+            url,
+            {"refresh_token": old_refresh_token},
+            format="json",
+        )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_access_token_lifetime_is_30_minutes(self, test_user):

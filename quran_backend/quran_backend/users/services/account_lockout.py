@@ -65,8 +65,11 @@ class AccountLockoutService:
 
             # Log failed attempt
             logger.info(
-                f"Failed login attempt for {email} from {ip_address or 'unknown IP'} "
-                f"(attempt {attempts}/{MAX_ATTEMPTS})",
+                "Failed login attempt for %s from %s (attempt %d/%d)",
+                email,
+                ip_address or "unknown IP",
+                attempts,
+                MAX_ATTEMPTS,
             )
 
             # Check if we should lock the account
@@ -77,19 +80,19 @@ class AccountLockoutService:
 
                 # Log lockout event
                 logger.warning(
-                    f"Account locked: {email} after {attempts} failed attempts "
-                    f"from {ip_address or 'unknown IP'}",
+                    "Account locked: %s after %d failed attempts from %s",
+                    email,
+                    attempts,
+                    ip_address or "unknown IP",
                 )
                 return True
 
+            # Account not locked
             return False
 
-        except Exception as e:
+        except Exception:
             # Graceful degradation: log error but don't block login
-            logger.error(
-                f"Error recording failed attempt for {email}: {e}",
-                exc_info=True,
-            )
+            logger.exception("Error recording failed attempt for %s", email)
             return False
 
     @classmethod
@@ -118,14 +121,16 @@ class AccountLockoutService:
 
                 if seconds_remaining > 0:
                     return (True, seconds_remaining)
+
                 # Lockout has expired, clean up
                 cache.delete(lockout_key)
 
+            # Account not locked
             return (False, 0)
 
-        except Exception as e:
+        except Exception:
             # Graceful degradation: log error and allow login
-            logger.error(f"Error checking lockout for {email}: {e}", exc_info=True)
+            logger.exception("Error checking lockout for %s", email)
             return (False, 0)
 
     @classmethod
@@ -146,11 +151,11 @@ class AccountLockoutService:
             cache.delete(attempt_key)
             cache.delete(lockout_key)
 
-            logger.info(f"Lockout cleared for {email}")
+            logger.info("Lockout cleared for %s", email)
 
-        except Exception as e:
+        except Exception:
             # Graceful degradation: log error
-            logger.error(f"Error resetting attempts for {email}: {e}", exc_info=True)
+            logger.exception("Error resetting attempts for %s", email)
 
     @classmethod
     def get_attempt_count(cls, email: str) -> int:
@@ -167,10 +172,7 @@ class AccountLockoutService:
             attempt_key = cls._get_attempt_key(email)
             return cache.get(attempt_key, 0)
 
-        except Exception as e:
+        except Exception:
             # Graceful degradation: log error and return 0
-            logger.error(
-                f"Error getting attempt count for {email}: {e}",
-                exc_info=True,
-            )
+            logger.exception("Error getting attempt count for %s", email)
             return 0

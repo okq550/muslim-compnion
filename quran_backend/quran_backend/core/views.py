@@ -200,9 +200,8 @@ def _check_cache():
 
         if result == cache_value:
             return ("up", round(latency_ms, 2))
-        else:
-            logger.warning("Cache read/write mismatch in health check")
-            return ("down", 0.0)
+        logger.warning("Cache read/write mismatch in health check")
+        return ("down", 0.0)
 
     except Exception:
         logger.exception("Cache health check failed")
@@ -225,9 +224,8 @@ def _check_celery():
 
         if worker_count > 0:
             return ("up", worker_count)
-        else:
-            logger.warning("No active Celery workers found")
-            return ("down", 0)
+        logger.warning("No active Celery workers found")
+        return ("down", 0)
 
     except Exception:
         logger.exception("Celery health check failed")

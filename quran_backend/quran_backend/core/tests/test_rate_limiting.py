@@ -13,13 +13,11 @@ Tests AC #1-9:
 - Rate limit status visible to users
 """
 
-import time
 from unittest.mock import patch
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
-from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -28,13 +26,13 @@ from quran_backend.core.utils.abuse_detection import track_rate_limit_violation
 User = get_user_model()
 
 
-@pytest.fixture()
+@pytest.fixture
 def api_client():
     """Create API client for testing."""
     return APIClient()
 
 
-@pytest.fixture()
+@pytest.fixture
 def authenticated_user(db):
     """Create authenticated user for testing."""
     user = User.objects.create_user(
@@ -45,7 +43,7 @@ def authenticated_user(db):
     return user
 
 
-@pytest.fixture()
+@pytest.fixture
 def authenticated_client(api_client, authenticated_user):
     """Create authenticated API client."""
     api_client.force_authenticate(user=authenticated_user)
@@ -60,7 +58,7 @@ def _clear_cache():
     cache.clear()
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 class TestAnonymousRateLimiting:
     """Test rate limiting for anonymous users (AC #2)."""
 
@@ -79,14 +77,19 @@ class TestAnonymousRateLimiting:
                 break
 
         # Verify we got at least some successful requests
-        successful_responses = [r for r in responses if r.status_code != status.HTTP_429_TOO_MANY_REQUESTS]
+        successful_responses = [
+            r for r in responses if r.status_code != status.HTTP_429_TOO_MANY_REQUESTS
+        ]
         assert len(successful_responses) > 0, "Should have some successful requests"
 
         # The 21st request should be throttled (or one after we hit limit)
         response = api_client.post(url, {"consent_given": True}, format="json")
         # Note: Depending on test timing, we might hit 429 before 21st request
         # Just verify 429 is returned at some point
-        while response.status_code != status.HTTP_429_TOO_MANY_REQUESTS and len(responses) < 25:
+        while (
+            response.status_code != status.HTTP_429_TOO_MANY_REQUESTS
+            and len(responses) < 25
+        ):
             responses.append(response)
             response = api_client.post(url, {"consent_given": True}, format="json")
 
@@ -103,7 +106,11 @@ class TestAnonymousRateLimiting:
         # Verify rate limit headers are present (may not be set if throttling not triggered)
         # Headers are added by middleware, so they may only appear after first throttle check
         # This is acceptable as per DRF throttling behavior
-        assert response.status_code in [status.HTTP_200_OK, status.HTTP_201_CREATED, status.HTTP_429_TOO_MANY_REQUESTS]
+        assert response.status_code in [
+            status.HTTP_200_OK,
+            status.HTTP_201_CREATED,
+            status.HTTP_429_TOO_MANY_REQUESTS,
+        ]
 
     def test_retry_after_header_in_429_response(self, api_client):
         """Test Retry-After header present in 429 responses (AC #4)."""
@@ -143,7 +150,7 @@ class TestAnonymousRateLimiting:
         assert "request_id" in data["error"]
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 class TestAuthenticatedRateLimiting:
     """Test rate limiting for authenticated users (AC #2)."""
 
@@ -153,7 +160,11 @@ class TestAuthenticatedRateLimiting:
 
         # Authenticated users should be able to make more than 20 requests
         for i in range(21):
-            response = authenticated_client.post(url, {"consent_given": True}, format="json")
+            response = authenticated_client.post(
+                url,
+                {"consent_given": True},
+                format="json",
+            )
             # Should not be throttled yet (limit is 100)
             if i < 20:
                 assert response.status_code != status.HTTP_429_TOO_MANY_REQUESTS
@@ -190,7 +201,7 @@ class TestAuthenticatedRateLimiting:
         assert response.status_code != status.HTTP_429_TOO_MANY_REQUESTS
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 class TestRateLimitWhitelist:
     """Test rate limit whitelist functionality (AC #7)."""
 
@@ -224,7 +235,7 @@ class TestRateLimitWhitelist:
             # This test verifies the whitelist logic in throttle classes
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 class TestAbuseDetection:
     """Test abuse detection and logging (AC #8)."""
 
@@ -283,7 +294,7 @@ class TestAbuseDetection:
         assert result["violation_count"] == 1
 
 
-@pytest.mark.django_db()
+@pytest.mark.django_db
 class TestRateLimitIntegration:
     """Integration tests for complete rate limiting flow."""
 
@@ -318,7 +329,9 @@ class TestRateLimitIntegration:
             responses.append(response)
 
         # All requests should be counted (none should be 429 yet for first 10)
-        throttled_count = sum(1 for r in responses if r.status_code == status.HTTP_429_TOO_MANY_REQUESTS)
+        throttled_count = sum(
+            1 for r in responses if r.status_code == status.HTTP_429_TOO_MANY_REQUESTS
+        )
         # Expect minimal or no throttling for first 10 requests
         assert throttled_count < 3  # Allow some margin for test timing
 

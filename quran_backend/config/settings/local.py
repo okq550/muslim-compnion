@@ -52,6 +52,27 @@ EMAIL_BACKEND = env(
     default="django.core.mail.backends.console.EmailBackend",
 )
 
+# Anymail (Mailgun)
+# ------------------------------------------------------------------------------
+# Only configure Anymail if Mailgun credentials are provided
+if env("MAILGUN_API_KEY", default=None):
+    # https://anymail.readthedocs.io/en/stable/installation/#installing-anymail
+    INSTALLED_APPS += ["anymail"]
+    # https://anymail.readthedocs.io/en/stable/installation/#anymail-settings-reference
+    # https://anymail.readthedocs.io/en/stable/esps/mailgun/
+    ANYMAIL = {
+        "MAILGUN_API_KEY": env("MAILGUN_API_KEY"),
+        "MAILGUN_SENDER_DOMAIN": env("MAILGUN_SENDER_DOMAIN"),
+        "MAILGUN_API_URL": env("MAILGUN_API_URL", default="https://api.mailgun.net/v3"),
+    }
+
+# Email configuration
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@quranbackend.com")
+FRONTEND_PASSWORD_RESET_URL = env(
+    "FRONTEND_PASSWORD_RESET_URL",
+    default="http://localhost:3000/reset-password",
+)
+
 # django-debug-toolbar
 # ------------------------------------------------------------------------------
 # https://django-debug-toolbar.readthedocs.io/en/latest/installation.html#prerequisites

@@ -48,7 +48,8 @@
       "Bash(env SKIP=ruff-check,ruff-format git commit -m \"$(cat <<''EOF''\nAdd supporting documentation and story files for Epic 1 completion\n\nAdded story files and supporting documentation for US-API-005, US-API-006,\nand Riwayah transmission data reference.\n\nNew Documentation:\n- US-API-005: Rate limiting and throttling story and context\n- US-API-006: Data backup and recovery story and context\n- Riwayah-Transmission.csv: Canonical Quranic transmission reference data\n- Operations runbooks for backup/recovery procedures\n\nConfiguration Updates:\n- Updated Claude Code settings with additional pre-approved commands\n\nEpic 1 Status: All infrastructure stories documented and ready for future implementation\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(env SKIP=ruff-check,ruff-format git commit -m \"$(cat <<''EOF''\nUpdate Claude Code settings with expanded pre-approved commands\n\nAdded additional pre-approved Bash commands for Docker, Python, and git workflows\nto streamline development workflow.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(DJANGO_READ_DOT_ENV_FILE=True DJANGO_SETTINGS_MODULE=config.settings.local DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres python manage.py:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(docker logs:*)"
     ],
     "deny": [],
     "ask": []

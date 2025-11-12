@@ -52,7 +52,11 @@ class TestTokenBlacklisting:
 
         # Logout with refresh token
         url = reverse("api:auth-logout")
-        response = api_client.post(url, {"refresh_token": refresh_token_str}, format="json")
+        response = api_client.post(
+            url,
+            {"refresh_token": refresh_token_str},
+            format="json",
+        )
 
         assert response.status_code == status.HTTP_200_OK
         assert "message" in response.data  # Check message exists (language-agnostic)
@@ -70,14 +74,22 @@ class TestTokenBlacklisting:
 
         # Try to refresh with blacklisted token
         url = reverse("api:auth-token-refresh")
-        response = api_client.post(url, {"refresh_token": refresh_token_str}, format="json")
+        response = api_client.post(
+            url,
+            {"refresh_token": refresh_token_str},
+            format="json",
+        )
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_logout_with_invalid_token_returns_400(self, api_client):
         """Test logout with invalid token returns 400."""
         url = reverse("api:auth-logout")
-        response = api_client.post(url, {"refresh_token": "invalid-token"}, format="json")
+        response = api_client.post(
+            url,
+            {"refresh_token": "invalid-token"},
+            format="json",
+        )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert (
@@ -97,7 +109,11 @@ class TestTokenBlacklisting:
 
         # Try to logout again with same token
         url = reverse("api:auth-logout")
-        response = api_client.post(url, {"refresh_token": refresh_token_str}, format="json")
+        response = api_client.post(
+            url,
+            {"refresh_token": refresh_token_str},
+            format="json",
+        )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
@@ -127,7 +143,11 @@ class TestTokenBlacklisting:
 
         # Refresh the token
         url = reverse("api:auth-token-refresh")
-        response = api_client.post(url, {"refresh_token": old_refresh_token}, format="json")
+        response = api_client.post(
+            url,
+            {"refresh_token": old_refresh_token},
+            format="json",
+        )
 
         assert response.status_code == status.HTTP_200_OK
         assert "refresh_token" in response.data
@@ -177,7 +197,11 @@ class TestTokenBlacklisting:
 
         # Perform 5 rotations
         for i in range(5):
-            response = api_client.post(url, {"refresh_token": current_refresh}, format="json")
+            response = api_client.post(
+                url,
+                {"refresh_token": current_refresh},
+                format="json",
+            )
             assert response.status_code == status.HTTP_200_OK
 
             new_refresh = response.data["refresh_token"]
@@ -191,7 +215,11 @@ class TestTokenBlacklisting:
             current_refresh = new_refresh
 
         # Final token should still work
-        response = api_client.post(url, {"refresh_token": current_refresh}, format="json")
+        response = api_client.post(
+            url,
+            {"refresh_token": current_refresh},
+            format="json",
+        )
         assert response.status_code == status.HTTP_200_OK
 
     def test_token_rotation_prevents_replay_attacks(self, api_client, test_user):

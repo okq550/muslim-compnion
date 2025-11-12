@@ -14,6 +14,11 @@ import logging
 import time
 from collections.abc import Callable
 
+import redis
+import requests
+from django.db import OperationalError
+from django_redis.exceptions import ConnectionInterrupted
+
 from quran_backend.core.exceptions import NetworkError
 from quran_backend.core.exceptions import TransientError
 
@@ -61,8 +66,10 @@ def retry_with_exponential_backoff(
                 last_exception = exc
                 attempts = 1
                 logger.info(
-                    f"Function {func.__name__} failed on first attempt: {exc}. "
-                    f"Will retry up to {max_retries} times.",
+                    "Function %s failed on first attempt: %s. Will retry up to %d times.",
+                    func.__name__,
+                    exc,
+                    max_retries,
                 )
 
             # Retry attempts
@@ -72,8 +79,11 @@ def retry_with_exponential_backoff(
 
                 # Log retry attempt
                 logger.info(
-                    f"Retrying {func.__name__}... (attempt {retry_num}/{max_retries}) "
-                    f"after {delay}s delay",
+                    "Retrying %s... (attempt %d/%d) after %s s delay",
+                    func.__name__,
+                    retry_num,
+                    max_retries,
+                    delay,
                 )
 
                 # Wait before retrying
@@ -84,22 +94,30 @@ def retry_with_exponential_backoff(
                     result = func(*args, **kwargs)
                     # Success! Log and return
                     logger.info(
-                        f"Function {func.__name__} succeeded on attempt {retry_num + 1} "
-                        f"(after {retry_num} retries)",
+                        "Function %s succeeded on attempt %d (after %d retries)",
+                        func.__name__,
+                        retry_num + 1,
+                        retry_num,
                     )
                     return result
                 except exceptions as exc:
                     last_exception = exc
                     attempts = retry_num + 1
                     logger.warning(
-                        f"Retry {retry_num}/{max_retries} failed for {func.__name__}: {exc}",
+                        "Retry %d/%d failed for %s: %s",
+                        retry_num,
+                        max_retries,
+                        func.__name__,
+                        exc,
                     )
                     # Continue to next retry attempt
 
             # All retries exhausted
             logger.error(
-                f"Function {func.__name__} failed after {attempts} total attempts "
-                f"(1 initial + {max_retries} retries). Raising last exception.",
+                "Function %s failed after %d total attempts (1 initial + %d retries). Raising last exception.",
+                func.__name__,
+                attempts,
+                max_retries,
             )
             raise last_exception
 
@@ -123,7 +141,6 @@ def retry_on_db_error(max_retries: int = 3):
             user.data = data
             user.save()
     """
-    from django.db import OperationalError
 
     return retry_with_exponential_backoff(
         max_retries=max_retries,
@@ -148,7 +165,6 @@ def retry_on_network_error(max_retries: int = 3):
                 raise NetworkError(f"Failed to fetch audio: {response.status_code}")
             return response.content
     """
-    import requests
 
     return retry_with_exponential_backoff(
         max_retries=max_retries,
@@ -183,8 +199,6 @@ def retry_on_cache_error(max_retries: int = 2):
     Note: This is complementary to the IGNORE_EXCEPTIONS setting in cache config.
           Use this decorator for critical cache operations that should be retried.
     """
-    import redis
-    from django_redis.exceptions import ConnectionInterrupted
 
     return retry_with_exponential_backoff(
         max_retries=max_retries,

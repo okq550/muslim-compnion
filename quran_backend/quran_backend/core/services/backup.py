@@ -19,7 +19,6 @@ import subprocess
 import tempfile
 from datetime import UTC
 from datetime import datetime
-from pathlib import Path
 
 import boto3
 import sentry_sdk
@@ -48,8 +47,16 @@ class BackupService:
     def __init__(self):
         """Initialize backup service with database and S3 configuration."""
         self.db_config = settings.DATABASES["default"]
-        self.s3_bucket = getattr(settings, "BACKUP_S3_BUCKET", "quran-backend-backups-production")
-        self.kms_key_id = getattr(settings, "BACKUP_KMS_KEY_ID", "alias/quran-backend-backup-key")
+        self.s3_bucket = getattr(
+            settings,
+            "BACKUP_S3_BUCKET",
+            "quran-backend-backups-production",
+        )
+        self.kms_key_id = getattr(
+            settings,
+            "BACKUP_KMS_KEY_ID",
+            "alias/quran-backend-backup-key",
+        )
         self.s3_client = boto3.client("s3")
         self.environment = getattr(settings, "ENVIRONMENT_NAME", "production")
 
@@ -106,7 +113,7 @@ class BackupService:
 
             logger.info(
                 f"Backup created successfully: {size_mb:.2f} MB, "
-                f"checksum: {checksum[:16]}..., duration: {duration_seconds:.1f}s"
+                f"checksum: {checksum[:16]}..., duration: {duration_seconds:.1f}s",
             )
 
             return {
@@ -121,7 +128,9 @@ class BackupService:
 
         except subprocess.CalledProcessError as e:
             # pg_dump execution failed
-            logger.error(f"Database dump failed: {e.stderr if hasattr(e, 'stderr') else str(e)}")
+            logger.error(
+                f"Database dump failed: {e.stderr if hasattr(e, 'stderr') else str(e)}",
+            )
             sentry_sdk.capture_exception(
                 e,
                 extra={
@@ -131,11 +140,11 @@ class BackupService:
                     "db_name": self.db_config.get("NAME", "postgres"),
                 },
             )
-            raise BackupFailedError(f"Database dump failed: {str(e)}") from e
+            raise BackupFailedError(f"Database dump failed: {e!s}") from e
 
-        except (OSError, IOError) as e:
+        except OSError as e:
             # File system errors (disk full, permissions, etc.)
-            logger.error(f"Backup file operation failed: {str(e)}")
+            logger.error(f"Backup file operation failed: {e!s}")
             sentry_sdk.capture_exception(
                 e,
                 extra={
@@ -147,11 +156,11 @@ class BackupService:
             # Clean up on failure
             if temp_dir and os.path.exists(temp_dir):
                 shutil.rmtree(temp_dir, ignore_errors=True)
-            raise BackupFailedError(f"Backup file operation failed: {str(e)}") from e
+            raise BackupFailedError(f"Backup file operation failed: {e!s}") from e
 
         except Exception as e:
             # Unexpected errors
-            logger.error(f"Unexpected error during backup: {str(e)}")
+            logger.error(f"Unexpected error during backup: {e!s}")
             sentry_sdk.capture_exception(
                 e,
                 extra={
@@ -162,7 +171,7 @@ class BackupService:
             # Clean up on failure
             if temp_dir and os.path.exists(temp_dir):
                 shutil.rmtree(temp_dir, ignore_errors=True)
-            raise BackupFailedError(f"Backup failed: {str(e)}") from e
+            raise BackupFailedError(f"Backup failed: {e!s}") from e
 
     def _execute_pg_dump(self, output_file: str) -> None:
         """
@@ -207,7 +216,7 @@ class BackupService:
 
         logger.info(
             f"Executing pg_dump: host={db_host}, port={db_port}, "
-            f"database={db_name}, user={db_user}"
+            f"database={db_name}, user={db_user}",
         )
 
         try:
@@ -224,7 +233,7 @@ class BackupService:
             # Log success
             file_size = os.path.getsize(output_file)
             logger.info(
-                f"pg_dump completed successfully: {file_size / (1024 * 1024):.2f} MB"
+                f"pg_dump completed successfully: {file_size / (1024 * 1024):.2f} MB",
             )
 
             # Log any warnings from pg_dump (they go to stderr even on success)
@@ -233,13 +242,15 @@ class BackupService:
 
         except subprocess.TimeoutExpired as e:
             logger.error(f"pg_dump timed out after {e.timeout} seconds")
-            raise BackupFailedError(f"Database dump timed out after {e.timeout} seconds") from e
+            raise BackupFailedError(
+                f"Database dump timed out after {e.timeout} seconds",
+            ) from e
 
         except subprocess.CalledProcessError as e:
             # pg_dump failed - log detailed error
             logger.error(
                 f"pg_dump failed with exit code {e.returncode}. "
-                f"stderr: {e.stderr}, stdout: {e.stdout}"
+                f"stderr: {e.stderr}, stdout: {e.stdout}",
             )
             raise
 
@@ -271,7 +282,7 @@ class BackupService:
 
             logger.info(
                 f"Compression complete: {original_size / (1024 * 1024):.2f} MB -> "
-                f"{compressed_size / (1024 * 1024):.2f} MB ({ratio:.1f}% reduction)"
+                f"{compressed_size / (1024 * 1024):.2f} MB ({ratio:.1f}% reduction)",
             )
 
             # Remove original uncompressed file to save space
@@ -279,8 +290,8 @@ class BackupService:
 
             return compressed_file
 
-        except (OSError, IOError) as e:
-            logger.error(f"Compression failed: {str(e)}")
+        except OSError as e:
+            logger.error(f"Compression failed: {e!s}")
             raise
 
     def calculate_checksum(self, file_path: str) -> str:
@@ -310,8 +321,8 @@ class BackupService:
             logger.info(f"Checksum calculated: {checksum}")
             return checksum
 
-        except (OSError, IOError) as e:
-            logger.error(f"Failed to calculate checksum: {str(e)}")
+        except OSError as e:
+            logger.error(f"Failed to calculate checksum: {e!s}")
             raise
 
     def get_backup_metadata(self) -> dict:
@@ -341,7 +352,13 @@ class BackupService:
         }
 
     @retry_with_exponential_backoff(max_retries=3, delays=(2.0, 4.0, 8.0))
-    def upload_to_s3(self, local_file: str, s3_key: str, metadata: dict, checksum: str) -> bool:
+    def upload_to_s3(
+        self,
+        local_file: str,
+        s3_key: str,
+        metadata: dict,
+        checksum: str,
+    ) -> bool:
         """
         Upload backup file to S3 with metadata.
 
@@ -384,7 +401,7 @@ class BackupService:
 
             logger.info(
                 f"Upload complete: {file_size / (1024 * 1024):.2f} MB uploaded to "
-                f"s3://{self.s3_bucket}/{s3_key}"
+                f"s3://{self.s3_bucket}/{s3_key}",
             )
 
             return True
@@ -395,7 +412,7 @@ class BackupService:
 
             logger.error(
                 f"S3 upload failed: {error_code} - {error_message}. "
-                f"Bucket: {self.s3_bucket}, Key: {s3_key}"
+                f"Bucket: {self.s3_bucket}, Key: {s3_key}",
             )
 
             sentry_sdk.capture_exception(
@@ -412,7 +429,7 @@ class BackupService:
             raise BackupFailedError(f"S3 upload failed: {error_message}") from e
 
         except Exception as e:
-            logger.error(f"Unexpected error during S3 upload: {str(e)}")
+            logger.error(f"Unexpected error during S3 upload: {e!s}")
             sentry_sdk.capture_exception(
                 e,
                 extra={
@@ -422,7 +439,7 @@ class BackupService:
                     "key": s3_key,
                 },
             )
-            raise BackupFailedError(f"S3 upload failed: {str(e)}") from e
+            raise BackupFailedError(f"S3 upload failed: {e!s}") from e
 
     def verify_upload_integrity(self, s3_key: str, expected_checksum: str) -> bool:
         """
@@ -457,7 +474,7 @@ class BackupService:
             if stored_checksum != expected_checksum:
                 logger.error(
                     f"Checksum mismatch! Expected: {expected_checksum}, "
-                    f"Got: {stored_checksum}"
+                    f"Got: {stored_checksum}",
                 )
 
                 sentry_sdk.capture_message(
@@ -474,17 +491,21 @@ class BackupService:
 
                 raise IntegrityCheckFailedError(
                     f"Checksum mismatch: expected {expected_checksum}, "
-                    f"got {stored_checksum}"
+                    f"got {stored_checksum}",
                 )
 
-            logger.info(f"Integrity check passed: checksum {expected_checksum[:16]}... verified")
+            logger.info(
+                f"Integrity check passed: checksum {expected_checksum[:16]}... verified",
+            )
             return True
 
         except ClientError as e:
             error_code = e.response.get("Error", {}).get("Code", "Unknown")
             error_message = e.response.get("Error", {}).get("Message", str(e))
 
-            logger.error(f"Failed to retrieve S3 metadata: {error_code} - {error_message}")
+            logger.error(
+                f"Failed to retrieve S3 metadata: {error_code} - {error_message}",
+            )
 
             sentry_sdk.capture_exception(
                 e,
@@ -497,7 +518,9 @@ class BackupService:
                 },
             )
 
-            raise BackupFailedError(f"Failed to verify upload integrity: {error_message}") from e
+            raise BackupFailedError(
+                f"Failed to verify upload integrity: {error_message}",
+            ) from e
 
     def generate_s3_key(self, date: datetime | None = None) -> str:
         """

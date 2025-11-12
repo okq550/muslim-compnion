@@ -364,7 +364,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
     is_analytics_enabled = serializers.BooleanField(
         source="user.is_analytics_enabled",
         required=False,
-        help_text=_("User consent for usage analytics tracking (true to opt-in, false to opt-out)"),
+        help_text=_(
+            "User consent for usage analytics tracking "
+            "(true to opt-in, false to opt-out)",
+        ),
     )
 
     class Meta:
@@ -373,17 +376,21 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = []
         extra_kwargs = {
             "preferred_language": {
-                "help_text": _("Preferred language for API responses (ar for Arabic, en for English)"),
+                "help_text": _(
+                    "Preferred language for API responses "
+                    "(ar for Arabic, en for English)",
+                ),
             },
             "timezone": {
-                "help_text": _("User's timezone for localized date/time display (e.g., 'UTC', 'Asia/Riyadh')"),
+                "help_text": _(
+                    "User's timezone for localized date/time display "
+                    "(e.g., 'UTC', 'Asia/Riyadh')",
+                ),
             },
         }
 
     def update(self, instance, validated_data):
         """Update profile and handle analytics preference if provided."""
-        from quran_backend.users.models import User
-
         # Extract user-related data
         user_data = validated_data.pop("user", {})
 

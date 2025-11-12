@@ -33,7 +33,11 @@ class EncryptionService:
 
     def __init__(self):
         """Initialize encryption service with KMS configuration."""
-        self.kms_key_id = getattr(settings, "BACKUP_KMS_KEY_ID", "alias/quran-backend-backup-key")
+        self.kms_key_id = getattr(
+            settings,
+            "BACKUP_KMS_KEY_ID",
+            "alias/quran-backend-backup-key",
+        )
         self.kms_client = boto3.client("kms")
 
     @retry_with_exponential_backoff(max_retries=3, delays=(2.0, 4.0, 8.0))
@@ -72,10 +76,13 @@ class EncryptionService:
             encrypted_key = response["CiphertextBlob"]
 
             # Step 2: Encrypt file with plaintext data key using AES-256-GCM
-            from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+            import struct
+
             from cryptography.hazmat.backends import default_backend
             from cryptography.hazmat.primitives import padding
-            import struct
+            from cryptography.hazmat.primitives.ciphers import Cipher
+            from cryptography.hazmat.primitives.ciphers import algorithms
+            from cryptography.hazmat.primitives.ciphers import modes
 
             # Read file to encrypt
             with open(file_path, "rb") as f:
@@ -83,13 +90,14 @@ class EncryptionService:
 
             # Generate random IV (initialization vector)
             import secrets
+
             iv = secrets.token_bytes(16)  # 128-bit IV for AES
 
             # Create cipher with AES-256-CBC mode
             cipher = Cipher(
                 algorithms.AES(plaintext_key),
                 modes.CBC(iv),
-                backend=default_backend()
+                backend=default_backend(),
             )
             encryptor = cipher.encryptor()
 
@@ -119,7 +127,7 @@ class EncryptionService:
             logger.info(
                 f"Encryption complete: {original_size / (1024 * 1024):.2f} MB -> "
                 f"{encrypted_size / (1024 * 1024):.2f} MB (overhead: "
-                f"{((encrypted_size - original_size) / original_size) * 100:.1f}%)"
+                f"{((encrypted_size - original_size) / original_size) * 100:.1f}%)",
             )
 
             return encrypted_file
@@ -143,7 +151,7 @@ class EncryptionService:
             raise EncryptionFailedError(f"Encryption failed: {error_message}") from e
 
         except Exception as e:
-            logger.error(f"Unexpected error during encryption: {str(e)}")
+            logger.error(f"Unexpected error during encryption: {e!s}")
 
             sentry_sdk.capture_exception(
                 e,
@@ -154,7 +162,7 @@ class EncryptionService:
                 },
             )
 
-            raise EncryptionFailedError(f"Encryption failed: {str(e)}") from e
+            raise EncryptionFailedError(f"Encryption failed: {e!s}") from e
 
     @retry_with_exponential_backoff(max_retries=3, delays=(2.0, 4.0, 8.0))
     def decrypt_file(self, file_path: str, kms_key_id: str | None = None) -> str:
@@ -175,7 +183,9 @@ class EncryptionService:
             EncryptionFailedError: If decryption fails
         """
         if not file_path.endswith(".enc"):
-            raise EncryptionFailedError("File must have '.enc' extension for decryption")
+            raise EncryptionFailedError(
+                "File must have '.enc' extension for decryption",
+            )
 
         decrypted_file = file_path[:-4]  # Remove '.enc' extension
 
@@ -203,15 +213,17 @@ class EncryptionService:
             plaintext_key = response["Plaintext"]
 
             # Step 2: Decrypt file content using plaintext data key
-            from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
             from cryptography.hazmat.backends import default_backend
             from cryptography.hazmat.primitives import padding
+            from cryptography.hazmat.primitives.ciphers import Cipher
+            from cryptography.hazmat.primitives.ciphers import algorithms
+            from cryptography.hazmat.primitives.ciphers import modes
 
             # Create cipher
             cipher = Cipher(
                 algorithms.AES(plaintext_key),
                 modes.CBC(iv),
-                backend=default_backend()
+                backend=default_backend(),
             )
             decryptor = cipher.decryptor()
 
@@ -232,7 +244,7 @@ class EncryptionService:
 
             logger.info(
                 f"Decryption complete: {encrypted_size / (1024 * 1024):.2f} MB -> "
-                f"{decrypted_size / (1024 * 1024):.2f} MB"
+                f"{decrypted_size / (1024 * 1024):.2f} MB",
             )
 
             return decrypted_file
@@ -255,7 +267,7 @@ class EncryptionService:
             raise EncryptionFailedError(f"Decryption failed: {error_message}") from e
 
         except Exception as e:
-            logger.error(f"Unexpected error during decryption: {str(e)}")
+            logger.error(f"Unexpected error during decryption: {e!s}")
 
             sentry_sdk.capture_exception(
                 e,
@@ -266,4 +278,4 @@ class EncryptionService:
                 },
             )
 
-            raise EncryptionFailedError(f"Decryption failed: {str(e)}") from e
+            raise EncryptionFailedError(f"Decryption failed: {e!s}") from e

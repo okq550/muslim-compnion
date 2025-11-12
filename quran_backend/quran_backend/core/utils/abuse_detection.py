@@ -55,8 +55,10 @@ def track_rate_limit_violation(user_id_or_ip, endpoint, context=None):
         if violation_count >= settings.RATE_LIMIT_ABUSE_THRESHOLD:
             # Critical alert for repeat offenders
             logger.critical(
-                f"Rate limit abuse detected: {user_id_or_ip} exceeded threshold "
-                f"({violation_count} violations in 1 hour, threshold: {settings.RATE_LIMIT_ABUSE_THRESHOLD})"
+                "Rate limit abuse detected: %s exceeded threshold (%d violations in 1 hour, threshold: %d)",
+                user_id_or_ip,
+                violation_count,
+                settings.RATE_LIMIT_ABUSE_THRESHOLD,
             )
             sentry_sdk.capture_message(
                 f"Rate limit abuse threshold exceeded: {user_id_or_ip}",
@@ -70,8 +72,11 @@ def track_rate_limit_violation(user_id_or_ip, endpoint, context=None):
         else:
             # Regular violation logging (info level)
             logger.info(
-                f"Rate limit violation: {user_id_or_ip} on {endpoint} "
-                f"(count: {violation_count}/{settings.RATE_LIMIT_ABUSE_THRESHOLD})"
+                "Rate limit violation: %s on %s (count: %d/%d)",
+                user_id_or_ip,
+                endpoint,
+                violation_count,
+                settings.RATE_LIMIT_ABUSE_THRESHOLD,
             )
             sentry_sdk.capture_message(
                 f"Rate limit violation: {user_id_or_ip}",

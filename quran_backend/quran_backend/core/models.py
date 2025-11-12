@@ -24,37 +24,37 @@ class BackupStatus(models.Model):
     ]
 
     backup_date = models.DateTimeField(
-        help_text="Date/time when backup was initiated"
+        help_text="Date/time when backup was initiated",
     )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        help_text="Backup execution status"
+        help_text="Backup execution status",
     )
     file_size_mb = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        help_text="Backup file size in megabytes"
+        help_text="Backup file size in megabytes",
     )
     duration_seconds = models.IntegerField(
-        help_text="Backup duration in seconds"
+        help_text="Backup duration in seconds",
     )
     checksum = models.CharField(
         max_length=64,
-        help_text="SHA-256 checksum of backup file"
+        help_text="SHA-256 checksum of backup file",
     )
     s3_key = models.CharField(
         max_length=500,
-        help_text="S3 object key where backup is stored"
+        help_text="S3 object key where backup is stored",
     )
     error_message = models.TextField(
         null=True,
         blank=True,
-        help_text="Error message if backup failed"
+        help_text="Error message if backup failed",
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
-        help_text="Timestamp when record was created"
+        help_text="Timestamp when record was created",
     )
 
     class Meta:
@@ -91,7 +91,9 @@ class BackupStatus(models.Model):
         Returns:
             float: Success rate as percentage (0-100)
         """
-        from datetime import UTC, datetime, timedelta
+        from datetime import UTC
+        from datetime import datetime
+        from datetime import timedelta
 
         cutoff = datetime.now(UTC) - timedelta(days=days)
         total = cls.objects.filter(backup_date__gte=cutoff).count()
@@ -101,7 +103,7 @@ class BackupStatus(models.Model):
 
         successful = cls.objects.filter(
             backup_date__gte=cutoff,
-            status="success"
+            status="success",
         ).count()
 
         return (successful / total) * 100

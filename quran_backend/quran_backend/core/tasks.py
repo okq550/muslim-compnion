@@ -56,13 +56,8 @@ def warm_quran_cache(self) -> dict[str, any]:
 
         logger.info("Cache warming task completed successfully")
 
-        return {
-            "status": "success",
-            "message": "Cache warming completed",
-        }
-
     except Exception as e:
-        logger.error(f"Cache warming task failed: {e}", exc_info=True)
+        logger.exception("Cache warming task failed: %s", e)
 
         # Retry the task if it fails (max 3 attempts)
         try:
@@ -95,20 +90,22 @@ def check_cache_health_task() -> dict[str, any]:
         # Log warning if cache is degraded or unavailable
         if health_status["status"] == "degraded":
             logger.warning(
-                f"Cache health degraded: {health_status['details']}, "
-                f"latency: {health_status['latency_ms']}ms",
+                "Cache health degraded: %s, latency: %sms",
+                health_status["details"],
+                health_status["latency_ms"],
             )
         elif health_status["status"] == "unavailable":
-            logger.error(f"Cache unavailable: {health_status['details']}")
+            logger.error("Cache unavailable: %s", health_status["details"])
         else:
             logger.info(
-                f"Cache health check passed (latency: {health_status['latency_ms']}ms)",
+                "Cache health check passed (latency: %sms)",
+                health_status["latency_ms"],
             )
 
         return health_status
 
     except Exception as e:
-        logger.error(f"Cache health check task failed: {e}", exc_info=True)
+        logger.exception("Cache health check task failed: %s", e)
         return {
             "status": "error",
             "details": f"Health check failed: {e}",
@@ -146,7 +143,7 @@ def log_cache_metrics_task() -> dict[str, any]:
         }
 
     except Exception as e:
-        logger.error(f"Cache metrics logging task failed: {e}", exc_info=True)
+        logger.exception("Cache metrics logging task failed: %s", e)
         return {
             "status": "error",
             "details": f"Metrics logging failed: {e}",
@@ -245,7 +242,7 @@ def run_daily_backup(self) -> dict:
 
         # Step 6: Log success to Sentry
         sentry_sdk.capture_message(
-            f"Daily backup completed successfully: {backup_result['size_mb']:.2f} MB",
+            "Daily backup completed successfully: %.2f MB" % backup_result["size_mb"],
             level="info",
             extra={
                 "component": "backup",
@@ -258,8 +255,9 @@ def run_daily_backup(self) -> dict:
         )
 
         logger.info(
-            f"Daily backup completed successfully: "
-            f"{backup_result['size_mb']:.2f} MB uploaded to {s3_key}",
+            "Daily backup completed successfully: %.2f MB uploaded to %s",
+            backup_result["size_mb"],
+            s3_key,
         )
 
         # Cleanup temporary directory
@@ -276,7 +274,7 @@ def run_daily_backup(self) -> dict:
         }
 
     except Exception as e:
-        logger.error(f"Daily backup task failed: {e}", exc_info=True)
+        logger.exception("Daily backup task failed: %s", e)
 
         # Record backup failure in database
         try:
@@ -292,7 +290,7 @@ def run_daily_backup(self) -> dict:
                 error_message=str(e)[:500],  # Limit error message length
             )
         except Exception as db_error:
-            logger.error(f"Failed to record backup failure: {db_error}")
+            logger.exception("Failed to record backup failure: %s", db_error)
 
         # Log failure to Sentry with CRITICAL severity
         sentry_sdk.capture_exception(
@@ -379,7 +377,9 @@ def enforce_backup_retention_policy(self) -> dict:
         logger.info("Starting backup retention policy enforcement")
 
         s3_bucket = getattr(
-            settings, "BACKUP_S3_BUCKET", "quran-backend-backups-production"
+            settings,
+            "BACKUP_S3_BUCKET",
+            "quran-backend-backups-production",
         )
         environment = getattr(settings, "ENVIRONMENT_NAME", "production")
 
@@ -417,7 +417,7 @@ def enforce_backup_retention_policy(self) -> dict:
             try:
                 date_str = s3_key.split("/")[1]  # Extract YYYY-MM-DD
                 backup_date = datetime.strptime(date_str, "%Y-%m-%d").replace(
-                    tzinfo=UTC
+                    tzinfo=UTC,
                 )
             except (IndexError, ValueError):
                 logger.warning(f"Skipping backup with invalid key format: {s3_key}")
@@ -495,7 +495,7 @@ def enforce_backup_retention_policy(self) -> dict:
         }
 
     except Exception as e:
-        logger.error(f"Backup retention policy enforcement failed: {e}", exc_info=True)
+        logger.exception("Backup retention policy enforcement failed: %s", e)
 
         sentry_sdk.capture_exception(
             e,

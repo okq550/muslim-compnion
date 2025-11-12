@@ -1,0 +1,94 @@
+code-review
+
+Would you like me to explain:
+  - How any of the implementations work?
+  - The Arabic localization configuration?
+  - Docker Compose setup?
+  - Testing approach?
+  - Or anything else about what was implemented?
+
+
+🚀 Common Commands
+
+  Start All Services
+
+  cd quran_backend
+  docker compose -f docker-compose.local.yml up -d
+
+  View Running Services
+
+  docker compose -f docker-compose.local.yml ps
+
+  View Logs
+
+  # All services
+  docker compose -f docker-compose.local.yml logs
+
+  # Specific service
+  docker compose -f docker-compose.local.yml logs django
+  docker compose -f docker-compose.local.yml logs celeryworker
+
+  # Follow logs in real-time
+  docker compose -f docker-compose.local.yml logs -f django
+
+  Restart a Service
+
+  docker compose -f docker-compose.local.yml restart django
+
+  Stop All Services
+
+  docker compose -f docker-compose.local.yml down
+
+  Stop and Remove Volumes (⚠️ Deletes data)
+
+  docker compose -f docker-compose.local.yml down -v
+
+  Execute Commands in Container
+
+  # Django shell
+  docker compose -f docker-compose.local.yml exec django python manage.py shell
+
+# Make database migrations
+  docker compose -f docker-compose.local.yml exec django python manage.py makemigrations
+
+  # Database migrations
+  docker compose -f docker-compose.local.yml exec django python manage.py migrate
+
+  # Create superuser
+  docker compose -f docker-compose.local.yml exec django python manage.py createsuperuser
+
+
+Cache Warming:
+  python manage.py warm_cache                    # Warm all content types
+  python manage.py warm_cache --content-types quran  # Warm specific type
+  python manage.py warm_cache --clear-first      # Clear then warm
+
+  Using Cache Decorator:
+  @cache_response(cache_key_func=lambda r, *a, **kw: f"quran:{kw['pk']}", ttl=604800)
+  def retrieve(self, request, *args, **kwargs):
+      return super().retrieve(request, *args, **kwargs)
+
+
+
+GENERAL ->
+  *workflow-status
+
+SM ->
+  *workflow-status
+  *create-story US-API-003
+  *story-context US-API-003
+  *validate-story-context US-API-003
+  *story-ready-for-dev US-API-003
+
+DEV ->
+  *workflow-status
+  *develop-story US-API-007
+  /bmad:bmm:workflows:code-review US-API-007
+  *story-done US-API-003
+
+
+
+  Would you like me to:
+  1. Run a full test suite to generate coverage report?
+  2. Create API documentation using drf-spectacular?
+  3. Continue with the next story from your sprint?

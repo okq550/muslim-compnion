@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.db import transaction
 from django.utils.encoding import force_bytes
@@ -24,6 +25,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from quran_backend.users.models import User
 from quran_backend.users.models import UserProfile
 from quran_backend.users.services.account_lockout import AccountLockoutService
+from quran_backend.users.tasks import send_password_reset_email
 
 from .serializers import PasswordResetConfirmSerializer
 from .serializers import PasswordResetRequestSerializer
@@ -79,7 +81,8 @@ class UserRegistrationView(APIView):
     - At least one lowercase letter
     - At least one digit
 
-    **Rate Limit:** Subject to default API rate limits (100/min authenticated, 20/min anonymous)
+    **Rate Limit:** Subject to default API rate limits (100/min authenticated,
+    20/min anonymous)
     """
 
     permission_classes = [AllowAny]
@@ -87,7 +90,9 @@ class UserRegistrationView(APIView):
     @extend_schema(
         operation_id="user_register",
         summary="User Registration",
-        description="Create a new user account with email and password. Returns JWT tokens.",
+        description=(
+            "Create a new user account with email and password. Returns JWT tokens."
+        ),
         request=UserRegistrationSerializer,
         responses={
             201: UserRegistrationSerializer,
@@ -101,7 +106,10 @@ class UserRegistrationView(APIView):
                             "message": "Invalid input data",
                             "request_id": "550e8400-e29b-41d4-a716-446655440000",
                             "details": [
-                                {"field": "email", "message": "A user with this email already exists"},
+                                {
+                                    "field": "email",
+                                    "message": "A user with this email already exists",
+                                },
                             ],
                         },
                     ),
@@ -209,7 +217,10 @@ class UserLoginView(APIView):
                     OpenApiExample(
                         name="account_locked",
                         value={
-                            "detail": "Account temporarily locked due to multiple failed login attempts. Try again in 30 minutes.",
+                            "detail": (
+                                "Account temporarily locked due to multiple failed "
+                                "login attempts. Try again in 30 minutes."
+                            ),
                             "retry_after": 1800,
                         },
                     ),
@@ -222,7 +233,9 @@ class UserLoginView(APIView):
                         name="rate_limit_exceeded",
                         value={
                             "error": "RATE_LIMIT_EXCEEDED",
-                            "message": "Too many login attempts. Please try again later.",
+                            "message": (
+                                "Too many login attempts. Please try again later."
+                            ),
                             "request_id": "550e8400-e29b-41d4-a716-446655440000",
                         },
                     ),
@@ -447,7 +460,10 @@ class PasswordResetRequestView(APIView):
     @extend_schema(
         operation_id="password_reset_request",
         summary="Request Password Reset",
-        description="Send password reset email if account exists. Always returns success for security.",
+        description=(
+            "Send password reset email if account exists. "
+            "Always returns success for security."
+        ),
         request=PasswordResetRequestSerializer,
         responses={
             200: OpenApiResponse(
@@ -455,7 +471,9 @@ class PasswordResetRequestView(APIView):
                 examples=[
                     OpenApiExample(
                         name="success",
-                        value={"message": "Password reset email sent if account exists"},
+                        value={
+                            "message": "Password reset email sent if account exists",
+                        },
                     ),
                 ],
             ),
@@ -466,7 +484,10 @@ class PasswordResetRequestView(APIView):
                         name="rate_limit_exceeded",
                         value={
                             "error": "RATE_LIMIT_EXCEEDED",
-                            "message": "Too many password reset requests. Please try again later.",
+                            "message": (
+                                "Too many password reset requests. "
+                                "Please try again later."
+                            ),
                         },
                     ),
                 ],
@@ -484,6 +505,7 @@ class PasswordResetRequestView(APIView):
     )
     def post(self, request):
         """Handle password reset request."""
+
         serializer = PasswordResetRequestSerializer(data=request.data)
         if serializer.is_valid():
             email = serializer.validated_data["email"]
@@ -491,12 +513,23 @@ class PasswordResetRequestView(APIView):
             try:
                 user = User.objects.get(email=email)
                 # Generate reset token and uid
-                _token = default_token_generator.make_token(user)
-                _uid = urlsafe_base64_encode(force_bytes(user.pk))
+                token = default_token_generator.make_token(user)
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
 
-                # TODO: In production, send email here with reset link
-                # Email should contain:
-                # {FRONTEND_URL}/reset-password?uid={uid}&token={token}
+                # Get frontend URL from settings (default for local dev)
+                frontend_url = getattr(
+                    settings,
+                    "FRONTEND_PASSWORD_RESET_URL",
+                    "http://localhost:3000/reset-password",
+                )
+
+                # Send password reset email asynchronously via Celery
+                send_password_reset_email.delay(
+                    user_email=email,
+                    reset_url=frontend_url,
+                    uid=uid,
+                    token=token,
+                )
 
                 # US-API-007 AC #1: Log password reset request
                 audit_logger.info(
@@ -672,7 +705,12 @@ class PasswordResetConfirmView(APIView):
                         value={
                             "error": "VALIDATION_ERROR",
                             "message": "Invalid or expired reset link",
-                            "details": [{"field": "token", "message": "Invalid or expired reset link."}],
+                            "details": [
+                                {
+                                    "field": "token",
+                                    "message": "Invalid or expired reset link.",
+                                },
+                            ],
                         },
                     ),
                 ],
@@ -715,7 +753,8 @@ class UserProfileViewSet(RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
     API endpoint for user profile management including analytics preferences.
 
     GET /api/v1/users/profile/ - Retrieve current user's profile
-    PATCH /api/v1/users/profile/ - Update current user's profile (including is_analytics_enabled)
+    PATCH /api/v1/users/profile/ - Update current user's profile (including
+    is_analytics_enabled)
     """
 
     serializer_class = UserProfileSerializer

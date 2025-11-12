@@ -17,15 +17,17 @@ import os
 import shutil
 import subprocess
 import tempfile
-from datetime import UTC, datetime, timedelta
+from datetime import UTC
+from datetime import datetime
+from datetime import timedelta
 
 import boto3
 import sentry_sdk
 from botocore.exceptions import ClientError
 from django.conf import settings
-from django.db import connection
 
-from quran_backend.core.exceptions import IntegrityCheckFailedError, RestoreFailedError
+from quran_backend.core.exceptions import IntegrityCheckFailedError
+from quran_backend.core.exceptions import RestoreFailedError
 from quran_backend.core.services.encryption import EncryptionService
 from quran_backend.core.utils.retry import retry_with_exponential_backoff
 
@@ -48,8 +50,16 @@ class RecoveryService:
     def __init__(self):
         """Initialize recovery service with S3 and database configuration."""
         self.db_config = settings.DATABASES["default"]
-        self.s3_bucket = getattr(settings, "BACKUP_S3_BUCKET", "quran-backend-backups-production")
-        self.kms_key_id = getattr(settings, "BACKUP_KMS_KEY_ID", "alias/quran-backend-backup-key")
+        self.s3_bucket = getattr(
+            settings,
+            "BACKUP_S3_BUCKET",
+            "quran-backend-backups-production",
+        )
+        self.kms_key_id = getattr(
+            settings,
+            "BACKUP_KMS_KEY_ID",
+            "alias/quran-backend-backup-key",
+        )
         self.s3_client = boto3.client("s3")
         self.environment = getattr(settings, "ENVIRONMENT_NAME", "production")
         self.encryption_service = EncryptionService()
@@ -73,7 +83,7 @@ class RecoveryService:
         Raises:
             RestoreFailedError: If S3 listing fails
         """
-        logger.info(f"Listing backups for the past {days} days")
+        logger.info("Listing backups for the past %d days", days)
 
         try:
             # Calculate cutoff date
@@ -81,7 +91,10 @@ class RecoveryService:
 
             # List objects in S3 bucket for this environment
             prefix = f"{self.environment}/"
-            response = self.s3_client.list_objects_v2(Bucket=self.s3_bucket, Prefix=prefix)
+            response = self.s3_client.list_objects_v2(
+                Bucket=self.s3_bucket,
+                Prefix=prefix,
+            )
 
             if "Contents" not in response:
                 logger.info("No backups found in S3 bucket")
@@ -97,9 +110,14 @@ class RecoveryService:
                 # Extract date from key format: {environment}/{YYYY-MM-DD}/db_backup.sql.gz.enc
                 try:
                     date_str = s3_key.split("/")[1]  # Extract YYYY-MM-DD
-                    backup_date = datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=UTC)
+                    backup_date = datetime.strptime(date_str, "%Y-%m-%d").replace(
+                        tzinfo=UTC,
+                    )
                 except (IndexError, ValueError):
-                    logger.warning(f"Skipping backup with invalid key format: {s3_key}")
+                    logger.warning(
+                        "Skipping backup with invalid key format: %s", s3_key
+                    )
+
                     continue
 
                 # Filter by cutoff date
@@ -109,25 +127,27 @@ class RecoveryService:
                 # Calculate age in days
                 age_days = (datetime.now(UTC) - backup_date).days
 
-                backups.append({
-                    "date": date_str,
-                    "size_mb": size_bytes / (1024 * 1024),
-                    "s3_key": s3_key,
-                    "age_days": age_days,
-                    "last_modified": last_modified.isoformat(),
-                })
+                backups.append(
+                    {
+                        "date": date_str,
+                        "size_mb": size_bytes / (1024 * 1024),
+                        "s3_key": s3_key,
+                        "age_days": age_days,
+                        "last_modified": last_modified.isoformat(),
+                    },
+                )
 
             # Sort by date (newest first)
             backups.sort(key=lambda x: x["date"], reverse=True)
 
-            logger.info(f"Found {len(backups)} backups in the past {days} days")
+            logger.info("Found %d backups in the past %d days", len(backups), days)
             return backups
 
         except ClientError as e:
             error_code = e.response.get("Error", {}).get("Code", "Unknown")
             error_message = e.response.get("Error", {}).get("Message", str(e))
 
-            logger.error(f"Failed to list backups: {error_code} - {error_message}")
+            logger.error("Failed to list backups: %s - %s", error_code, error_message)
 
             sentry_sdk.capture_exception(
                 e,
@@ -156,13 +176,17 @@ class RecoveryService:
         Raises:
             RestoreFailedError: If download fails
         """
-        logger.info(f"Downloading backup from S3: s3://{self.s3_bucket}/{s3_key}")
+        logger.info("Downloading backup from S3: s3://%s/%s", self.s3_bucket, s3_key)
 
         try:
             self.s3_client.download_file(self.s3_bucket, s3_key, local_path)
 
             file_size = os.path.getsize(local_path)
-            logger.info(f"Download complete: {file_size / (1024 * 1024):.2f} MB saved to {local_path}")
+            logger.info(
+                "Download complete: %.2f MB saved to %s",
+                file_size / (1024 * 1024),
+                local_path,
+            )
 
             return local_path
 
@@ -170,7 +194,9 @@ class RecoveryService:
             error_code = e.response.get("Error", {}).get("Code", "Unknown")
             error_message = e.response.get("Error", {}).get("Message", str(e))
 
-            logger.error(f"Failed to download backup: {error_code} - {error_message}")
+            logger.exception(
+                "Failed to download backup: %s - %s", error_code, error_message
+            )
 
             sentry_sdk.capture_exception(
                 e,
@@ -183,7 +209,9 @@ class RecoveryService:
                 },
             )
 
-            raise RestoreFailedError(f"Failed to download backup: {error_message}") from e
+            raise RestoreFailedError(
+                f"Failed to download backup: {error_message}",
+            ) from e
 
     def decrypt_backup(self, encrypted_file: str, output_file: str) -> str:
         """
@@ -199,7 +227,7 @@ class RecoveryService:
         Raises:
             RestoreFailedError: If decryption fails
         """
-        logger.info(f"Decrypting backup: {encrypted_file}")
+        logger.info("Decrypting backup: %s", encrypted_file)
 
         try:
             decrypted_file = self.encryption_service.decrypt_file(encrypted_file)
@@ -208,12 +236,12 @@ class RecoveryService:
             if decrypted_file != output_file:
                 shutil.move(decrypted_file, output_file)
 
-            logger.info(f"Decryption complete: {output_file}")
+            logger.info("Decryption complete: %s", output_file)
             return output_file
 
         except Exception as e:
-            logger.error(f"Failed to decrypt backup: {str(e)}")
-            raise RestoreFailedError(f"Failed to decrypt backup: {str(e)}") from e
+            logger.exception("Failed to decrypt backup: %s", e)
+            raise RestoreFailedError(f"Failed to decrypt backup: {e!s}") from e
 
     def decompress_backup(self, gz_file: str, output_file: str) -> str:
         """
@@ -229,7 +257,7 @@ class RecoveryService:
         Raises:
             RestoreFailedError: If decompression fails
         """
-        logger.info(f"Decompressing backup: {gz_file}")
+        logger.info("Decompressing backup: %s", gz_file)
 
         try:
             with gzip.open(gz_file, "rb") as f_in:
@@ -237,13 +265,13 @@ class RecoveryService:
                     shutil.copyfileobj(f_in, f_out)
 
             file_size = os.path.getsize(output_file)
-            logger.info(f"Decompression complete: {file_size / (1024 * 1024):.2f} MB")
+            logger.info("Decompression complete: %.2f MB", file_size / (1024 * 1024))
 
             return output_file
 
-        except (OSError, IOError) as e:
-            logger.error(f"Failed to decompress backup: {str(e)}")
-            raise RestoreFailedError(f"Failed to decompress backup: {str(e)}") from e
+        except OSError as e:
+            logger.exception("Failed to decompress backup: %s", e)
+            raise RestoreFailedError(f"Failed to decompress backup: {e!s}") from e
 
     def verify_backup_integrity(self, file_path: str, expected_checksum: str) -> bool:
         """
@@ -261,7 +289,7 @@ class RecoveryService:
         """
         import hashlib
 
-        logger.info(f"Verifying backup integrity: {file_path}")
+        logger.info("Verifying backup integrity: %s", file_path)
 
         try:
             sha256_hash = hashlib.sha256()
@@ -275,7 +303,7 @@ class RecoveryService:
             if actual_checksum != expected_checksum:
                 logger.error(
                     f"Checksum mismatch! Expected: {expected_checksum}, "
-                    f"Got: {actual_checksum}"
+                    f"Got: {actual_checksum}",
                 )
 
                 sentry_sdk.capture_message(
@@ -291,15 +319,18 @@ class RecoveryService:
                 )
 
                 raise IntegrityCheckFailedError(
-                    f"Checksum mismatch: expected {expected_checksum}, got {actual_checksum}"
+                    f"Checksum mismatch: expected {expected_checksum}, got {actual_checksum}",
                 )
 
-            logger.info(f"Integrity check passed: checksum {expected_checksum[:16]}... verified")
+            logger.info(
+                "Integrity check passed: checksum %s... verified",
+                expected_checksum[:16],
+            )
             return True
 
-        except (OSError, IOError) as e:
-            logger.error(f"Failed to verify backup integrity: {str(e)}")
-            raise RestoreFailedError(f"Failed to verify backup integrity: {str(e)}") from e
+        except OSError as e:
+            logger.exception("Failed to verify backup integrity: %s", e)
+            raise RestoreFailedError(f"Failed to verify backup integrity: {e!s}") from e
 
     def restore_database(
         self,
@@ -324,7 +355,7 @@ class RecoveryService:
         Raises:
             RestoreFailedError: If restore fails
         """
-        logger.info(f"Restoring database from: {sql_file} to target: {target_db}")
+        logger.info("Restoring database from: %s to target: %s", sql_file, target_db)
 
         # Get database configuration
         db_name = self.db_config.get("NAME", "postgres")
@@ -364,7 +395,7 @@ class RecoveryService:
             env = os.environ.copy()
             env["PGPASSWORD"] = db_password
 
-            logger.info(f"Executing database restore to: {actual_db}")
+            logger.info("Executing database restore to: %s", actual_db)
 
             # Execute psql with timeout (max 1 hour for large restores)
             result = subprocess.run(
@@ -376,11 +407,11 @@ class RecoveryService:
                 check=True,
             )
 
-            logger.info(f"Database restore completed successfully to: {actual_db}")
+            logger.info("Database restore completed successfully to: %s", actual_db)
 
             # Log warnings if any
             if result.stderr:
-                logger.warning(f"psql warnings: {result.stderr}")
+                logger.warning("psql warnings: %s", result.stderr)
 
             # Log to Sentry
             sentry_sdk.capture_message(
@@ -397,13 +428,17 @@ class RecoveryService:
             return True
 
         except subprocess.TimeoutExpired as e:
-            logger.error(f"Database restore timed out after {e.timeout} seconds")
-            raise RestoreFailedError(f"Database restore timed out after {e.timeout} seconds") from e
+            logger.error("Database restore timed out after %s seconds", e.timeout)
+            raise RestoreFailedError(
+                f"Database restore timed out after {e.timeout} seconds",
+            ) from e
 
         except subprocess.CalledProcessError as e:
             logger.error(
-                f"Database restore failed with exit code {e.returncode}. "
-                f"stderr: {e.stderr}, stdout: {e.stdout}"
+                "Database restore failed with exit code %s. stderr: %s, stdout: %s",
+                e.returncode,
+                e.stderr,
+                e.stdout,
             )
 
             sentry_sdk.capture_exception(
@@ -495,7 +530,9 @@ class RecoveryService:
             if temp_dir and os.path.exists(temp_dir):
                 shutil.rmtree(temp_dir, ignore_errors=True)
 
-            logger.info(f"Full recovery workflow completed successfully for {backup_date}")
+            logger.info(
+                f"Full recovery workflow completed successfully for {backup_date}",
+            )
 
             return {
                 "success": True,
@@ -505,10 +542,10 @@ class RecoveryService:
             }
 
         except Exception as e:
-            logger.error(f"Full recovery workflow failed: {str(e)}", exc_info=True)
+            logger.exception("Full recovery workflow failed: %s", e)
 
             # Cleanup on failure
             if temp_dir and os.path.exists(temp_dir):
                 shutil.rmtree(temp_dir, ignore_errors=True)
 
-            raise RestoreFailedError(f"Recovery workflow failed: {str(e)}") from e
+            raise RestoreFailedError(f"Recovery workflow failed: {e!s}") from e

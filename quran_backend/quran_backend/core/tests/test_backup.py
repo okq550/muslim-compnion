@@ -13,18 +13,20 @@ import gzip
 import hashlib
 import os
 import tempfile
-from datetime import UTC, datetime, timedelta
-from unittest.mock import MagicMock, Mock, patch
+from datetime import UTC
+from datetime import datetime
+from datetime import timedelta
+from unittest.mock import patch
 
 import pytest
-from moto import mock_kms, mock_s3
+from moto import mock_kms
+from moto import mock_s3
 
-from quran_backend.core.exceptions import BackupFailedError, IntegrityCheckFailedError
+from quran_backend.core.exceptions import IntegrityCheckFailedError
 from quran_backend.core.models import BackupStatus
 from quran_backend.core.services.backup import BackupService
 from quran_backend.core.services.encryption import EncryptionService
 from quran_backend.core.services.recovery import RecoveryService
-
 
 # =============================================================================
 # Backup Service Tests (AC #1, #2, #4)
@@ -99,6 +101,7 @@ class TestBackupService:
 
         # Create mock S3 bucket
         import boto3
+
         s3 = boto3.client("s3", region_name="us-east-1")
         s3.create_bucket(Bucket="test-backups")
 
@@ -134,6 +137,7 @@ class TestBackupService:
 
         # Create mock S3 bucket
         import boto3
+
         s3 = boto3.client("s3", region_name="us-east-1")
         s3.create_bucket(Bucket="test-backups")
 
@@ -160,6 +164,7 @@ class TestBackupService:
 
         # Create mock S3 bucket
         import boto3
+
         s3 = boto3.client("s3", region_name="us-east-1")
         s3.create_bucket(Bucket="test-backups")
 
@@ -195,6 +200,7 @@ class TestEncryptionService:
 
         # Create mock KMS key
         import boto3
+
         kms = boto3.client("kms", region_name="us-east-1")
         key_response = kms.create_key(Description="Test backup key")
         key_id = key_response["KeyMetadata"]["KeyId"]
@@ -226,6 +232,7 @@ class TestEncryptionService:
 
         # Create mock KMS key
         import boto3
+
         kms = boto3.client("kms", region_name="us-east-1")
         key_response = kms.create_key(Description="Test backup key")
         key_id = key_response["KeyMetadata"]["KeyId"]
@@ -268,6 +275,7 @@ class TestRecoveryService:
 
         # Create mock S3 bucket with backups
         import boto3
+
         s3 = boto3.client("s3", region_name="us-east-1")
         s3.create_bucket(Bucket="test-backups")
 
@@ -297,6 +305,7 @@ class TestRecoveryService:
 
         # Create mock S3 bucket
         import boto3
+
         s3 = boto3.client("s3", region_name="us-east-1")
         s3.create_bucket(Bucket="test-backups")
 
@@ -442,11 +451,15 @@ class TestCeleryBackupTasks:
 
         # Create mock S3 bucket and KMS key
         import boto3
+
         s3 = boto3.client("s3", region_name="us-east-1")
         s3.create_bucket(Bucket="quran-backend-backups-production")
 
         kms = boto3.client("kms", region_name="us-east-1")
-        kms.create_key(Description="Test backup key", KeyId="alias/quran-backend-backup-key")
+        kms.create_key(
+            Description="Test backup key",
+            KeyId="alias/quran-backend-backup-key",
+        )
 
         # Execute task
         result = run_daily_backup()
@@ -465,10 +478,11 @@ class TestCeleryBackupTasks:
     @mock_s3
     def test_retention_policy_deletes_old_backups(self):
         """Test retention policy deletes backups older than 30 days."""
-        from quran_backend.core.tasks import enforce_backup_retention_policy
-
         # Create mock S3 bucket
         import boto3
+
+        from quran_backend.core.tasks import enforce_backup_retention_policy
+
         s3 = boto3.client("s3", region_name="us-east-1")
         s3.create_bucket(Bucket="quran-backend-backups-production")
 
@@ -476,13 +490,21 @@ class TestCeleryBackupTasks:
         for i in range(35, 40):  # 35-39 days old (beyond 30-day retention)
             date = (datetime.now(UTC) - timedelta(days=i)).strftime("%Y-%m-%d")
             s3_key = f"production/{date}/db_backup.sql.gz.enc"
-            s3.put_object(Bucket="quran-backend-backups-production", Key=s3_key, Body=b"old backup")
+            s3.put_object(
+                Bucket="quran-backend-backups-production",
+                Key=s3_key,
+                Body=b"old backup",
+            )
 
         # Create recent backups (should be kept)
         for i in range(5):  # 0-4 days old (within 30-day retention)
             date = (datetime.now(UTC) - timedelta(days=i)).strftime("%Y-%m-%d")
             s3_key = f"production/{date}/db_backup.sql.gz.enc"
-            s3.put_object(Bucket="quran-backend-backups-production", Key=s3_key, Body=b"recent backup")
+            s3.put_object(
+                Bucket="quran-backend-backups-production",
+                Key=s3_key,
+                Body=b"recent backup",
+            )
 
         # Run retention policy
         result = enforce_backup_retention_policy()

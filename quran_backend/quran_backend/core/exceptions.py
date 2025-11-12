@@ -12,9 +12,18 @@ import uuid
 from datetime import UTC
 from datetime import datetime
 
+from django.core.exceptions import PermissionDenied
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.http import Http404
 from django.utils.translation import gettext_lazy as _
 from rest_framework import status
 from rest_framework.exceptions import APIException
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import NotAuthenticated
+from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
+from rest_framework.exceptions import Throttled
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.response import Response
 from rest_framework.views import exception_handler as drf_exception_handler
 
@@ -109,7 +118,7 @@ class EncryptionFailedError(APIException):
 
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     default_detail = _(
-        "Encryption operation failed. Please contact system administrator."
+        "Encryption operation failed. Please contact system administrator.",
     )
     default_code = ErrorCodes.ENCRYPTION_ERROR
 
@@ -119,7 +128,7 @@ class RestoreFailedError(APIException):
 
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     default_detail = _(
-        "Database restoration failed. Please contact system administrator."
+        "Database restoration failed. Please contact system administrator.",
     )
     default_code = ErrorCodes.RESTORE_ERROR
 
@@ -142,29 +151,20 @@ def get_error_code_from_exception(exc):
     Returns:
         str: Error code constant
     """
-    from django.core.exceptions import PermissionDenied
-    from django.core.exceptions import ValidationError as DjangoValidationError
-    from django.http import Http404
-    from rest_framework.exceptions import AuthenticationFailed
-    from rest_framework.exceptions import NotAuthenticated
-    from rest_framework.exceptions import NotFound
-    from rest_framework.exceptions import PermissionDenied as DRFPermissionDenied
-    from rest_framework.exceptions import Throttled
-    from rest_framework.exceptions import ValidationError as DRFValidationError
-
     # Map exception types to error codes
-    if isinstance(exc, (DRFValidationError, DjangoValidationError, ValidationError)):
-        return ErrorCodes.VALIDATION_ERROR
-    if isinstance(exc, (NotAuthenticated, AuthenticationFailed, AuthenticationError)):
-        return ErrorCodes.AUTH_ERROR
-    if isinstance(exc, (PermissionDenied, DRFPermissionDenied, AuthorizationError)):
-        return ErrorCodes.AUTHORIZATION_ERROR
-    if isinstance(exc, (Http404, NotFound, ResourceNotFoundError)):
-        return ErrorCodes.NOT_FOUND
-    if isinstance(exc, (NetworkError, TransientError)):
-        return ErrorCodes.NETWORK_ERROR
-    if isinstance(exc, (Throttled, RateLimitError)):
-        return ErrorCodes.RATE_LIMIT_EXCEEDED
+    error_code_mapping = [
+        ((DRFValidationError, DjangoValidationError, ValidationError), ErrorCodes.VALIDATION_ERROR),
+        ((NotAuthenticated, AuthenticationFailed, AuthenticationError), ErrorCodes.AUTH_ERROR),
+        ((PermissionDenied, DRFPermissionDenied, AuthorizationError), ErrorCodes.AUTHORIZATION_ERROR),
+        ((Http404, NotFound, ResourceNotFoundError), ErrorCodes.NOT_FOUND),
+        ((NetworkError, TransientError), ErrorCodes.NETWORK_ERROR),
+        ((Throttled, RateLimitError), ErrorCodes.RATE_LIMIT_EXCEEDED),
+    ]
+
+    for exception_types, error_code in error_code_mapping:
+        if isinstance(exc, exception_types):
+            return error_code
+
     return ErrorCodes.SERVER_ERROR
 
 
@@ -236,7 +236,7 @@ def custom_exception_handler(exc, context):
             "error": {
                 "code": ErrorCodes.RATE_LIMIT_EXCEEDED,
                 "message": _(
-                    "Too many requests. Please try again in {seconds} seconds."
+                    "Too many requests. Please try again in {seconds} seconds.",
                 ).format(
                     seconds=retry_after,
                 ),
