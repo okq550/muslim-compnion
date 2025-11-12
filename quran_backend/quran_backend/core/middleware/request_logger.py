@@ -14,6 +14,8 @@ import time
 
 logger = logging.getLogger(__name__)
 
+RESPONSE_TIME_SLOW_MS = 500  # Threshold for slow requests
+
 
 class RequestLoggingMiddleware:
     """
@@ -71,7 +73,7 @@ class RequestLoggingMiddleware:
         self._log_response(request, response, request_id, response_time_ms)
 
         # Log slow requests (WARNING level) - AC #2
-        if response_time_ms > 500:
+        if response_time_ms > RESPONSE_TIME_SLOW_MS:
             self._log_slow_request(request, response, request_id, response_time_ms)
 
         return response
@@ -106,7 +108,9 @@ class RequestLoggingMiddleware:
 
         # Log request with structured context
         logger.info(
-            f"Request: {request.method} {request.path}",
+            "Request: %s %s",
+            request.method,
+            request.path,
             extra={
                 "request_id": request_id,
                 "endpoint": request.path,
@@ -128,7 +132,11 @@ class RequestLoggingMiddleware:
             response_time_ms (float): Response time in milliseconds
         """
         logger.info(
-            f"Response: {request.method} {request.path} - {response.status_code} ({response_time_ms:.2f}ms)",
+            "Response: %s %s - %s (%.2fms)",
+            request.method,
+            request.path,
+            response.status_code,
+            response_time_ms,
             extra={
                 "request_id": request_id,
                 "endpoint": request.path,
@@ -154,7 +162,10 @@ class RequestLoggingMiddleware:
             user_id = str(request.user.id)
 
         logger.warning(
-            f"Slow request: {request.method} {request.path} took {response_time_ms:.2f}ms",
+            "Slow request: %s %s took %.2fms",
+            request.method,
+            request.path,
+            response_time_ms,
             extra={
                 "request_id": request_id,
                 "endpoint": request.path,

@@ -27,6 +27,11 @@ from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.response import Response
 from rest_framework.views import exception_handler as drf_exception_handler
 
+from quran_backend.core.utils.abuse_detection import track_rate_limit_violation
+
+STATUS_ERROR_500 = 500  # HTTP status code threshold for server errors
+DEFAULT_ERROR_MESSAGE = "Something went wrong. Please try again."
+
 
 # Error Code Constants (AC #4)
 class ErrorCodes:
@@ -141,6 +146,107 @@ class IntegrityCheckFailedError(APIException):
     default_code = ErrorCodes.INTEGRITY_ERROR
 
 
+def _get_identifier_from_request(request):
+    """
+    Extract user identifier from request (user ID or IP address).
+
+    Args:
+        request: Django HttpRequest
+
+    Returns:
+        str: User identifier (user_{id} or IP address)
+    """
+    if request.user and request.user.is_authenticated:
+        return f"user_{request.user.id}"
+
+    # Get IP address (handle X-Forwarded-For for load balancers)
+    x_forwarded_for = request.headers.get("x-forwarded-for")
+    if x_forwarded_for:
+        return x_forwarded_for.split(",")[0].strip()
+    return request.META.get("REMOTE_ADDR", "unknown")
+
+
+def _handle_throttled_exception(exc, context):
+    """
+    Handle Throttled exception with rate limit tracking.
+
+    Args:
+        exc: Throttled exception instance
+        context: Request context
+
+    Returns:
+        Response: Standardized rate limit error response
+    """
+    # Get request from context
+    request = context.get("request")
+    request_id = getattr(request, "request_id", str(uuid.uuid4()))
+
+    # Calculate retry_after in seconds
+    retry_after = int(exc.wait) if exc.wait else 60
+
+    # Track rate limit violation and detect abuse (AC #8)
+    identifier = _get_identifier_from_request(request)
+    endpoint = request.path
+    track_rate_limit_violation(
+        identifier,
+        endpoint,
+        context={
+            "method": request.method,
+            "request_id": request_id,
+            "user_agent": request.headers.get("user-agent", ""),
+        },
+    )
+
+    # Build rate limit error response
+    response_data = {
+        "error": {
+            "code": ErrorCodes.RATE_LIMIT_EXCEEDED,
+            "message": _(
+                "Too many requests. Please try again in {seconds} seconds.",
+            ).format(seconds=retry_after),
+            "details": {
+                "retry_after": retry_after,
+            },
+            "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+            "request_id": request_id,
+        },
+    }
+
+    response = Response(response_data, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    # Add Retry-After header (AC #4)
+    response["Retry-After"] = str(retry_after)
+    return response
+
+
+def _extract_error_message(exc):
+    """
+    Extract user-friendly error message from exception.
+
+    Args:
+        exc: Exception instance
+
+    Returns:
+        str: User-friendly error message
+    """
+    if not hasattr(exc, "detail"):
+        return str(exc)
+
+    if isinstance(exc.detail, dict):
+        # For field-level validation errors, extract first error
+        first_field = next(iter(exc.detail.keys()), None)
+        if first_field:
+            first_error = exc.detail[first_field]
+            if isinstance(first_error, list):
+                return str(first_error[0])
+            return str(first_error)
+        return _(DEFAULT_ERROR_MESSAGE)
+
+    if isinstance(exc.detail, list):
+        return str(exc.detail[0]) if exc.detail else str(exc)
+
+    return str(exc.detail)
+
+
 def get_error_code_from_exception(exc):
     """
     Map exception types to standardized error codes.
@@ -153,9 +259,18 @@ def get_error_code_from_exception(exc):
     """
     # Map exception types to error codes
     error_code_mapping = [
-        ((DRFValidationError, DjangoValidationError, ValidationError), ErrorCodes.VALIDATION_ERROR),
-        ((NotAuthenticated, AuthenticationFailed, AuthenticationError), ErrorCodes.AUTH_ERROR),
-        ((PermissionDenied, DRFPermissionDenied, AuthorizationError), ErrorCodes.AUTHORIZATION_ERROR),
+        (
+            (DRFValidationError, DjangoValidationError, ValidationError),
+            ErrorCodes.VALIDATION_ERROR,
+        ),
+        (
+            (NotAuthenticated, AuthenticationFailed, AuthenticationError),
+            ErrorCodes.AUTH_ERROR,
+        ),
+        (
+            (PermissionDenied, DRFPermissionDenied, AuthorizationError),
+            ErrorCodes.AUTHORIZATION_ERROR,
+        ),
         ((Http404, NotFound, ResourceNotFoundError), ErrorCodes.NOT_FOUND),
         ((NetworkError, TransientError), ErrorCodes.NETWORK_ERROR),
         ((Throttled, RateLimitError), ErrorCodes.RATE_LIMIT_EXCEEDED),
@@ -194,64 +309,9 @@ def custom_exception_handler(exc, context):
         }
     }
     """
-    from rest_framework.exceptions import Throttled
-
     # Special handling for Throttled exceptions (US-API-005, AC #3, #4, #8)
     if isinstance(exc, Throttled):
-        # Get request from context
-        request = context.get("request")
-        request_id = getattr(request, "request_id", str(uuid.uuid4()))
-
-        # Calculate retry_after in seconds
-        retry_after = int(exc.wait) if exc.wait else 60
-
-        # Track rate limit violation and detect abuse (AC #8)
-        from quran_backend.core.utils.abuse_detection import track_rate_limit_violation
-
-        # Determine identifier (user ID or IP address)
-        if request.user and request.user.is_authenticated:
-            identifier = f"user_{request.user.id}"
-        else:
-            # Get IP address (handle X-Forwarded-For for load balancers)
-            x_forwarded_for = request.headers.get("x-forwarded-for")
-            if x_forwarded_for:
-                identifier = x_forwarded_for.split(",")[0].strip()
-            else:
-                identifier = request.META.get("REMOTE_ADDR", "unknown")
-
-        # Track violation
-        endpoint = request.path
-        track_rate_limit_violation(
-            identifier,
-            endpoint,
-            context={
-                "method": request.method,
-                "request_id": request_id,
-                "user_agent": request.headers.get("user-agent", ""),
-            },
-        )
-
-        # Build rate limit error response
-        response_data = {
-            "error": {
-                "code": ErrorCodes.RATE_LIMIT_EXCEEDED,
-                "message": _(
-                    "Too many requests. Please try again in {seconds} seconds.",
-                ).format(
-                    seconds=retry_after,
-                ),
-                "details": {
-                    "retry_after": retry_after,
-                },
-                "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
-                "request_id": request_id,
-            },
-        }
-
-        response = Response(response_data, status=status.HTTP_429_TOO_MANY_REQUESTS)
-        # Add Retry-After header (AC #4)
-        response["Retry-After"] = str(retry_after)
-        return response
+        return _handle_throttled_exception(exc, context)
 
     # Call DRF's default exception handler first
     response = drf_exception_handler(exc, context)
@@ -259,7 +319,7 @@ def custom_exception_handler(exc, context):
     # If DRF didn't handle it, create a generic 500 response
     if response is None:
         response = Response(
-            {"detail": _("Something went wrong. Please try again.")},
+            {"detail": _(DEFAULT_ERROR_MESSAGE)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
@@ -273,28 +333,11 @@ def custom_exception_handler(exc, context):
     error_code = get_error_code_from_exception(exc)
 
     # Extract user-friendly message
-    if hasattr(exc, "detail"):
-        if isinstance(exc.detail, dict):
-            # For field-level validation errors, extract first error
-            first_field = next(iter(exc.detail.keys()), None)
-            if first_field:
-                first_error = exc.detail[first_field]
-                if isinstance(first_error, list):
-                    message = str(first_error[0])
-                else:
-                    message = str(first_error)
-            else:
-                message = _("Something went wrong. Please try again.")
-        elif isinstance(exc.detail, list):
-            message = str(exc.detail[0]) if exc.detail else str(exc)
-        else:
-            message = str(exc.detail)
-    else:
-        message = str(exc)
+    message = _extract_error_message(exc)
 
     # For server errors (500), use generic message (AC #2)
-    if response.status_code >= 500:
-        message = _("Something went wrong. Please try again.")
+    if response.status_code >= STATUS_ERROR_500:
+        message = _(DEFAULT_ERROR_MESSAGE)
         details = {}  # Don't expose internal details
     else:
         # Include validation details for client errors

@@ -49,7 +49,8 @@
       "Bash(env SKIP=ruff-check,ruff-format git commit -m \"$(cat <<''EOF''\nUpdate Claude Code settings with expanded pre-approved commands\n\nAdded additional pre-approved Bash commands for Docker, Python, and git workflows\nto streamline development workflow.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(DJANGO_READ_DOT_ENV_FILE=True DJANGO_SETTINGS_MODULE=config.settings.local DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres python manage.py:*)",
       "Bash(python:*)",
-      "Bash(docker logs:*)"
+      "Bash(docker logs:*)",
+      "Bash(ruff format:*)"
     ],
     "deny": [],
     "ask": []
