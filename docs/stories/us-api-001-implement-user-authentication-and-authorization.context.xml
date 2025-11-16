@@ -88,63 +88,63 @@
     </docs>
     <code>
       <artifact>
-        <path>quran_backend/quran_backend/users/models.py</path>
+        <path>backend/backend/users/models.py</path>
         <kind>model</kind>
         <symbol>User</symbol>
         <lines>7-26</lines>
         <reason>Existing custom User model extending AbstractUser. Needs modification to add UUID primary key, email as USERNAME_FIELD, is_analytics_enabled field. Currently has 'name' field instead of first_name/last_name.</reason>
       </artifact>
       <artifact>
-        <path>quran_backend/quran_backend/users/api/views.py</path>
+        <path>backend/backend/users/api/views.py</path>
         <kind>viewset</kind>
         <symbol>UserViewSet</symbol>
         <lines>14-26</lines>
         <reason>Existing DRF ViewSet for User model using SessionAuthentication and TokenAuthentication. Pattern to follow for new JWT auth views. Includes /me endpoint for current user profile. Authorization: filters queryset to current user only (line 21).</reason>
       </artifact>
       <artifact>
-        <path>quran_backend/quran_backend/users/api/serializers.py</path>
+        <path>backend/backend/users/api/serializers.py</path>
         <kind>serializer</kind>
         <symbol>UserSerializer</symbol>
         <lines>1-50</lines>
         <reason>Existing User serializer. Need to create additional serializers: UserRegistrationSerializer, UserLoginSerializer, PasswordResetRequestSerializer, PasswordResetConfirmSerializer.</reason>
       </artifact>
       <artifact>
-        <path>quran_backend/quran_backend/users/urls.py</path>
+        <path>backend/backend/users/urls.py</path>
         <kind>url_config</kind>
         <symbol>app_name</symbol>
         <lines>1-50</lines>
         <reason>URL routing for users app. Need to add auth endpoints: /api/v1/auth/register/, /login/, /logout/, /token/refresh/, /password-reset/, /password-reset-confirm/.</reason>
       </artifact>
       <artifact>
-        <path>quran_backend/config/settings/base.py</path>
+        <path>backend/config/settings/base.py</path>
         <kind>settings</kind>
         <symbol>REST_FRAMEWORK</symbol>
         <lines>330-335</lines>
         <reason>Current DRF settings use SessionAuthentication and TokenAuthentication. Need to add JWTAuthentication and configure SIMPLE_JWT settings (access/refresh token lifetimes).</reason>
       </artifact>
       <artifact>
-        <path>quran_backend/config/settings/base.py</path>
+        <path>backend/config/settings/base.py</path>
         <kind>settings</kind>
         <symbol>INSTALLED_APPS</symbol>
         <lines>63-93</lines>
         <reason>rest_framework and rest_framework.authtoken already installed. Verify rest_framework_simplejwt is installed via dependencies.</reason>
       </artifact>
       <artifact>
-        <path>quran_backend/quran_backend/users/tests/test_models.py</path>
+        <path>backend/backend/users/tests/test_models.py</path>
         <kind>test</kind>
         <symbol>test_user_get_absolute_url</symbol>
         <lines>1-6</lines>
         <reason>Existing test pattern using pytest-django. Follow this pattern for new authentication tests. Use fixtures for User objects (from factories.py).</reason>
       </artifact>
       <artifact>
-        <path>quran_backend/quran_backend/users/tests/factories.py</path>
+        <path>backend/backend/users/tests/factories.py</path>
         <kind>test_factory</kind>
         <symbol>UserFactory</symbol>
         <lines>1-50</lines>
         <reason>Factory Boy factories for generating test User objects. Use for creating test users in authentication test cases.</reason>
       </artifact>
       <artifact>
-        <path>quran_backend/quran_backend/users/tests/api/test_views.py</path>
+        <path>backend/backend/users/tests/api/test_views.py</path>
         <kind>test</kind>
         <symbol>API tests</symbol>
         <lines>1-100</lines>
@@ -205,7 +205,7 @@
           Response: { "user": {...}, "tokens": { "access": "...", "refresh": "..." } }
           Status: 201 Created
         </signature>
-        <path>quran_backend/users/views.py - UserRegistrationView (to be created)</path>
+        <path>backend/users/views.py - UserRegistrationView (to be created)</path>
       </endpoint>
       <endpoint>
         <name>POST /api/v1/auth/login/</name>
@@ -215,7 +215,7 @@
           Response: { "tokens": { "access": "...", "refresh": "..." } }
           Status: 200 OK
         </signature>
-        <path>quran_backend/users/views.py - UserLoginView (to be created)</path>
+        <path>backend/users/views.py - UserLoginView (to be created)</path>
       </endpoint>
       <endpoint>
         <name>POST /api/v1/auth/logout/</name>
@@ -226,7 +226,7 @@
           Status: 200 OK
           Authentication: Required (JWT)
         </signature>
-        <path>quran_backend/users/views.py - UserLogoutView (to be created)</path>
+        <path>backend/users/views.py - UserLogoutView (to be created)</path>
       </endpoint>
       <endpoint>
         <name>POST /api/v1/auth/token/refresh/</name>
@@ -237,7 +237,7 @@
           Status: 200 OK
           Uses: rest_framework_simplejwt.views.TokenRefreshView (built-in)
         </signature>
-        <path>quran_backend/users/urls.py - Route to TokenRefreshView</path>
+        <path>backend/users/urls.py - Route to TokenRefreshView</path>
       </endpoint>
       <endpoint>
         <name>POST /api/v1/auth/password-reset/</name>
@@ -247,7 +247,7 @@
           Response: { "message": "Password reset email sent" }
           Status: 200 OK
         </signature>
-        <path>quran_backend/users/views.py - PasswordResetRequestView (to be created)</path>
+        <path>backend/users/views.py - PasswordResetRequestView (to be created)</path>
       </endpoint>
       <endpoint>
         <name>POST /api/v1/auth/password-reset-confirm/</name>
@@ -257,27 +257,27 @@
           Response: { "message": "Password reset successful" }
           Status: 200 OK
         </signature>
-        <path>quran_backend/users/views.py - PasswordResetConfirmView (to be created)</path>
+        <path>backend/users/views.py - PasswordResetConfirmView (to be created)</path>
       </endpoint>
     </api>
     <serializers>
       <serializer>
         <name>UserSerializer</name>
         <kind>DRF Serializer</kind>
-        <signature>Existing serializer at quran_backend/users/api/serializers.py</signature>
-        <path>quran_backend/users/api/serializers.py</path>
+        <signature>Existing serializer at backend/users/api/serializers.py</signature>
+        <path>backend/users/api/serializers.py</path>
       </serializer>
       <serializer>
         <name>UserRegistrationSerializer</name>
         <kind>DRF Serializer</kind>
         <signature>Fields: email, password, password_confirm. Validates: email format, uniqueness, password strength (min 8 chars, complexity), password match.</signature>
-        <path>quran_backend/users/serializers.py (to be created)</path>
+        <path>backend/users/serializers.py (to be created)</path>
       </serializer>
       <serializer>
         <name>UserLoginSerializer</name>
         <kind>DRF Serializer</kind>
         <signature>Fields: email, password. Authenticates using django.contrib.auth.authenticate()</signature>
-        <path>quran_backend/users/serializers.py (to be created)</path>
+        <path>backend/users/serializers.py (to be created)</path>
       </serializer>
     </serializers>
     <permissions>
@@ -285,7 +285,7 @@
         <name>IsOwnerPermission</name>
         <kind>DRF Permission Class</kind>
         <signature>Checks: request.user == object.user for user-specific resources. Returns: True (allow) or False (403 Forbidden)</signature>
-        <path>quran_backend/users/permissions.py (to be created)</path>
+        <path>backend/users/permissions.py (to be created)</path>
       </permission>
     </permissions>
     <throttles>
@@ -293,29 +293,29 @@
         <name>AuthRateThrottle</name>
         <kind>DRF Throttle Class</kind>
         <signature>Inherits: AnonRateThrottle. Rate: 5 requests per 15 minutes per IP. Returns: 429 Too Many Requests with Retry-After header when exceeded.</signature>
-        <path>quran_backend/users/throttling.py (to be created)</path>
+        <path>backend/users/throttling.py (to be created)</path>
       </throttle>
       <throttle>
         <name>AccountLockoutThrottle</name>
         <kind>DRF Throttle Class</kind>
         <signature>Uses Redis to track failed login attempts by IP. Locks account for 1 hour after 10 failures.</signature>
-        <path>quran_backend/users/throttling.py (to be created)</path>
+        <path>backend/users/throttling.py (to be created)</path>
       </throttle>
     </throttles>
   </interfaces>
 
   <tests>
     <standards>
-      Use pytest-django testing framework with factory_boy for test data generation. Follow existing test patterns in quran_backend/users/tests/. Unit tests for serializers, models, utilities. Integration tests for API endpoints with authentication flows. Security tests for rate limiting, account lockout, authorization. Test coverage goal: >90% for authentication code. Run tests via: docker-compose exec django pytest quran_backend/users/tests/ -v
+      Use pytest-django testing framework with factory_boy for test data generation. Follow existing test patterns in backend/users/tests/. Unit tests for serializers, models, utilities. Integration tests for API endpoints with authentication flows. Security tests for rate limiting, account lockout, authorization. Test coverage goal: >90% for authentication code. Run tests via: docker-compose exec django pytest backend/users/tests/ -v
     </standards>
     <locations>
-      - quran_backend/users/tests/test_models.py - User and UserProfile model tests
-      - quran_backend/users/tests/test_views.py - Authentication endpoint integration tests
-      - quran_backend/users/tests/test_serializers.py - Serializer validation tests
-      - quran_backend/users/tests/test_permissions.py - Authorization tests (IsOwnerPermission)
-      - quran_backend/users/tests/test_throttling.py - Rate limiting and account lockout tests
-      - quran_backend/users/tests/api/test_views.py - DRF API endpoint tests
-      - quran_backend/users/tests/factories.py - Factory Boy factories for User, UserProfile
+      - backend/users/tests/test_models.py - User and UserProfile model tests
+      - backend/users/tests/test_views.py - Authentication endpoint integration tests
+      - backend/users/tests/test_serializers.py - Serializer validation tests
+      - backend/users/tests/test_permissions.py - Authorization tests (IsOwnerPermission)
+      - backend/users/tests/test_throttling.py - Rate limiting and account lockout tests
+      - backend/users/tests/api/test_views.py - DRF API endpoint tests
+      - backend/users/tests/factories.py - Factory Boy factories for User, UserProfile
     </locations>
     <ideas>
       - AC #1: Test POST /api/v1/auth/register/ with valid data returns 201, tokens, and user profile

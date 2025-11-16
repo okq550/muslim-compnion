@@ -16,7 +16,7 @@
     <tasks>
       <task id="1" name="Create Custom Exception Handler">
         <subtasks>
-          <item>Create quran_backend/core/exceptions.py module</item>
+          <item>Create backend/core/exceptions.py module</item>
           <item>Implement custom_exception_handler(exc, context) function</item>
           <item>Define error code constants (VALIDATION_ERROR, AUTH_ERROR, NOT_FOUND, NETWORK_ERROR, SERVER_ERROR, RATE_LIMIT_EXCEEDED)</item>
           <item>Wrap error messages with gettext_lazy for localization</item>
@@ -26,7 +26,7 @@
       </task>
       <task id="2" name="Implement Error Middleware">
         <subtasks>
-          <item>Create quran_backend/core/middleware/error_handler.py</item>
+          <item>Create backend/core/middleware/error_handler.py</item>
           <item>Implement ErrorHandlingMiddleware class with request_id generation</item>
           <item>Catch unhandled exceptions and log to Sentry</item>
           <item>Ensure database transactions are rolled back</item>
@@ -45,7 +45,7 @@
       </task>
       <task id="4" name="Implement Retry Logic">
         <subtasks>
-          <item>Create quran_backend/core/utils/retry.py</item>
+          <item>Create backend/core/utils/retry.py</item>
           <item>Implement retry_with_exponential_backoff decorator (max 3 retries, 1s/2s/4s delays)</item>
           <item>Apply to external API calls, database connections, Redis operations</item>
         </subtasks>
@@ -62,7 +62,7 @@
       </task>
       <task id="6" name="Implement Error Response Serializers">
         <subtasks>
-          <item>Create quran_backend/core/serializers.py</item>
+          <item>Create backend/core/serializers.py</item>
           <item>Define ErrorDetailSerializer and ErrorResponseSerializer</item>
           <item>Use serializer in custom exception handler</item>
         </subtasks>
@@ -88,7 +88,7 @@
       </task>
       <task id="9" name="Comprehensive Error Handling Tests">
         <subtasks>
-          <item>Create quran_backend/core/tests/test_error_handling.py</item>
+          <item>Create backend/core/tests/test_error_handling.py</item>
           <item>Test custom exception handler (all error types, standardized format)</item>
           <item>Test error middleware (unhandled exceptions, request_id, rollback)</item>
           <item>Test retry logic (exponential backoff, max retries)</item>
@@ -256,42 +256,42 @@
     </docs>
     <code>
       <artifact>
-        <path>quran_backend/quran_backend/users/api/exceptions.py</path>
+        <path>backend/backend/users/api/exceptions.py</path>
         <kind>exception handler</kind>
         <symbol>custom_exception_handler</symbol>
         <lines>7-56</lines>
         <reason>Existing custom exception handler for DRF. Transforms exceptions to standardized format. Will be extended to add request_id, timestamp, error codes, and Sentry logging.</reason>
       </artifact>
       <artifact>
-        <path>quran_backend/quran_backend/middleware.py</path>
+        <path>backend/backend/middleware.py</path>
         <kind>middleware</kind>
         <symbol>ForceArabicMiddleware</symbol>
         <lines>6-15</lines>
         <reason>Example middleware pattern. New ErrorHandlingMiddleware will follow similar structure for generating request_id and catching unhandled exceptions.</reason>
       </artifact>
       <artifact>
-        <path>quran_backend/config/settings/base.py</path>
+        <path>backend/config/settings/base.py</path>
         <kind>configuration</kind>
         <symbol>MIDDLEWARE, REST_FRAMEWORK</symbol>
         <lines>139-144, 331-336</lines>
         <reason>MIDDLEWARE configuration where ErrorHandlingMiddleware will be added. REST_FRAMEWORK settings where custom exception handler will be configured.</reason>
       </artifact>
       <artifact>
-        <path>quran_backend/locale/ar/LC_MESSAGES/django.po</path>
+        <path>backend/locale/ar/LC_MESSAGES/django.po</path>
         <kind>translation file</kind>
         <symbol>django.po</symbol>
         <lines>all</lines>
         <reason>Existing Arabic translation file. Will create separate errors.po file for error messages following same structure.</reason>
       </artifact>
       <artifact>
-        <path>quran_backend/quran_backend/users/tests/api/test_views.py</path>
+        <path>backend/backend/users/tests/api/test_views.py</path>
         <kind>test</kind>
         <symbol>TestUserRegistrationView</symbol>
         <lines>42-50</lines>
         <reason>Example test pattern using pytest and APIClient. Error handling tests will follow similar structure with fixtures and assertions.</reason>
       </artifact>
       <artifact>
-        <path>quran_backend/quran_backend/users/models.py</path>
+        <path>backend/backend/users/models.py</path>
         <kind>model</kind>
         <symbol>UserProfile</symbol>
         <lines>all</lines>
@@ -334,28 +334,28 @@
       <name>custom_exception_handler</name>
       <kind>function</kind>
       <signature>def custom_exception_handler(exc: Exception, context: dict) -> Response | None</signature>
-      <path>quran_backend/quran_backend/users/api/exceptions.py</path>
+      <path>backend/backend/users/api/exceptions.py</path>
       <description>DRF exception handler that transforms exceptions to standardized error responses. Will be extended to add request_id, timestamp, error codes, and Sentry logging.</description>
     </interface>
     <interface>
       <name>ErrorHandlingMiddleware</name>
       <kind>class</kind>
       <signature>class ErrorHandlingMiddleware: def __init__(get_response), def __call__(request), def process_exception(request, exception)</signature>
-      <path>quran_backend/core/middleware/error_handler.py (to be created)</path>
+      <path>backend/core/middleware/error_handler.py (to be created)</path>
       <description>Django middleware for generating request_id, catching unhandled exceptions, logging to Sentry, and ensuring transaction rollback.</description>
     </interface>
     <interface>
       <name>ErrorResponseSerializer</name>
       <kind>class</kind>
       <signature>class ErrorResponseSerializer(serializers.Serializer): error = ErrorDetailSerializer()</signature>
-      <path>quran_backend/core/serializers.py (to be created)</path>
+      <path>backend/core/serializers.py (to be created)</path>
       <description>Serializer for standardized error response format with code, message, details, timestamp, request_id.</description>
     </interface>
     <interface>
       <name>retry_with_exponential_backoff</name>
       <kind>decorator</kind>
       <signature>@retry_with_exponential_backoff(max_retries=3, delays=[1, 2, 4], exceptions=(TransientError, NetworkError))</signature>
-      <path>quran_backend/core/utils/retry.py (to be created)</path>
+      <path>backend/core/utils/retry.py (to be created)</path>
       <description>Decorator for automatic retry with exponential backoff on transient errors. Logs each attempt and respects max retry limit.</description>
     </interface>
     <interface>
@@ -371,10 +371,10 @@
 Testing framework: pytest with pytest-django plugin. Test pattern: Arrange-Act-Assert with descriptive test names (test_feature_condition_expected_result). Use APIClient for endpoint testing, APIRequestFactory for unit tests. Fixtures for test data (factory_boy). Mock Sentry calls in tests. Verify both success and failure scenarios. Test localization with HTTP_ACCEPT_LANGUAGE header. Aim for &gt;90% coverage on error handling code. Integration tests for end-to-end error flows. Load tests for retry logic under stress.
     </standards>
     <locations>
-      <location>quran_backend/quran_backend/core/tests/test_error_handling.py (to be created)</location>
-      <location>quran_backend/quran_backend/core/tests/test_middleware.py (to be created)</location>
-      <location>quran_backend/quran_backend/core/tests/test_retry.py (to be created)</location>
-      <location>quran_backend/quran_backend/users/tests/api/test_views.py (existing, add error scenarios)</location>
+      <location>backend/backend/core/tests/test_error_handling.py (to be created)</location>
+      <location>backend/backend/core/tests/test_middleware.py (to be created)</location>
+      <location>backend/backend/core/tests/test_retry.py (to be created)</location>
+      <location>backend/backend/users/tests/api/test_views.py (existing, add error scenarios)</location>
     </locations>
     <ideas>
       <test ac="1" name="test_network_error_returns_user_friendly_message">

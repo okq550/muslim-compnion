@@ -10,7 +10,7 @@ so that **we can improve the user experience and make data-driven decisions**.
 
 ## Background
 
-This story implements a privacy-first analytics and usage tracking system for the Quran Backend API. The system will collect anonymous usage data to understand feature adoption, user flows, performance metrics, and error patterns - all while respecting user privacy and providing transparent opt-out mechanisms. The analytics data will inform product improvements and help identify which features deliver the most value to users.
+This story implements a privacy-first analytics and usage tracking system for the Muslim Companion API. The system will collect anonymous usage data to understand feature adoption, user flows, performance metrics, and error patterns - all while respecting user privacy and providing transparent opt-out mechanisms. The analytics data will inform product improvements and help identify which features deliver the most value to users.
 
 **Parent Epic**: EPIC 1 - Cross-Cutting / Infrastructure Stories
 **Priority**: P2 (Low - Phase 2)
@@ -89,7 +89,7 @@ This story implements a privacy-first analytics and usage tracking system for th
 
 ### Task 1: Create AnalyticsEvent Model and Migrations (AC #6)
 
-- [ ] Create `quran_backend/analytics/` Django app
+- [ ] Create `backend/analytics/` Django app
 - [ ] Define `AnalyticsEvent` model in `analytics/models.py`:
   - [ ] `event_type`: CharField(max_length=100) - e.g., 'surah_viewed'
   - [ ] `event_data`: JSONField - flexible metadata storage
@@ -110,7 +110,7 @@ This story implements a privacy-first analytics and usage tracking system for th
 
 ### Task 2: Implement Analytics Service (AC #1, #2, #7)
 
-- [ ] Create `quran_backend/analytics/services.py`
+- [ ] Create `backend/analytics/services.py`
 - [ ] Implement `AnalyticsService` class:
   - [ ] `track_event(user, event_type, event_data, request)` method:
     - [ ] Check `user.is_analytics_enabled` - skip tracking if False
@@ -126,7 +126,7 @@ This story implements a privacy-first analytics and usage tracking system for th
 
 ### Task 3: Add User Opt-In/Opt-Out API (AC #2, #4)
 
-- [ ] Update `UserProfile` model (in `quran_backend/users/models.py`):
+- [ ] Update `UserProfile` model (in `backend/users/models.py`):
   - [ ] Add `is_analytics_enabled` BooleanField (default=False for privacy-first)
   - [ ] Generate migration: `python manage.py makemigrations users`
 - [ ] Create serializer in `users/api/serializers.py`:
@@ -152,7 +152,7 @@ This story implements a privacy-first analytics and usage tracking system for th
   - [ ] Search views (Epic 2) - `search_performed`
 - [ ] For each view, add analytics tracking:
   ```python
-  from quran_backend.analytics.services import analytics_service
+  from backend.analytics.services import analytics_service
 
   # In view method after successful operation
   analytics_service.track_event(
@@ -167,7 +167,7 @@ This story implements a privacy-first analytics and usage tracking system for th
 
 ### Task 5: Create Privacy Policy Endpoint (AC #5)
 
-- [ ] Create `quran_backend/legal/` Django app
+- [ ] Create `backend/legal/` Django app
 - [ ] Create `PrivacyPolicy` model (or use static content):
   - [ ] `content`: TextField (Markdown format)
   - [ ] `version`: CharField (e.g., "1.0")
@@ -222,7 +222,7 @@ This story implements a privacy-first analytics and usage tracking system for th
   ```python
   CELERY_BEAT_SCHEDULE = {
       'cleanup-analytics': {
-          'task': 'quran_backend.analytics.tasks.cleanup_old_analytics_events',
+          'task': 'backend.analytics.tasks.cleanup_old_analytics_events',
           'schedule': crontab(hour=3, minute=0, day_of_week='sunday'),  # Weekly at 3 AM Sunday
       },
   }
@@ -273,7 +273,7 @@ This story implements a privacy-first analytics and usage tracking system for th
 
 ### Task 11: Comprehensive Analytics Tests (AC #1-5, #9)
 
-- [ ] Create `quran_backend/analytics/tests/test_analytics.py`
+- [ ] Create `backend/analytics/tests/test_analytics.py`
 - [ ] Test AnalyticsEvent model:
   - [ ] Event creation with valid data
   - [ ] Timestamp auto-generation
@@ -450,8 +450,8 @@ def test_analytics_not_tracked_when_disabled(self):
 
 **Files to Reference**:
 - `config/settings/production.py` (Sentry configuration)
-- `quran_backend/core/middleware/error_handler.py` (error handling patterns)
-- `quran_backend/core/tests/test_error_handling.py` (testing patterns)
+- `backend/core/middleware/error_handler.py` (error handling patterns)
+- `backend/core/tests/test_error_handling.py` (testing patterns)
 
 ### Performance Considerations
 
@@ -535,32 +535,32 @@ Implementation followed privacy-first design principles with opt-out by default 
 
 ### File List
 
-- quran_backend/quran_backend/analytics/__init__.py
-- quran_backend/quran_backend/analytics/apps.py
-- quran_backend/quran_backend/analytics/models.py
-- quran_backend/quran_backend/analytics/admin.py
-- quran_backend/quran_backend/analytics/services.py
-- quran_backend/quran_backend/analytics/tasks.py
-- quran_backend/quran_backend/analytics/api/__init__.py
-- quran_backend/quran_backend/analytics/api/serializers.py
-- quran_backend/quran_backend/analytics/api/views.py
-- quran_backend/quran_backend/analytics/tests/__init__.py
-- quran_backend/quran_backend/analytics/tests/test_analytics_core.py
-- quran_backend/quran_backend/analytics/tests/api/__init__.py
-- quran_backend/quran_backend/analytics/tests/api/test_endpoints.py
-- quran_backend/quran_backend/analytics/migrations/0001_initial.py
-- quran_backend/quran_backend/legal/__init__.py
-- quran_backend/quran_backend/legal/apps.py
-- quran_backend/quran_backend/legal/models.py
-- quran_backend/quran_backend/legal/admin.py
-- quran_backend/quran_backend/legal/api/__init__.py
-- quran_backend/quran_backend/legal/api/serializers.py
-- quran_backend/quran_backend/legal/api/views.py
-- quran_backend/quran_backend/legal/migrations/0001_initial.py
-- quran_backend/quran_backend/users/api/serializers.py (modified - added UserProfileSerializer)
-- quran_backend/quran_backend/users/api/views.py (modified - added UserProfileViewSet)
-- quran_backend/config/settings/base.py (modified - added analytics/legal apps, scheduled cleanup task)
-- quran_backend/config/api_router.py (modified - added analytics and legal endpoints)
+- backend/backend/analytics/__init__.py
+- backend/backend/analytics/apps.py
+- backend/backend/analytics/models.py
+- backend/backend/analytics/admin.py
+- backend/backend/analytics/services.py
+- backend/backend/analytics/tasks.py
+- backend/backend/analytics/api/__init__.py
+- backend/backend/analytics/api/serializers.py
+- backend/backend/analytics/api/views.py
+- backend/backend/analytics/tests/__init__.py
+- backend/backend/analytics/tests/test_analytics_core.py
+- backend/backend/analytics/tests/api/__init__.py
+- backend/backend/analytics/tests/api/test_endpoints.py
+- backend/backend/analytics/migrations/0001_initial.py
+- backend/backend/legal/__init__.py
+- backend/backend/legal/apps.py
+- backend/backend/legal/models.py
+- backend/backend/legal/admin.py
+- backend/backend/legal/api/__init__.py
+- backend/backend/legal/api/serializers.py
+- backend/backend/legal/api/views.py
+- backend/backend/legal/migrations/0001_initial.py
+- backend/backend/users/api/serializers.py (modified - added UserProfileSerializer)
+- backend/backend/users/api/views.py (modified - added UserProfileViewSet)
+- backend/config/settings/base.py (modified - added analytics/legal apps, scheduled cleanup task)
+- backend/config/api_router.py (modified - added analytics and legal endpoints)
 
 ### Completion Notes
 **Completed:** 2025-11-10

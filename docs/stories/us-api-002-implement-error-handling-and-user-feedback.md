@@ -10,7 +10,7 @@ so that **I understand what went wrong and what I can do about it**.
 
 ## Background
 
-This story implements comprehensive error handling infrastructure for the Quran Backend API, ensuring users receive clear, localized, actionable feedback when errors occur. The system will handle network errors, server errors, validation errors, authentication errors, and resource not found errors with consistent, user-friendly messaging.
+This story implements comprehensive error handling infrastructure for the Muslim Companion API, ensuring users receive clear, localized, actionable feedback when errors occur. The system will handle network errors, server errors, validation errors, authentication errors, and resource not found errors with consistent, user-friendly messaging.
 
 **Parent Epic**: EPIC 1 - Cross-Cutting / Infrastructure Stories
 **Priority**: P0 (Critical - All Phases)
@@ -92,7 +92,7 @@ This story implements comprehensive error handling infrastructure for the Quran 
 
 ### Task 1: Create Custom Exception Handler (AC #1-4, #7)
 
-- [x] Create `quran_backend/core/exceptions.py` module
+- [x] Create `backend/core/exceptions.py` module
 - [x] Implement `custom_exception_handler(exc, context)` function:
   - [x] Inherit from DRF's `exception_handler`
   - [x] Transform exceptions to standardized format
@@ -110,13 +110,13 @@ This story implements comprehensive error handling infrastructure for the Quran 
 - [x] Configure in `config/settings.py`:
   ```python
   REST_FRAMEWORK = {
-      'EXCEPTION_HANDLER': 'quran_backend.core.exceptions.custom_exception_handler',
+      'EXCEPTION_HANDLER': 'backend.core.exceptions.custom_exception_handler',
   }
   ```
 
 ### Task 2: Implement Error Middleware (AC #2, #6, #8)
 
-- [x] Create `quran_backend/core/middleware/error_handler.py`
+- [x] Create `backend/core/middleware/error_handler.py`
 - [x] Implement `ErrorHandlingMiddleware` class:
   - [x] Generate unique `request_id` for each request
   - [x] Attach `request_id` to request object
@@ -128,7 +128,7 @@ This story implements comprehensive error handling infrastructure for the Quran 
   ```python
   MIDDLEWARE = [
       ...
-      'quran_backend.core.middleware.error_handler.ErrorHandlingMiddleware',
+      'backend.core.middleware.error_handler.ErrorHandlingMiddleware',
       ...
   ]
   ```
@@ -139,7 +139,7 @@ This story implements comprehensive error handling infrastructure for the Quran 
 
 ### Task 3: Create Custom Exception Classes (AC #3, #5)
 
-- [x] Define custom exception classes in `quran_backend/core/exceptions.py`:
+- [x] Define custom exception classes in `backend/core/exceptions.py`:
   - [x] `ValidationError` - for data validation failures
   - [x] `AuthenticationError` - for auth failures
   - [x] `AuthorizationError` - for permission denials
@@ -154,7 +154,7 @@ This story implements comprehensive error handling infrastructure for the Quran 
 
 ### Task 4: Implement Retry Logic (AC #5)
 
-- [x] Create `quran_backend/core/utils/retry.py`
+- [x] Create `backend/core/utils/retry.py`
 - [x] Implement `retry_with_exponential_backoff` decorator:
   - [x] Max retries: 3
   - [x] Delays: 1s, 2s, 4s
@@ -194,7 +194,7 @@ This story implements comprehensive error handling infrastructure for the Quran 
 
 ### Task 6: Implement Error Response Serializers (AC #4)
 
-- [x] Create `quran_backend/core/serializers.py`
+- [x] Create `backend/core/serializers.py`
 - [x] Define `ErrorResponseSerializer`:
   ```python
   class ErrorDetailSerializer(serializers.Serializer):
@@ -250,7 +250,7 @@ This story implements comprehensive error handling infrastructure for the Quran 
 
 ### Task 9: Comprehensive Error Handling Tests (AC #9)
 
-- [x] Create `quran_backend/core/tests/test_error_handling.py`
+- [x] Create `backend/core/tests/test_error_handling.py`
 - [x] Test custom exception handler:
   - [x] ValidationError returns 400 with correct format
   - [x] AuthenticationError returns 401
@@ -363,7 +363,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.locale.LocaleMiddleware',  # Language detection
-    'quran_backend.core.middleware.error_handler.ErrorHandlingMiddleware',  # THIS ONE
+    'backend.core.middleware.error_handler.ErrorHandlingMiddleware',  # THIS ONE
     ...
 ]
 ```
@@ -518,20 +518,20 @@ N/A - Implementation proceeded smoothly following story context and acceptance c
 ### File List
 
 **Created:**
-- quran_backend/core/__init__.py
-- quran_backend/core/exceptions.py
-- quran_backend/core/middleware/__init__.py
-- quran_backend/core/middleware/error_handler.py
-- quran_backend/core/utils/__init__.py
-- quran_backend/core/utils/retry.py
-- quran_backend/core/tests/__init__.py
-- quran_backend/core/tests/test_error_handling.py
+- backend/core/__init__.py
+- backend/core/exceptions.py
+- backend/core/middleware/__init__.py
+- backend/core/middleware/error_handler.py
+- backend/core/utils/__init__.py
+- backend/core/utils/retry.py
+- backend/core/tests/__init__.py
+- backend/core/tests/test_error_handling.py
 
 **Modified:**
-- quran_backend/config/settings/base.py (updated MIDDLEWARE, REST_FRAMEWORK)
-- quran_backend/config/settings/production.py (updated Sentry configuration)
-- quran_backend/users/api/views.py (added @transaction.atomic to PasswordResetConfirmView)
-- quran_backend/locale/ar/LC_MESSAGES/django.po (added Arabic error message translations)
+- backend/config/settings/base.py (updated MIDDLEWARE, REST_FRAMEWORK)
+- backend/config/settings/production.py (updated Sentry configuration)
+- backend/users/api/views.py (added @transaction.atomic to PasswordResetConfirmView)
+- backend/locale/ar/LC_MESSAGES/django.po (added Arabic error message translations)
 
 ### Change Log
 
@@ -633,7 +633,7 @@ All tasks marked as complete ([x]) in the story have been verified to be actuall
 
 ### Test Coverage and Gaps
 
-**Test Suite:** `quran_backend/core/tests/test_error_handling.py` (410 lines, 27 tests)
+**Test Suite:** `backend/core/tests/test_error_handling.py` (410 lines, 27 tests)
 
 **Test Classes:**
 1. **TestCustomExceptionHandler** (8 tests) - AC #1-4, #7
@@ -704,7 +704,7 @@ All tasks marked as complete ([x]) in the story have been verified to be actuall
 MIDDLEWARE = [
     ...
     "django.middleware.locale.LocaleMiddleware",  # Line 143 (CORRECT ORDER)
-    "quran_backend.core.middleware.error_handler.ErrorHandlingMiddleware",  # Line 144
+    "backend.core.middleware.error_handler.ErrorHandlingMiddleware",  # Line 144
     ...
 ]
 ```

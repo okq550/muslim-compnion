@@ -83,7 +83,7 @@ This story addresses Acceptance Criterion #16 from US-API-001 which was partiall
   - [ ] Verify LocaleMiddleware in MIDDLEWARE (should be after SessionMiddleware)
 
 - [ ] **Task 2**: Wrap Serializer Error Messages (AC #2, #5)
-  - [ ] Update `quran_backend/users/api/serializers.py`
+  - [ ] Update `backend/users/api/serializers.py`
   - [ ] Import: `from django.utils.translation import gettext_lazy as _`
   - [ ] Wrap all error strings in UserRegistrationSerializer:
     - "A user with this email already exists." → `_("A user with this email already exists.")`
@@ -94,7 +94,7 @@ This story addresses Acceptance Criterion #16 from US-API-001 which was partiall
   - [ ] Wrap all error strings in PasswordResetConfirmSerializer
 
 - [ ] **Task 3**: Wrap View Response Messages (AC #2, #5)
-  - [ ] Update `quran_backend/users/api/views.py`
+  - [ ] Update `backend/users/api/views.py`
   - [ ] Import: `from django.utils.translation import gettext_lazy as _`
   - [ ] Wrap all response messages:
     - "Successfully logged out" → `_("Successfully logged out")`
@@ -103,7 +103,7 @@ This story addresses Acceptance Criterion #16 from US-API-001 which was partiall
     - "Password has been reset successfully" → `_("Password has been reset successfully")`
 
 - [ ] **Task 4**: Update Custom Exception Handler (AC #2, #5)
-  - [ ] Update `quran_backend/users/api/exceptions.py`
+  - [ ] Update `backend/users/api/exceptions.py`
   - [ ] Ensure exception messages are translated
   - [ ] DRF's built-in messages are already i18n-ready
   - [ ] Test that error "code" and "message" fields are localized
@@ -140,14 +140,14 @@ This story addresses Acceptance Criterion #16 from US-API-001 which was partiall
 - [ ] **Task 7**: Add Language Detection Middleware (AC #4)
   - [ ] Option 1: Use Django's built-in LocaleMiddleware (already active)
   - [ ] Option 2: Create custom middleware for more control:
-    - Create `quran_backend/users/middleware/language.py`
+    - Create `backend/users/middleware/language.py`
     - Read `Accept-Language` header
     - Call `django.utils.translation.activate(language_code)`
     - Add to MIDDLEWARE after LocaleMiddleware
   - [ ] Test with curl: `curl -H "Accept-Language: ar" http://localhost:8000/api/v1/auth/login/`
 
 - [ ] **Task 8**: Comprehensive i18n Testing (AC #6, #7)
-  - [ ] Create `quran_backend/users/tests/api/test_i18n.py`
+  - [ ] Create `backend/users/tests/api/test_i18n.py`
   - [ ] Test: Registration errors in Arabic (`Accept-Language: ar`)
   - [ ] Test: Registration errors in English (`Accept-Language: en`)
   - [ ] Test: Login errors in Arabic
@@ -273,9 +273,9 @@ def test_registration_error_in_arabic(self):
 
 **Related Code**:
 - Settings: `config/settings/base.py` (LANGUAGE_CODE, MIDDLEWARE)
-- Serializers: `quran_backend/users/api/serializers.py` (all error messages)
-- Views: `quran_backend/users/api/views.py` (response messages)
-- Exception handler: `quran_backend/users/api/exceptions.py`
+- Serializers: `backend/users/api/serializers.py` (all error messages)
+- Views: `backend/users/api/views.py` (response messages)
+- Exception handler: `backend/users/api/exceptions.py`
 
 **UserProfile Integration**:
 - `preferred_language` field already exists in UserProfile model!

@@ -25,7 +25,7 @@
 
   <acceptanceCriteria>
     <criterion id="1">Run `cookiecutter gh:cookiecutter/cookiecutter-django` with correct prompts specified in architecture document</criterion>
-    <criterion id="2">Project structure created with project_slug=quran_backend</criterion>
+    <criterion id="2">Project structure created with project_slug=muslim_companion</criterion>
     <criterion id="3">Docker configuration includes web, PostgreSQL, Redis, Celery services</criterion>
     <criterion id="4">`docker-compose up` builds all containers successfully</criterion>
     <criterion id="5">Database migrations apply without errors</criterion>

@@ -109,63 +109,63 @@
     </docs>
     <code>
       <file>
-        <path>quran_backend/pyproject.toml</path>
+        <path>backend/pyproject.toml</path>
         <kind>dependency-manifest</kind>
         <symbol>drf-spectacular</symbol>
         <lines>195</lines>
         <reason>drf-spectacular==0.29.0 already installed - use for OpenAPI schema generation</reason>
       </file>
       <file>
-        <path>quran_backend/config/settings/base.py</path>
+        <path>backend/config/settings/base.py</path>
         <kind>settings</kind>
         <symbol>INSTALLED_APPS, REST_FRAMEWORK</symbol>
         <lines>1-100</lines>
         <reason>Add drf_spectacular to INSTALLED_APPS and configure DEFAULT_SCHEMA_CLASS and SPECTACULAR_SETTINGS</reason>
       </file>
       <file>
-        <path>quran_backend/config/urls.py</path>
+        <path>backend/config/urls.py</path>
         <kind>url-config</kind>
         <symbol>urlpatterns</symbol>
         <lines>1-50</lines>
         <reason>Add schema, Swagger UI, and ReDoc URL routes using SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView</reason>
       </file>
       <file>
-        <path>quran_backend/quran_backend/users/api/serializers.py</path>
+        <path>backend/backend/users/api/serializers.py</path>
         <kind>serializers</kind>
         <symbol>UserSerializer, LoginSerializer, TokenSerializer, RegisterSerializer</symbol>
         <lines>1-200</lines>
         <reason>Add help_text to all serializer fields, add docstrings to serializers for documentation generation</reason>
       </file>
       <file>
-        <path>quran_backend/quran_backend/users/api/views.py</path>
+        <path>backend/backend/users/api/views.py</path>
         <kind>views</kind>
         <symbol>LoginView, LogoutView, TokenRefreshView, RegisterView, UserProfileView</symbol>
         <lines>1-400</lines>
         <reason>Add comprehensive docstrings to all ViewSets, use @extend_schema decorator for detailed endpoint documentation</reason>
       </file>
       <file>
-        <path>quran_backend/quran_backend/core/views.py</path>
+        <path>backend/backend/core/views.py</path>
         <kind>views</kind>
         <symbol>health_check</symbol>
         <lines>1-100</lines>
         <reason>Document health check endpoint with @extend_schema showing response format and monitoring details</reason>
       </file>
       <file>
-        <path>quran_backend/quran_backend/core/exceptions.py</path>
+        <path>backend/backend/core/exceptions.py</path>
         <kind>exceptions</kind>
         <symbol>ERROR_CODES</symbol>
         <lines>1-100</lines>
         <reason>Reference all error codes for error response documentation in OpenAPI schema</reason>
       </file>
       <file>
-        <path>quran_backend/quran_backend/users/api/throttling.py</path>
+        <path>backend/backend/users/api/throttling.py</path>
         <kind>throttling</kind>
         <symbol>UserRateThrottle, AnonRateThrottle</symbol>
         <lines>1-50</lines>
         <reason>Create SmartThrottle class to exempt documentation endpoints (/api/docs/, /api/redoc/, /api/schema/) from rate limiting</reason>
       </file>
       <file>
-        <path>quran_backend/quran_backend/core/middleware/error_handler.py</path>
+        <path>backend/backend/core/middleware/error_handler.py</path>
         <kind>middleware</kind>
         <symbol>ErrorHandlingMiddleware</symbol>
         <lines>1-100</lines>
@@ -222,31 +222,31 @@
       <name>Authentication Endpoints</name>
       <kind>REST</kind>
       <signature>POST /api/v1/auth/login/, /api/v1/auth/logout/, /api/v1/auth/token/refresh/, /api/v1/auth/password/reset/</signature>
-      <path>quran_backend/users/api/views.py</path>
+      <path>backend/users/api/views.py</path>
     </api>
     <api>
       <name>User Management Endpoints</name>
       <kind>REST</kind>
       <signature>GET /api/v1/users/me/, POST /api/v1/users/register/</signature>
-      <path>quran_backend/users/api/views.py</path>
+      <path>backend/users/api/views.py</path>
     </api>
     <api>
       <name>Health Check Endpoint</name>
       <kind>REST</kind>
       <signature>GET /api/v1/health/ - System health monitoring</signature>
-      <path>quran_backend/core/views.py</path>
+      <path>backend/core/views.py</path>
     </api>
     <interface>
       <name>ErrorResponseSerializer</name>
       <kind>DRF Serializer</kind>
       <signature>Serializer for standardized error responses with error code, message, request_id, and details fields</signature>
-      <path>quran_backend/core/api/serializers.py (to be created)</path>
+      <path>backend/core/api/serializers.py (to be created)</path>
     </interface>
     <interface>
       <name>SmartThrottle</name>
       <kind>DRF Throttle Class</kind>
       <signature>Custom throttle class that exempts documentation endpoints from rate limiting</signature>
-      <path>quran_backend/core/throttling.py (to be created)</path>
+      <path>backend/core/throttling.py (to be created)</path>
     </interface>
   </interfaces>
 
@@ -255,7 +255,7 @@
       Use pytest-django with APIClient for endpoint testing. Test OpenAPI schema generation and validation against OpenAPI 3.0 specification. Test Swagger UI and ReDoc accessibility without authentication. Verify serializer fields have help_text. Verify ViewSet docstrings are comprehensive. Test try-it-out functionality with JWT authentication. Test documentation endpoints are not rate limited. Manual testing required for code examples (cURL, Python, JavaScript) and Postman collection import.
     </standards>
     <locations>
-      quran_backend/quran_backend/core/tests/test_api_documentation.py (new file)
+      backend/backend/core/tests/test_api_documentation.py (new file)
     </locations>
     <ideas>
       <idea ac="1">Test OpenAPI schema is generated successfully with valid JSON format</idea>

@@ -155,7 +155,7 @@ Building upon the foundation established in Epic 1 (authentication, error handli
   }
 
   SPECTACULAR_SETTINGS = {
-      'TITLE': 'Quran Backend API',
+      'TITLE': 'Muslim Companion API',
       'DESCRIPTION': 'RESTful API for Quran reading, recitation, translation, tafseer, and bookmarks',
       'VERSION': '1.0.0',
       'SERVE_INCLUDE_SCHEMA': False,
@@ -418,7 +418,7 @@ Building upon the foundation established in Epic 1 (authentication, error handli
   REST_FRAMEWORK = {
       ...
       'DEFAULT_THROTTLE_CLASSES': [
-          'quran_backend.core.throttling.SmartThrottle',
+          'backend.core.throttling.SmartThrottle',
       ],
   }
   ```
@@ -440,7 +440,7 @@ Building upon the foundation established in Epic 1 (authentication, error handli
 
 ### Task 12: Comprehensive API Documentation Tests (AC #1-11)
 
-- [x] Create `quran_backend/core/tests/test_api_documentation.py`
+- [x] Create `backend/core/tests/test_api_documentation.py`
 - [x] Test OpenAPI schema generation:
   - [x] Schema generated successfully
   - [x] Schema validates against OpenAPI 3.0 specification
@@ -578,7 +578,7 @@ def test_openapi_schema_generated(self):
     assert response.status_code == 200
     schema = response.json()
     assert schema['openapi'] == '3.0.3'
-    assert schema['info']['title'] == 'Quran Backend API'
+    assert schema['info']['title'] == 'Muslim Companion API'
     assert schema['info']['version'] == '1.0.0'
     assert '/api/v1/auth/login/' in schema['paths']
 
@@ -750,17 +750,17 @@ claude-sonnet-4-5-20250929
 ### File List
 
 **Modified Files:**
-- quran_backend/config/settings/base.py - Enhanced SPECTACULAR_SETTINGS configuration
-- quran_backend/config/urls.py - Added ReDoc URL route
-- quran_backend/quran_backend/users/api/serializers.py - Added help_text and docstrings to all serializers
-- quran_backend/quran_backend/users/api/views.py - Added @extend_schema decorators to all authentication views
-- quran_backend/quran_backend/core/views.py - Added @extend_schema decorator to health check endpoint
-- quran_backend/quran_backend/core/throttling.py - Updated throttle classes to exempt documentation endpoints
-- quran_backend/README.md - Added comprehensive API Documentation section
+- backend/config/settings/base.py - Enhanced SPECTACULAR_SETTINGS configuration
+- backend/config/urls.py - Added ReDoc URL route
+- backend/backend/users/api/serializers.py - Added help_text and docstrings to all serializers
+- backend/backend/users/api/views.py - Added @extend_schema decorators to all authentication views
+- backend/backend/core/views.py - Added @extend_schema decorator to health check endpoint
+- backend/backend/core/throttling.py - Updated throttle classes to exempt documentation endpoints
+- backend/README.md - Added comprehensive API Documentation section
 
 **New Files:**
-- quran_backend/quran_backend/core/api/serializers.py - Error response serializers for documentation
-- quran_backend/quran_backend/core/tests/test_api_documentation.py - Comprehensive API documentation test suite (17 tests, all passing)
+- backend/backend/core/api/serializers.py - Error response serializers for documentation
+- backend/backend/core/tests/test_api_documentation.py - Comprehensive API documentation test suite (17 tests, all passing)
 
 ## Change Log
 
@@ -794,7 +794,7 @@ The story delivers on all 11 acceptance criteria with strong documentation cover
 #### MEDIUM Severity Issues
 
 1. **[MEDIUM] Task 3 falsely marked complete - Token refresh endpoint missing @extend_schema decorator**
-   - **Location:** quran_backend/users/api/views.py:527-554 (ThrottledTokenRefreshView)
+   - **Location:** backend/users/api/views.py:527-554 (ThrottledTokenRefreshView)
    - **Evidence:** Class has docstring but no @extend_schema decorator
    - **Impact:** Token refresh endpoint (`POST /api/v1/auth/token/refresh/`) is not properly documented in OpenAPI schema with request/response examples, despite AC #4 requiring complete authentication flow documentation
    - **Related AC:** AC #4 (Authentication Flow Documented - token refresh flow)
@@ -944,7 +944,7 @@ The story delivers on all 11 acceptance criteria with strong documentation cover
 
 #### Code Changes Required:
 
-- [ ] [MEDIUM] Add @extend_schema decorator to ThrottledTokenRefreshView (AC #4) [file: quran_backend/users/api/views.py:527-554]
+- [ ] [MEDIUM] Add @extend_schema decorator to ThrottledTokenRefreshView (AC #4) [file: backend/users/api/views.py:527-554]
   ```python
   @extend_schema(
       operation_id="token_refresh",

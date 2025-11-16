@@ -15,37 +15,37 @@
     <soThat>we can recover from data loss or corruption</soThat>
     <tasks>
       ### Task 1: Create Backup Service Module (AC #1, #2)
-      - Create `quran_backend/core/services/backup.py` module
+      - Create `backend/core/services/backup.py` module
       - Implement `BackupService` class with methods for backup orchestration, compression, checksum
       - Implement `pg_dump` execution with error handling
       - Handle environment-specific database credentials
 
       ### Task 2: Implement Encryption and S3 Upload (AC #3, #4)
-      - Create `quran_backend/core/services/encryption.py` module
+      - Create `backend/core/services/encryption.py` module
       - Implement `EncryptionService` class using AWS KMS
       - Implement S3 upload in `BackupService`
       - Verify upload integrity
 
       ### Task 3: Create Celery Scheduled Backup Task (AC #1, #6)
-      - Create `quran_backend/core/tasks/backup_tasks.py`
+      - Create `backend/core/tasks/backup_tasks.py`
       - Implement `run_daily_backup` Celery task
       - Configure Celery Beat schedule for daily execution at 2:00 AM UTC
       - Add Celery task retry configuration
 
       ### Task 4: Implement Retention Policy and Cleanup (AC #7)
-      - Create `quran_backend/core/tasks/cleanup_tasks.py`
+      - Create `backend/core/tasks/cleanup_tasks.py`
       - Implement `enforce_backup_retention_policy` Celery task
       - Configure S3 lifecycle policies
       - Schedule cleanup task weekly
 
       ### Task 5: Create Recovery Service (AC #5, #8)
-      - Create `quran_backend/core/services/recovery.py` module
+      - Create `backend/core/services/recovery.py` module
       - Implement `RecoveryService` class with restore capabilities
       - Implement restoration workflow with staging-first approach
       - Create Django management command `restore_from_backup`
 
       ### Task 6: Implement Monitoring and Alerting (AC #6)
-      - Create `BackupStatus` model in `quran_backend/core/models.py`
+      - Create `BackupStatus` model in `backend/core/models.py`
       - Update backup task to record status in database
       - Configure Sentry alerting for backup failures
       - Create monitoring dashboard
@@ -193,56 +193,56 @@
     </docs>
     <code>
       <file>
-        <path>quran_backend/config/celery_app.py</path>
+        <path>backend/config/celery_app.py</path>
         <kind>celery_config</kind>
         <symbol>Celery app</symbol>
         <lines>1-28</lines>
         <reason>Celery application configuration for task scheduling. Use this as base for adding CELERY_BEAT_SCHEDULE with daily backup task at 2:00 AM UTC.</reason>
       </file>
       <file>
-        <path>quran_backend/config/settings/base.py</path>
+        <path>backend/config/settings/base.py</path>
         <kind>django_settings</kind>
         <symbol>CELERY_* settings</symbol>
         <lines>N/A</lines>
         <reason>Django base settings file. Add CELERY_BEAT_SCHEDULE here with daily backup task configuration. Also add BACKUP_S3_BUCKET, BACKUP_KMS_KEY_ID, and retention policy settings.</reason>
       </file>
       <file>
-        <path>quran_backend/config/settings/production.py</path>
+        <path>backend/config/settings/production.py</path>
         <kind>django_settings</kind>
         <symbol>Sentry configuration</symbol>
         <lines>N/A</lines>
         <reason>Production settings with Sentry integration. Configure backup-specific Sentry tags and alerting here. Add backup AWS infrastructure settings (S3 bucket, KMS key ID).</reason>
       </file>
       <file>
-        <path>quran_backend/quran_backend/core/exceptions.py</path>
+        <path>backend/backend/core/exceptions.py</path>
         <kind>exception_classes</kind>
         <symbol>Custom exception classes, ErrorCodes</symbol>
         <lines>1-92</lines>
         <reason>Custom exception classes for error handling. Create new exceptions: BackupFailedError, EncryptionFailedError, RestoreFailedError, IntegrityCheckFailedError. Follow existing pattern with status codes and localized messages.</reason>
       </file>
       <file>
-        <path>quran_backend/quran_backend/core/middleware/error_handler.py</path>
+        <path>backend/backend/core/middleware/error_handler.py</path>
         <kind>middleware</kind>
         <symbol>ErrorHandlingMiddleware</symbol>
         <lines>1-171</lines>
         <reason>Error handling middleware with Sentry logging. Use this pattern for logging backup/restore errors with full context. Reference for correlation IDs and transaction rollback patterns.</reason>
       </file>
       <file>
-        <path>quran_backend/quran_backend/core/utils/retry.py</path>
+        <path>backend/backend/core/utils/retry.py</path>
         <kind>utility</kind>
         <symbol>@retry_with_exponential_backoff, @retry_network_operation</symbol>
         <lines>22-181</lines>
         <reason>Retry decorators for transient errors. Apply @retry_network_operation to S3 upload and KMS encryption operations. Apply @retry_db_operation to PostgreSQL pg_dump execution.</reason>
       </file>
       <file>
-        <path>quran_backend/quran_backend/users/tasks.py</path>
+        <path>backend/backend/users/tasks.py</path>
         <kind>celery_tasks</kind>
         <symbol>Celery task examples</symbol>
         <lines>N/A</lines>
         <reason>Existing Celery task implementation patterns in the project. Reference for task structure, @shared_task decorator usage, error handling, and logging patterns.</reason>
       </file>
       <file>
-        <path>quran_backend/quran_backend/core/tests/test_error_handling.py</path>
+        <path>backend/backend/core/tests/test_error_handling.py</path>
         <kind>test_file</kind>
         <symbol>Test patterns</symbol>
         <lines>1-410</lines>
@@ -267,7 +267,7 @@
   </artifacts>
 
   <constraints>
-    - **Module Organization**: Create backup service in `quran_backend/core/services/backup.py`, encryption in `quran_backend/core/services/encryption.py`, recovery in `quran_backend/core/services/recovery.py`. Create tasks in `quran_backend/core/tasks/backup_tasks.py` and `quran_backend/core/tasks/cleanup_tasks.py`.
+    - **Module Organization**: Create backup service in `backend/core/services/backup.py`, encryption in `backend/core/services/encryption.py`, recovery in `backend/core/services/recovery.py`. Create tasks in `backend/core/tasks/backup_tasks.py` and `backend/core/tasks/cleanup_tasks.py`.
 
     - **Error Handling**: Use existing custom exception classes from `core/exceptions.py`. Create new backup-specific exceptions following existing patterns. Log all errors to Sentry with backup metadata context.
 
@@ -301,7 +301,7 @@
             def upload_to_s3(local_file: str, s3_bucket: str, s3_key: str) -> bool
             def verify_upload_integrity(s3_key: str, expected_checksum: str) -> bool
       </signature>
-      <path>quran_backend/core/services/backup.py</path>
+      <path>backend/core/services/backup.py</path>
     </interface>
 
     <interface>
@@ -312,7 +312,7 @@
             def encrypt_file(file_path: str, kms_key_id: str) -> str  # Returns encrypted file path
             def decrypt_file(file_path: str, kms_key_id: str) -> str  # Returns decrypted file path
       </signature>
-      <path>quran_backend/core/services/encryption.py</path>
+      <path>backend/core/services/encryption.py</path>
     </interface>
 
     <interface>
@@ -327,7 +327,7 @@
             def verify_backup_integrity(file_path: str, expected_checksum: str) -> bool
             def restore_database(sql_file: str, target_db: str = 'staging') -> bool
       </signature>
-      <path>quran_backend/core/services/recovery.py</path>
+      <path>backend/core/services/recovery.py</path>
     </interface>
 
     <interface>
@@ -337,7 +337,7 @@
         @shared_task(bind=True, max_retries=1, default_retry_delay=1800)
         def run_daily_backup(self) -> dict
       </signature>
-      <path>quran_backend/core/tasks/backup_tasks.py</path>
+      <path>backend/core/tasks/backup_tasks.py</path>
     </interface>
 
     <interface>
@@ -347,7 +347,7 @@
         @shared_task(bind=True)
         def enforce_backup_retention_policy(self) -> dict
       </signature>
-      <path>quran_backend/core/tasks/cleanup_tasks.py</path>
+      <path>backend/core/tasks/cleanup_tasks.py</path>
     </interface>
 
     <interface>
@@ -356,7 +356,7 @@
       <signature>
         python manage.py restore_from_backup --date=YYYY-MM-DD --target=staging|production --verify [--dry-run]
       </signature>
-      <path>quran_backend/quran_backend/core/management/commands/restore_from_backup.py</path>
+      <path>backend/backend/core/management/commands/restore_from_backup.py</path>
     </interface>
 
     <interface>
@@ -373,7 +373,7 @@
             error_message = models.TextField(null=True, blank=True)
             created_at = models.DateTimeField(auto_now_add=True)
       </signature>
-      <path>quran_backend/quran_backend/core/models.py</path>
+      <path>backend/backend/core/models.py</path>
     </interface>
 
     <interface>
@@ -382,16 +382,16 @@
       <signature>
         CELERY_BEAT_SCHEDULE = {
             'daily-database-backup': {
-                'task': 'quran_backend.core.tasks.backup_tasks.run_daily_backup',
+                'task': 'backend.core.tasks.backup_tasks.run_daily_backup',
                 'schedule': crontab(hour=2, minute=0),  # 2:00 AM UTC daily
             },
             'weekly-backup-cleanup': {
-                'task': 'quran_backend.core.tasks.cleanup_tasks.enforce_backup_retention_policy',
+                'task': 'backend.core.tasks.cleanup_tasks.enforce_backup_retention_policy',
                 'schedule': crontab(hour=3, minute=0, day_of_week=1),  # Monday 3:00 AM UTC
             },
         }
       </signature>
-      <path>quran_backend/config/settings/base.py</path>
+      <path>backend/config/settings/base.py</path>
     </interface>
   </interfaces>
 
@@ -400,11 +400,11 @@
       Use pytest with pytest-django for Django-specific fixtures. Mock external AWS services (S3, KMS) using moto library to avoid real AWS API calls in tests. Create separate test database for restoration tests. Follow test pattern from existing test_error_handling.py: descriptive test names (test_feature_condition_expected_result), Arrange-Act-Assert structure, proper fixtures and mocking, deterministic and fast tests. Aim for 25+ tests covering all acceptance criteria. Test coverage target: 90%+ for new code.
     </standards>
     <locations>
-      - quran_backend/quran_backend/core/tests/test_backup_service.py
-      - quran_backend/quran_backend/core/tests/test_encryption_service.py
-      - quran_backend/quran_backend/core/tests/test_recovery_service.py
-      - quran_backend/quran_backend/core/tests/test_backup_tasks.py
-      - quran_backend/quran_backend/core/tests/test_cleanup_tasks.py
+      - backend/backend/core/tests/test_backup_service.py
+      - backend/backend/core/tests/test_encryption_service.py
+      - backend/backend/core/tests/test_recovery_service.py
+      - backend/backend/core/tests/test_backup_tasks.py
+      - backend/backend/core/tests/test_cleanup_tasks.py
     </locations>
     <ideas>
       <test ac="1">

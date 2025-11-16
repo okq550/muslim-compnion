@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document describes the backup and recovery procedures for the Quran Backend API database. Automated daily backups ensure data protection and business continuity.
+This document describes the backup and recovery procedures for the Muslim Companion API database. Automated daily backups ensure data protection and business continuity.
 
 ## Backup System
 
@@ -187,7 +187,7 @@ Automated weekly reports sent to ops team every Monday:
 **Resolution**:
 1. Verify database is accessible: `docker-compose ps postgres`
 2. Check database credentials in environment variables
-3. Test connection manually: `psql -h localhost -U postgres -d quran_backend`
+3. Test connection manually: `psql -h localhost -U postgres -d muslim_companion`
 4. Review error logs in Sentry for detailed error message
 
 ### Backup Fails with S3 Upload Error
@@ -263,7 +263,7 @@ aws s3api put-public-access-block \
 ```bash
 # Create KMS key for backups
 aws kms create-key \
-  --description "Quran Backend Backup Encryption Key" \
+  --description "Muslim Companion Backup Encryption Key" \
   --key-usage ENCRYPT_DECRYPT \
   --origin AWS_KMS
 

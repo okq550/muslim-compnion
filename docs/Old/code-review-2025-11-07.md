@@ -9,7 +9,7 @@
 
 ## Summary
 
-This review covers the comprehensive JWT authentication system implementation for the django-muslim-companion Quran API backend. The implementation includes user registration, login/logout, password reset, JWT token management with blacklisting, account lockout protection, and bilingual error localization (Arabic/English).
+This review covers the comprehensive JWT authentication system implementation for the muslim-companion Quran API backend. The implementation includes user registration, login/logout, password reset, JWT token management with blacklisting, account lockout protection, and bilingual error localization (Arabic/English).
 
 **Overall Assessment:** The implementation demonstrates strong security practices with comprehensive test coverage. The code is well-structured, follows Django best practices, and includes multiple layers of protection against common authentication vulnerabilities.
 
@@ -31,7 +31,7 @@ None identified.
 ### Medium Severity Issues
 
 **1. Password Reset Token Exposure in Development Mode**
-- **Location:** `quran_backend/users/api/views.py:198-199`
+- **Location:** `backend/users/api/views.py:198-199`
 - **Issue:** Password reset tokens are returned in the response when `DEBUG=True`
 - **Risk:** While intended for development only, this could be accidentally deployed to staging/production
 - **Evidence:**
@@ -42,14 +42,14 @@ if settings.DEBUG:  # Only in development
 - **Recommendation:** Consider using a separate feature flag or removing this entirely in favor of email debugging tools
 
 **2. Missing Rate Limiting on Token Refresh Endpoint**
-- **Location:** `quran_backend/config/api_router.py:25-29`
+- **Location:** `backend/config/api_router.py:25-29`
 - **Issue:** Token refresh endpoint doesn't have throttling applied
 - **Risk:** Could be exploited for token exhaustion attacks
 - **Evidence:** `TokenRefreshView.as_view()` has no throttle_classes specified
 - **Recommendation:** Apply `AuthEndpointThrottle` or similar rate limiting
 
 **3. Error Handler Returns Full Exception Details**
-- **Location:** `quran_backend/users/api/exceptions.py:26-28`
+- **Location:** `backend/users/api/exceptions.py:26-28`
 - **Issue:** Custom exception handler exposes full exception string in production
 - **Risk:** Could leak sensitive information about system internals
 - **Evidence:**
@@ -62,12 +62,12 @@ if settings.DEBUG:  # Only in development
 ### Low Severity Issues
 
 **1. Hardcoded Cache Timeouts**
-- **Location:** `quran_backend/users/services/account_lockout.py:16-18`
+- **Location:** `backend/users/services/account_lockout.py:16-18`
 - **Issue:** Lockout duration and attempt window are hardcoded constants
 - **Recommendation:** Move to Django settings for easier configuration per environment
 
 **2. Username Generation Could Have Collisions**
-- **Location:** `quran_backend/users/api/serializers.py:80-86`
+- **Location:** `backend/users/api/serializers.py:80-86`
 - **Issue:** Simple counter-based username generation might not scale well
 - **Recommendation:** Consider using UUIDs or more robust unique identifier generation
 
@@ -325,12 +325,12 @@ if settings.DEBUG:  # Only in development
 
 ### Code Changes Required
 
-- [ ] [Med] Add rate limiting to token refresh endpoint [file: quran_backend/config/api_router.py:25-29]
-- [ ] [Med] Sanitize exception messages in production mode [file: quran_backend/users/api/exceptions.py:23-31]
-- [ ] [Med] Remove or protect password reset token exposure [file: quran_backend/users/api/views.py:198-199]
-- [ ] [Low] Extract lockout configuration to Django settings [file: quran_backend/users/services/account_lockout.py:16-18]
-- [ ] [Low] Add type hints to get_client_ip function [file: quran_backend/users/api/views.py:29-36]
-- [ ] [Low] Extract duplicate password validation to shared validator [file: quran_backend/users/api/serializers.py:37-64, 179-201]
+- [ ] [Med] Add rate limiting to token refresh endpoint [file: backend/config/api_router.py:25-29]
+- [ ] [Med] Sanitize exception messages in production mode [file: backend/users/api/exceptions.py:23-31]
+- [ ] [Med] Remove or protect password reset token exposure [file: backend/users/api/views.py:198-199]
+- [ ] [Low] Extract lockout configuration to Django settings [file: backend/users/services/account_lockout.py:16-18]
+- [ ] [Low] Add type hints to get_client_ip function [file: backend/users/api/views.py:29-36]
+- [ ] [Low] Extract duplicate password validation to shared validator [file: backend/users/api/serializers.py:37-64, 179-201]
 
 ### Test Improvements
 

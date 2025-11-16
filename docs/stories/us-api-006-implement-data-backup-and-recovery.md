@@ -10,7 +10,7 @@ so that **we can recover from data loss or corruption**.
 
 ## Background
 
-This story implements robust backup and recovery mechanisms to protect against data loss for the Quran Backend API. The system will perform automated daily backups of all critical data including user data (bookmarks, preferences), content data (Quran text, audio, translations, Tafseer), configuration, and system logs. Backups will be encrypted, stored redundantly in AWS S3, and verified for integrity. The recovery process will be documented and tested to ensure business continuity.
+This story implements robust backup and recovery mechanisms to protect against data loss for the Muslim Companion API. The system will perform automated daily backups of all critical data including user data (bookmarks, preferences), content data (Quran text, audio, translations, Tafseer), configuration, and system logs. Backups will be encrypted, stored redundantly in AWS S3, and verified for integrity. The recovery process will be documented and tested to ensure business continuity.
 
 **Parent Epic**: EPIC 1 - Cross-Cutting / Infrastructure Stories
 **Priority**: P1 (High - Phase 1)
@@ -80,7 +80,7 @@ This story implements robust backup and recovery mechanisms to protect against d
 
 ### Task 1: Create Backup Service Module (AC #1, #2)
 
-- [ ] Create `quran_backend/core/services/backup.py` module
+- [ ] Create `backend/core/services/backup.py` module
 - [ ] Implement `BackupService` class:
   - [ ] Method: `create_backup()` - orchestrate full backup process
   - [ ] Method: `compress_backup(file_path)` - gzip compression
@@ -98,7 +98,7 @@ This story implements robust backup and recovery mechanisms to protect against d
 
 ### Task 2: Implement Encryption and S3 Upload (AC #3, #4)
 
-- [ ] Create `quran_backend/core/services/encryption.py` module
+- [ ] Create `backend/core/services/encryption.py` module
 - [ ] Implement `EncryptionService` class using AWS KMS:
   - [ ] Method: `encrypt_file(file_path, kms_key_id)` - AES-256 encryption
   - [ ] Method: `decrypt_file(file_path, kms_key_id)` - decrypt for restore
@@ -118,7 +118,7 @@ This story implements robust backup and recovery mechanisms to protect against d
 
 ### Task 3: Create Celery Scheduled Backup Task (AC #1, #6)
 
-- [ ] Create `quran_backend/core/tasks/backup_tasks.py`
+- [ ] Create `backend/core/tasks/backup_tasks.py`
 - [ ] Implement `run_daily_backup` Celery task:
   - [ ] Mark as `@shared_task(bind=True)` for retry capability
   - [ ] Call `BackupService.create_backup()`
@@ -131,7 +131,7 @@ This story implements robust backup and recovery mechanisms to protect against d
   ```python
   CELERY_BEAT_SCHEDULE = {
       'daily-database-backup': {
-          'task': 'quran_backend.core.tasks.backup_tasks.run_daily_backup',
+          'task': 'backend.core.tasks.backup_tasks.run_daily_backup',
           'schedule': crontab(hour=2, minute=0),  # 2:00 AM UTC daily
       },
   }
@@ -143,7 +143,7 @@ This story implements robust backup and recovery mechanisms to protect against d
 
 ### Task 4: Implement Retention Policy and Cleanup (AC #7)
 
-- [ ] Create `quran_backend/core/tasks/cleanup_tasks.py`
+- [ ] Create `backend/core/tasks/cleanup_tasks.py`
 - [ ] Implement `enforce_backup_retention_policy` Celery task:
   - [ ] List all backups in S3 bucket
   - [ ] Parse backup dates from S3 object keys
@@ -160,14 +160,14 @@ This story implements robust backup and recovery mechanisms to protect against d
 - [ ] Schedule cleanup task weekly:
   ```python
   'weekly-backup-cleanup': {
-      'task': 'quran_backend.core.tasks.cleanup_tasks.enforce_backup_retention_policy',
+      'task': 'backend.core.tasks.cleanup_tasks.enforce_backup_retention_policy',
       'schedule': crontab(hour=3, minute=0, day_of_week=1),  # Monday 3:00 AM UTC
   }
   ```
 
 ### Task 5: Create Recovery Service (AC #5, #8)
 
-- [ ] Create `quran_backend/core/services/recovery.py` module
+- [ ] Create `backend/core/services/recovery.py` module
 - [ ] Implement `RecoveryService` class:
   - [ ] Method: `list_available_backups(days=30)` - list backups in S3
   - [ ] Method: `download_backup(backup_date, local_path)` - fetch from S3
@@ -195,7 +195,7 @@ This story implements robust backup and recovery mechanisms to protect against d
 
 ### Task 6: Implement Monitoring and Alerting (AC #6)
 
-- [ ] Create `BackupStatus` model in `quran_backend/core/models.py`:
+- [ ] Create `BackupStatus` model in `backend/core/models.py`:
   ```python
   class BackupStatus(models.Model):
       backup_date = models.DateTimeField()
@@ -255,7 +255,7 @@ This story implements robust backup and recovery mechanisms to protect against d
 
 ### Task 8: Write Comprehensive Tests (AC #1-8)
 
-- [ ] Create `quran_backend/core/tests/test_backup_service.py`
+- [ ] Create `backend/core/tests/test_backup_service.py`
 - [ ] Test `BackupService`:
   - [ ] `test_create_backup_success` - full backup process succeeds
   - [ ] `test_compress_backup_reduces_size` - gzip compression working
@@ -481,14 +481,14 @@ def test_backup_uploads_to_s3():
 - Use task result backend for status tracking
 
 **Files to Reference for Patterns**:
-- `quran_backend/core/exceptions.py` - custom exception classes
-- `quran_backend/core/middleware/error_handler.py` - error logging patterns
-- `quran_backend/core/utils/retry.py` - retry decorators
+- `backend/core/exceptions.py` - custom exception classes
+- `backend/core/middleware/error_handler.py` - error logging patterns
+- `backend/core/utils/retry.py` - retry decorators
 - `config/settings/production.py` - Sentry configuration
 
 **New Infrastructure Created** (available to use):
-- `quran_backend/core/` module structure established
-- `quran_backend/core/tests/` test suite structure
+- `backend/core/` module structure established
+- `backend/core/tests/` test suite structure
 - Error handling middleware and exception handler
 - Sentry integration with PagerDuty alerting
 - Transaction management patterns established
@@ -609,20 +609,20 @@ All tests use pytest-django fixtures and moto mocking to avoid real AWS API call
 ### File List
 
 **New Files Created:**
-- `quran_backend/quran_backend/core/services/backup.py` - BackupService for automated backups
-- `quran_backend/quran_backend/core/services/encryption.py` - EncryptionService for KMS encryption
-- `quran_backend/quran_backend/core/services/recovery.py` - RecoveryService for database restoration
-- `quran_backend/quran_backend/core/models.py` - BackupStatus model for status tracking
-- `quran_backend/quran_backend/core/migrations/0001_initial.py` - Database migration for BackupStatus
-- `quran_backend/quran_backend/core/migrations/__init__.py` - Migrations package
-- `quran_backend/quran_backend/core/management/commands/restore_from_backup.py` - Django management command for restoration
-- `quran_backend/quran_backend/core/tests/test_backup.py` - Comprehensive backup/recovery tests (16 tests)
+- `backend/backend/core/services/backup.py` - BackupService for automated backups
+- `backend/backend/core/services/encryption.py` - EncryptionService for KMS encryption
+- `backend/backend/core/services/recovery.py` - RecoveryService for database restoration
+- `backend/backend/core/models.py` - BackupStatus model for status tracking
+- `backend/backend/core/migrations/0001_initial.py` - Database migration for BackupStatus
+- `backend/backend/core/migrations/__init__.py` - Migrations package
+- `backend/backend/core/management/commands/restore_from_backup.py` - Django management command for restoration
+- `backend/backend/core/tests/test_backup.py` - Comprehensive backup/recovery tests (16 tests)
 - `docs/operations/backup-and-recovery.md` - Operations manual with recovery procedures
 
 **Modified Files:**
-- `quran_backend/quran_backend/core/exceptions.py` - Added backup-specific exceptions
-- `quran_backend/quran_backend/core/tasks.py` - Added backup and cleanup Celery tasks
-- `quran_backend/config/settings/base.py` - Added backup configuration and Celery Beat schedule
+- `backend/backend/core/exceptions.py` - Added backup-specific exceptions
+- `backend/backend/core/tasks.py` - Added backup and cleanup Celery tasks
+- `backend/config/settings/base.py` - Added backup configuration and Celery Beat schedule
 
 ## Change Log
 

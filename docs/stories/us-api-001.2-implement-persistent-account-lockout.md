@@ -74,7 +74,7 @@ This story addresses Acceptance Criterion #12 from US-API-001 which was partiall
 ## Tasks / Subtasks
 
 - [ ] **Task 1**: Create Lockout Service Class (AC #1, #2, #7)
-  - [ ] Create `quran_backend/users/services/account_lockout.py`
+  - [ ] Create `backend/users/services/account_lockout.py`
   - [ ] Implement `AccountLockoutService` class:
     - `record_failed_attempt(email: str, ip_address: str) -> bool`
     - `is_locked(email: str) -> tuple[bool, int]`  # (locked, seconds_remaining)
@@ -85,7 +85,7 @@ This story addresses Acceptance Criterion #12 from US-API-001 which was partiall
   - [ ] Constants: `MAX_ATTEMPTS = 10`, `LOCKOUT_DURATION = 3600`
 
 - [ ] **Task 2**: Integrate Lockout Check in Login View (AC #2, #3)
-  - [ ] Modify `UserLoginView.post()` in `quran_backend/users/api/views.py`
+  - [ ] Modify `UserLoginView.post()` in `backend/users/api/views.py`
   - [ ] Check `AccountLockoutService.is_locked()` before authentication
   - [ ] Return 423 Locked if account is locked with retry_after
   - [ ] Record failed attempt on authentication failure
@@ -93,21 +93,21 @@ This story addresses Acceptance Criterion #12 from US-API-001 which was partiall
   - [ ] Get client IP from `request.META['REMOTE_ADDR']` or `X-Forwarded-For`
 
 - [ ] **Task 3**: Add Custom 423 Locked Response (AC #3)
-  - [ ] Create custom exception `AccountLockedException` in `quran_backend/users/api/exceptions.py`
+  - [ ] Create custom exception `AccountLockedException` in `backend/users/api/exceptions.py`
   - [ ] Include `retry_after` attribute (seconds until unlock)
   - [ ] Update `custom_exception_handler` to handle 423 status
   - [ ] Format error message: "Account temporarily locked. Try again in {minutes} minutes."
   - [ ] Include `retry_after` in response headers (RFC 7231)
 
 - [ ] **Task 4**: Add Django Admin Integration (AC #4)
-  - [ ] Create `quran_backend/users/admin/actions.py`
+  - [ ] Create `backend/users/admin/actions.py`
   - [ ] Add admin action: `clear_failed_login_attempts`
   - [ ] Register action in `UserAdmin` class
   - [ ] Display success message: "Cleared failed attempts for X users"
-  - [ ] Add to `quran_backend/users/admin.py`
+  - [ ] Add to `backend/users/admin.py`
 
 - [ ] **Task 5**: Create Management Command (AC #4)
-  - [ ] Create `quran_backend/users/management/commands/clear_lockouts.py`
+  - [ ] Create `backend/users/management/commands/clear_lockouts.py`
   - [ ] Command: `python manage.py clear_lockouts --email user@example.com`
   - [ ] Optional flag: `--all` to clear all lockouts
   - [ ] Use `AccountLockoutService.reset_attempts()`
@@ -129,7 +129,7 @@ This story addresses Acceptance Criterion #12 from US-API-001 which was partiall
   - [ ] Test: Different users tracked independently
   - [ ] Test: Failed attempts from different IPs for same user
   - [ ] Test: Redis unavailable (graceful degradation)
-  - [ ] Add tests to `quran_backend/users/tests/api/test_lockout.py` (new file)
+  - [ ] Add tests to `backend/users/tests/api/test_lockout.py` (new file)
 
 - [ ] **Task 8**: Performance Testing (AC #8)
   - [ ] Measure login request time with lockout check
@@ -217,10 +217,10 @@ auth:lockout:{email}   → Timestamp of lockout (TTL: 1 hour)
 **Test Execution**:
 ```bash
 # Run lockout tests only
-docker-compose exec django pytest quran_backend/users/tests/api/test_lockout.py -v
+docker-compose exec django pytest backend/users/tests/api/test_lockout.py -v
 
 # Run with Redis
-docker-compose exec django pytest quran_backend/users/tests/api/test_lockout.py -v --redis
+docker-compose exec django pytest backend/users/tests/api/test_lockout.py -v --redis
 ```
 
 ### Performance Considerations
@@ -250,9 +250,9 @@ docker-compose exec django pytest quran_backend/users/tests/api/test_lockout.py 
 - Security logging patterns (Sentry integration)
 
 **Related Code**:
-- `UserLoginView` at `quran_backend/users/api/views.py:59-82`
-- `AuthEndpointThrottle` at `quran_backend/users/api/throttling.py:6-14`
-- Custom exception handler at `quran_backend/users/api/exceptions.py:6-34`
+- `UserLoginView` at `backend/users/api/views.py:59-82`
+- `AuthEndpointThrottle` at `backend/users/api/throttling.py:6-14`
+- Custom exception handler at `backend/users/api/exceptions.py:6-34`
 - Redis settings at `config/settings/base.py` (CACHES configuration)
 
 ### References

@@ -1,9 +1,9 @@
 # Product Requirements Document (PRD)
-# Quran Backend - Islamic Spiritual Companion App
+# Muslim Companion - Islamic Spiritual Companion App
 
 **Document Version:** 1.0
 **Date:** November 5, 2025
-**Product:** Quran Backend API
+**Product:** Muslim Companion API
 **Phase:** Phase 1 - MVP Core
 **Author:** Product Management Team
 
@@ -13,15 +13,15 @@
 
 ### Product Overview
 
-The Quran Backend is the foundational API service powering the Quran reading and audio experience within the Islamic Spiritual Companion App. This backend addresses critical user needs for accurate, authentic, and comprehensive Quran engagement, serving as the data and content delivery engine for one of the most vital features of Muslim spiritual practice.
+The Muslim Companion is the foundational API service powering the Quran reading and audio experience within the Islamic Spiritual Companion App. This backend addresses critical user needs for accurate, authentic, and comprehensive Quran engagement, serving as the data and content delivery engine for one of the most vital features of Muslim spiritual practice.
 
-The Islamic Spiritual Companion App is being developed to serve the global Muslim community with a trusted platform that addresses critical pain points identified in the current market, including inaccurate prayer times, intrusive advertising, fragmented user experiences, and unreliable functionality across existing Islamic applications. The Quran Backend is the cornerstone of this vision, delivering the sacred text with uncompromising authenticity and accessibility.
+The Islamic Spiritual Companion App is being developed to serve the global Muslim community with a trusted platform that addresses critical pain points identified in the current market, including inaccurate prayer times, intrusive advertising, fragmented user experiences, and unreliable functionality across existing Islamic applications. The Muslim Companion is the cornerstone of this vision, delivering the sacred text with uncompromising authenticity and accessibility.
 
 ### Vision Statement
 
 To become the world's most trusted Islamic app that seamlessly integrates into Muslims' daily spiritual practice, providing accurate prayer guidance, **meaningful Quran engagement**, and comprehensive Islamic learning tools.
 
-**Quran Backend Mission:** Power authentic, accessible, and engaging Quran experiences that honor the sacred text while meeting the diverse needs of Muslims worldwide through modern technology.
+**Muslim Companion Mission:** Power authentic, accessible, and engaging Quran experiences that honor the sacred text while meeting the diverse needs of Muslims worldwide through modern technology.
 
 ---
 
@@ -29,7 +29,7 @@ To become the world's most trusted Islamic app that seamlessly integrates into M
 
 ### The "Wow Factor" - What Makes This Special
 
-The Quran Backend embodies several unique differentiators that transform it from a simple data service into a spiritually meaningful technology:
+The Muslim Companion embodies several unique differentiators that transform it from a simple data service into a spiritually meaningful technology:
 
 #### 1. **Uncompromising Authenticity**
 - **Othmani Script Perfection:** Every character, diacritical mark, and Tajweed indicator verified against authoritative Mushaf sources
@@ -429,7 +429,7 @@ The Quran Backend embodies several unique differentiators that transform it from
 **Related User Stories:** US-RC-001A (new), US-RC-001
 
 **Islamic Context:**
-The 10 canonical Qira'at (recitation methods) each have 2 Riwayahs (transmission chains), totaling 20 authentic transmissions. This ensures the Quran Backend maintains scholarly accuracy in representing how the Quran has been preserved and transmitted across generations.
+The 10 canonical Qira'at (recitation methods) each have 2 Riwayahs (transmission chains), totaling 20 authentic transmissions. This ensures the Muslim Companion maintains scholarly accuracy in representing how the Quran has been preserved and transmitted across generations.
 
 ---
 
@@ -1100,7 +1100,7 @@ The 10 canonical Qira'at (recitation methods) each have 2 Riwayahs (transmission
    - Market Research and Competitive Analysis
    - Full Product Requirements Overview
 
-2. **EPIC_Quran Backend-Nov-5-2025.md**
+2. **EPIC_Muslim Companion-Nov-5-2025.md**
    - Detailed user story breakdown (43 user stories)
    - Acceptance criteria and business rules
    - Technical implementation notes
@@ -1183,4 +1183,4 @@ The 10 canonical Qira'at (recitation methods) each have 2 Riwayahs (transmission
 
 ---
 
-**Document Path:** `/Users/sam/code/src/github.com/okq550@gmail.com/Projects-Work/django-muslim-companion/docs/PRD.md`
+**Document Path:** `/Users/sam/code/src/github.com/okq550@gmail.com/Projects-Work/muslim-companion/docs/PRD.md`

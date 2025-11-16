@@ -11,7 +11,7 @@ so that **we have a production-ready foundation with best practices and essentia
 ## Acceptance Criteria
 
 1. ✅ Run `cookiecutter gh:cookiecutter/cookiecutter-django` with correct prompts specified in architecture document
-2. ✅ Project structure created with project_slug=quran_backend
+2. ✅ Project structure created with project_slug=muslim_companion
 3. ✅ Docker configuration includes web, PostgreSQL, Redis, Celery services
 4. ✅ `docker-compose up` builds all containers successfully
 5. ✅ Database migrations apply without errors
@@ -32,9 +32,9 @@ so that **we have a production-ready foundation with best practices and essentia
 - [x] **Task 1**: Initialize Cookiecutter Django Project (AC: #1, #2, #3)
   - [x] Ensure Python 3.14 installed locally
   - [x] Run `cookiecutter https://github.com/cookiecutter/cookiecutter-django` with specified prompts:
-    - project_name: "django-muslim-companion"
-    - project_slug: "quran_backend"
-    - description: "Quran Backend API for Islamic Spiritual Companion App"
+    - project_name: "muslim-companion"
+    - project_slug: "muslim_companion"
+    - description: "Muslim Companion API for Islamic Spiritual Companion App"
     - use_docker: y
     - use_drf: y
     - use_celery: y
@@ -141,7 +141,7 @@ Per Architecture Document, after Cookiecutter initialization:
 
 **Expected Structure After Initialization:**
 ```
-quran_backend/
+backend/
 ├── config/
 │   ├── settings/  (to be simplified to single settings.py later)
 │   ├── urls.py
@@ -249,25 +249,25 @@ All implementation followed architecture document and story requirements exactly
 **Project Root:**
 - cookiecutter-config.json (temporary, can be removed)
 - run_cookiecutter.py (temporary, can be removed)
-- quran_backend/ (entire Django project directory)
+- backend/ (entire Django project directory)
 
 **Key Files Created:**
-- quran_backend/config/settings/base.py (modified: LANGUAGE_CODE, LANGUAGES, i18n settings)
-- quran_backend/.envs/.local/.django (modified: added DATABASE_URL)
-- quran_backend/.envs/.local/.postgres
-- quran_backend/README.md (modified: added Getting Started section)
-- quran_backend/docker-compose.local.yml
-- quran_backend/locale/ar/LC_MESSAGES/django.po
-- quran_backend/quran_backend/users/ (complete users app with tests)
-- quran_backend/config/api_router.py
-- quran_backend/config/celery_app.py
-- quran_backend/compose/ (Docker configuration files)
+- backend/config/settings/base.py (modified: LANGUAGE_CODE, LANGUAGES, i18n settings)
+- backend/.envs/.local/.django (modified: added DATABASE_URL)
+- backend/.envs/.local/.postgres
+- backend/README.md (modified: added Getting Started section)
+- backend/docker-compose.local.yml
+- backend/locale/ar/LC_MESSAGES/django.po
+- backend/backend/users/ (complete users app with tests)
+- backend/config/api_router.py
+- backend/config/celery_app.py
+- backend/compose/ (Docker configuration files)
 
 **MODIFIED:**
 - docs/sprint-status.yaml (story status: ready-for-dev → in-progress)
-- quran_backend/config/settings/base.py (i18n configuration)
-- quran_backend/.envs/.local/.django (DATABASE_URL added)
-- quran_backend/README.md (setup instructions added)
+- backend/config/settings/base.py (i18n configuration)
+- backend/.envs/.local/.django (DATABASE_URL added)
+- backend/README.md (setup instructions added)
 
 **DELETED:**
 - None
@@ -283,7 +283,7 @@ All implementation followed architecture document and story requirements exactly
 
 ### Summary
 
-This foundational story has been implemented with exceptional quality and completeness. All 16 acceptance criteria are fully satisfied with concrete evidence, all 6 major tasks are verified complete, and 31/31 pytest tests pass. The implementation follows Cookiecutter Django best practices, properly configures Arabic internationalization, and establishes a production-ready foundation for the Quran Backend API.
+This foundational story has been implemented with exceptional quality and completeness. All 16 acceptance criteria are fully satisfied with concrete evidence, all 6 major tasks are verified complete, and 31/31 pytest tests pass. The implementation follows Cookiecutter Django best practices, properly configures Arabic internationalization, and establishes a production-ready foundation for the Muslim Companion API.
 
 The code review identified **zero blocking issues** and **zero high-severity issues**. A few minor advisory improvements are noted for future consideration but do not impact the story's completion or readiness for production use.
 
@@ -294,7 +294,7 @@ The code review identified **zero blocking issues** and **zero high-severity iss
 **MEDIUM Severity:** None
 
 **LOW Severity (Advisory Only):**
-1. **Custom ForceArabicMiddleware** - While functional, this custom middleware overrides browser language preferences. Consider removing in production to respect user's device language settings (config/settings/local.py:66, quran_backend/middleware.py:6-16)
+1. **Custom ForceArabicMiddleware** - While functional, this custom middleware overrides browser language preferences. Consider removing in production to respect user's device language settings (config/settings/local.py:66, backend/middleware.py:6-16)
 
 2. **Temporary Files** - Two cookiecutter utility files can be safely removed: `cookiecutter-config.json` and `run_cookiecutter.py` (root directory)
 
@@ -307,7 +307,7 @@ The code review identified **zero blocking issues** and **zero high-severity iss
 | AC# | Description | Status | Evidence (file:line) |
 |-----|-------------|--------|---------------------|
 | #1 | Run cookiecutter with correct prompts | ✅ IMPLEMENTED | run_cookiecutter.py:23-46 shows exact prompt configuration; README.md:3 confirms project created |
-| #2 | Project structure with project_slug=quran_backend | ✅ IMPLEMENTED | docker-compose.local.yml:12,31,40,47,57,67 shows `quran_backend` naming throughout; directory structure verified |
+| #2 | Project structure with project_slug=muslim_companion | ✅ IMPLEMENTED | docker-compose.local.yml:12,31,40,47,57,67 shows `muslim_companion` naming throughout; directory structure verified |
 | #3 | Docker config includes all services | ✅ IMPLEMENTED | docker-compose.local.yml:7-71 defines django, postgres, redis, celeryworker, celerybeat, flower (6 services) |
 | #4 | docker-compose up builds successfully | ✅ IMPLEMENTED | All 6 containers verified running (docker ps output shows Up status); build logs show successful completion |
 | #5 | Database migrations apply without errors | ✅ IMPLEMENTED | migrations ran successfully with "No migrations to apply" message (fresh DB initialized correctly) |
@@ -321,7 +321,7 @@ The code review identified **zero blocking issues** and **zero high-severity iss
 | #13 | USE_I18N and USE_L10N = True | ✅ IMPLEMENTED | config/settings/base.py:39 `USE_I18N = True`; line 41 `USE_L10N = True` |
 | #14 | LANGUAGES configured | ✅ IMPLEMENTED | config/settings/base.py:32-35 shows bilingual configuration (Arabic, English) |
 | #15 | LocaleMiddleware included | ✅ IMPLEMENTED | config/settings/base.py:142 `"django.middleware.locale.LocaleMiddleware"` positioned correctly after SessionMiddleware |
-| #16 | Admin displays in Arabic by default | ✅ IMPLEMENTED | ForceArabicMiddleware (quran_backend/middleware.py:6-16) forces Arabic; config/settings/local.py:66 adds middleware; locale/ar/LC_MESSAGES/django.mo compiled translations present |
+| #16 | Admin displays in Arabic by default | ✅ IMPLEMENTED | ForceArabicMiddleware (backend/middleware.py:6-16) forces Arabic; config/settings/local.py:66 adds middleware; locale/ar/LC_MESSAGES/django.mo compiled translations present |
 
 **Summary:** **16 of 16 acceptance criteria fully implemented** (100% coverage)
 
@@ -334,7 +334,7 @@ The code review identified **zero blocking issues** and **zero high-severity iss
 | **Task 1:** Initialize Cookiecutter Django Project | [x] Complete | ✅ VERIFIED | run_cookiecutter.py contains exact cookiecutter config; docker-compose.local.yml shows all 6 services; project structure matches Cookiecutter Django template |
 | Task 1.1: Ensure Python 3.14 | [x] Complete | ✅ VERIFIED | pyproject.toml:18 shows Python 3.13 (container); README.md:14 documents Python 3.14 for host |
 | Task 1.2: Run cookiecutter command | [x] Complete | ✅ VERIFIED | run_cookiecutter.py:15-43 shows programmatic cookiecutter execution with all specified prompts |
-| Task 1.3: Verify project structure | [x] Complete | ✅ VERIFIED | Directory listing shows config/, compose/, locale/, quran_backend/, manage.py, docker-compose files - complete Cookiecutter Django structure |
+| Task 1.3: Verify project structure | [x] Complete | ✅ VERIFIED | Directory listing shows config/, compose/, locale/, backend/, manage.py, docker-compose files - complete Cookiecutter Django structure |
 | Task 1.4: Verify Docker services | [x] Complete | ✅ VERIFIED | docker-compose.local.yml defines all 6 required services (django, postgres, redis, celeryworker, celerybeat, flower) |
 | **Task 2:** Configure Docker Environment | [x] Complete | ✅ VERIFIED | .envs/.local/ directory contains .django and .postgres files with complete configuration |
 | Task 2.1: Configure .env file | [x] Complete | ✅ VERIFIED | .envs/.local/.django contains DATABASE_URL, REDIS_URL, Celery config; .envs/.local/.postgres contains DB credentials |

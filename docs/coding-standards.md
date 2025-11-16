@@ -1,8 +1,8 @@
-# Coding Standards - Quran Backend API
+# Coding Standards - Muslim Companion API
 
 **Version:** 1.0
 **Last Updated:** 2025-11-13
-**Project:** Django Muslim Companion - Quran Backend API
+**Project:** Django Muslim Companion - Muslim Companion API
 
 This document defines the coding standards, conventions, and quality rules enforced in this project. All code must comply with these standards before being committed.
 
@@ -29,7 +29,7 @@ This document defines the coding standards, conventions, and quality rules enfor
 
 This project uses **pre-commit hooks** to enforce code quality. All code is automatically checked before each commit. If any check fails, the commit will be blocked until issues are resolved.
 
-**Pre-commit configuration location:** `quran_backend/.pre-commit-config.yaml`
+**Pre-commit configuration location:** `backend/.pre-commit-config.yaml`
 
 ### Installed Hooks
 
@@ -168,7 +168,7 @@ Tests have relaxed rules for pragmatic testing:
 
 ```bash
 # Run all hooks on all files
-cd quran_backend
+cd muslim_companion
 pre-commit run --all-files
 
 # Run all hooks on staged files only
@@ -531,10 +531,10 @@ from rest_framework import status
 from rest_framework.response import Response
 
 # 3. Local imports
-from quran_backend.core.exceptions import ValidationError
-from quran_backend.quran.models import Surah
-from quran_backend.quran.models import Verse
-from quran_backend.users.models import User
+from backend.core.exceptions import ValidationError
+from backend.quran.models import Surah
+from backend.quran.models import Verse
+from backend.users.models import User
 ```
 
 ### Import Style
@@ -854,7 +854,7 @@ All errors must use this consistent format:
 
 ```python
 # ✅ CORRECT - Specific exception with context
-from quran_backend.core.exceptions import ValidationError
+from backend.core.exceptions import ValidationError
 
 def get_verse(surah_id: int, verse_number: int):
     try:
@@ -1197,16 +1197,16 @@ except Exception as e:
 
 ### Configuration Files
 
-- **Pre-commit config:** `quran_backend/.pre-commit-config.yaml`
-- **Ruff config:** `quran_backend/pyproject.toml` (tool.ruff section)
-- **Django settings:** `quran_backend/config/settings/`
+- **Pre-commit config:** `backend/.pre-commit-config.yaml`
+- **Ruff config:** `backend/pyproject.toml` (tool.ruff section)
+- **Django settings:** `backend/config/settings/`
 - **Architecture document:** `docs/architecture.md`
 
 ### Running Quality Checks
 
 ```bash
 # Install pre-commit hooks
-cd quran_backend
+cd muslim_companion
 pre-commit install
 
 # Run all checks

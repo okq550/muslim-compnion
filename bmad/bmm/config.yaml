@@ -3,7 +3,7 @@
 # Version: 6.0.0-alpha.6
 # Date: 2025-11-05T20:42:58.856Z
 
-project_name: django-muslim-companion
+project_name: muslim-companion
 include_game_planning: false
 user_skill_level: intermediate
 tech_docs: '{project-root}/docs'

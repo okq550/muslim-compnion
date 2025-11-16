@@ -7,9 +7,9 @@ from cookiecutter.main import cookiecutter
 
 # Configuration matching the architecture document specifications
 extra_context = {
-    "project_name": "django-muslim-companion",
-    "project_slug": "quran_backend",
-    "description": "Quran Backend API for Islamic Spiritual Companion App",
+    "project_name": "muslim-companion",
+    "project_slug": "muslim-companion",
+    "description": "Muslim Companion App Backend API ",
     "author_name": "Development Team",
     "domain_name": "example.com",
     "email": "dev@example.com",

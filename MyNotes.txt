@@ -12,7 +12,7 @@ Would you like me to explain:
 
   Start All Services
 
-  cd quran_backend
+  cd muslim-companion
   docker compose -f docker-compose.local.yml up -d
 
   View Running Services

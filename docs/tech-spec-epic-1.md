@@ -9,7 +9,7 @@ Status: Draft
 
 ## Overview
 
-Epic 1 establishes the foundational infrastructure for the Quran Backend API, providing essential cross-cutting concerns that all subsequent epics depend upon. This epic implements the production-ready foundation using Cookiecutter Django, along with critical infrastructure services including user authentication, error handling, caching, analytics, rate limiting, backup/recovery, and logging/monitoring.
+Epic 1 establishes the foundational infrastructure for the Muslim Companion API, providing essential cross-cutting concerns that all subsequent epics depend upon. This epic implements the production-ready foundation using Cookiecutter Django, along with critical infrastructure services including user authentication, error handling, caching, analytics, rate limiting, backup/recovery, and logging/monitoring.
 
 The infrastructure is designed to support a global Muslim user base with zero tolerance for data errors, offline-first architecture, and respectful design principles that honor the sacred nature of Quran content. All infrastructure decisions align with the PRD's vision of becoming the world's most trusted Islamic app through uncompromising technical excellence.
 
@@ -466,7 +466,7 @@ pytest-cov==4.1.0
 ## Acceptance Criteria (Authoritative)
 
 **US-API-000: Initialize Django Project**
-1. Cookiecutter Django project created with project_slug=quran_backend
+1. Cookiecutter Django project created with project_slug=muslim_companion
 2. Docker containers (web, PostgreSQL, Redis, Celery) build and run successfully
 3. Database migrations apply without errors
 4. Django admin accessible at localhost:8000/admin with Arabic RTL layout

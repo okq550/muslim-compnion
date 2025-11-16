@@ -10,7 +10,7 @@ so that **the system is protected from abuse and remains available for all users
 
 ## Background
 
-This story implements comprehensive rate limiting and throttling infrastructure for the Quran Backend API, ensuring fair resource allocation, preventing abuse, and protecting the system from attacks. The implementation leverages Django REST Framework's throttling classes combined with Redis for distributed rate tracking, providing appropriate limits based on user type (anonymous vs authenticated) and endpoint sensitivity.
+This story implements comprehensive rate limiting and throttling infrastructure for the Muslim Companion API, ensuring fair resource allocation, preventing abuse, and protecting the system from attacks. The implementation leverages Django REST Framework's throttling classes combined with Redis for distributed rate tracking, providing appropriate limits based on user type (anonymous vs authenticated) and endpoint sensitivity.
 
 **Parent Epic**: EPIC 1 - Cross-Cutting / Infrastructure Stories
 **Priority**: P1 (Medium - Phase 1)
@@ -85,8 +85,8 @@ This story implements comprehensive rate limiting and throttling infrastructure 
   REST_FRAMEWORK = {
       ...
       'DEFAULT_THROTTLE_CLASSES': [
-          'quran_backend.core.throttling.AnonRateThrottle',
-          'quran_backend.core.throttling.UserRateThrottle',
+          'backend.core.throttling.AnonRateThrottle',
+          'backend.core.throttling.UserRateThrottle',
       ],
       'DEFAULT_THROTTLE_RATES': {
           'anon': '20/minute',
@@ -99,7 +99,7 @@ This story implements comprehensive rate limiting and throttling infrastructure 
 
 ### Task 2: Create Custom Throttle Classes (AC #2, #5, #7)
 
-- [x] Create `quran_backend/core/throttling.py` module
+- [x] Create `backend/core/throttling.py` module
 - [x] Implement `AnonRateThrottle` class:
   - [x] Inherit from DRF's `AnonRateThrottle`
   - [x] Rate: 20 requests per minute per IP
@@ -116,7 +116,7 @@ This story implements comprehensive rate limiting and throttling infrastructure 
 
 ### Task 3: Add Rate Limit Headers to Responses (AC #5)
 
-- [x] Create `quran_backend/core/middleware/rate_limit_headers.py`
+- [x] Create `backend/core/middleware/rate_limit_headers.py`
 - [x] Implement `RateLimitHeadersMiddleware`:
   - [x] Extract throttle state from request
   - [x] Calculate remaining requests
@@ -129,14 +129,14 @@ This story implements comprehensive rate limiting and throttling infrastructure 
   ```python
   MIDDLEWARE = [
       ...
-      'quran_backend.core.middleware.rate_limit_headers.RateLimitHeadersMiddleware',
+      'backend.core.middleware.rate_limit_headers.RateLimitHeadersMiddleware',
       ...
   ]
   ```
 
 ### Task 4: Customize 429 Error Response (AC #3, #4)
 
-- [x] Update `quran_backend/core/exceptions.py` (from US-API-002)
+- [x] Update `backend/core/exceptions.py` (from US-API-002)
 - [x] Add `RateLimitExceededError` exception class:
   - [x] HTTP status code: 429
   - [x] Error code: `RATE_LIMIT_EXCEEDED`
@@ -162,7 +162,7 @@ This story implements comprehensive rate limiting and throttling infrastructure 
 
 ### Task 6: Implement Abuse Detection and Logging (AC #8)
 
-- [x] Create `quran_backend/core/utils/abuse_detection.py`
+- [x] Create `backend/core/utils/abuse_detection.py`
 - [x] Implement `track_rate_limit_violation` function:
   - [x] Log violation to Sentry with context (user ID, IP, endpoint)
   - [x] Increment violation counter in Redis
@@ -190,7 +190,7 @@ This story implements comprehensive rate limiting and throttling infrastructure 
 
 ### Task 8: Comprehensive Rate Limiting Tests (AC #1-9)
 
-- [x] Create `quran_backend/core/tests/test_rate_limiting.py`
+- [x] Create `backend/core/tests/test_rate_limiting.py`
 - [x] Test anonymous user rate limiting:
   - [x] Send 20 requests from same IP → all succeed
   - [x] Send 21st request → 429 response
@@ -317,8 +317,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.locale.LocaleMiddleware',
-    'quran_backend.core.middleware.error_handler.ErrorHandlingMiddleware',
-    'quran_backend.core.middleware.rate_limit_headers.RateLimitHeadersMiddleware',  # THIS ONE
+    'backend.core.middleware.error_handler.ErrorHandlingMiddleware',
+    'backend.core.middleware.rate_limit_headers.RateLimitHeadersMiddleware',  # THIS ONE
     ...
 ]
 ```
@@ -366,8 +366,8 @@ if isinstance(exc, Throttled):
 ```
 
 **Files to Reference**:
-- `quran_backend/core/exceptions.py` (custom exception handler, error codes)
-- `quran_backend/core/middleware/error_handler.py` (middleware patterns)
+- `backend/core/exceptions.py` (custom exception handler, error codes)
+- `backend/core/middleware/error_handler.py` (middleware patterns)
 - `config/settings.py` (existing CACHES, REST_FRAMEWORK config)
 
 **Testing Patterns**:
@@ -507,11 +507,11 @@ Implementation completed in single session (2025-11-10)
 ### File List
 
 - config/settings/base.py
-- quran_backend/core/throttling.py
-- quran_backend/core/middleware/rate_limit_headers.py
-- quran_backend/core/utils/abuse_detection.py
-- quran_backend/core/exceptions.py
-- quran_backend/core/tests/test_rate_limiting.py
+- backend/core/throttling.py
+- backend/core/middleware/rate_limit_headers.py
+- backend/core/utils/abuse_detection.py
+- backend/core/exceptions.py
+- backend/core/tests/test_rate_limiting.py
 
 ### Change Log
 

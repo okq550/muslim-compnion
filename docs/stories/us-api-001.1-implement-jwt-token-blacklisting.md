@@ -76,7 +76,7 @@ This story addresses a gap identified in the US-API-001 code review. Currently, 
   - [ ] Restart Django container: `docker-compose restart django`
 
 - [ ] **Task 3**: Update Logout Endpoint (AC #3, #4)
-  - [ ] Modify `UserLogoutView` in `quran_backend/users/api/views.py`
+  - [ ] Modify `UserLogoutView` in `backend/users/api/views.py`
   - [ ] Import `RefreshToken` from `rest_framework_simplejwt.tokens`
   - [ ] Validate and decode refresh token from request
   - [ ] Call `token.blacklist()` to add to blacklist
@@ -88,7 +88,7 @@ This story addresses a gap identified in the US-API-001 code review. Currently, 
 - [ ] **Task 4**: Add Outstanding Token Tracking Test (AC #5)
   - [ ] Write test to verify OutstandingToken created on login
   - [ ] Write test to verify OutstandingToken references correct user
-  - [ ] Test file: `quran_backend/users/tests/api/test_views.py`
+  - [ ] Test file: `backend/users/tests/api/test_views.py`
 
 - [ ] **Task 5**: Comprehensive Logout Testing (AC #6)
   - [ ] Test: Successful logout blacklists token
@@ -97,7 +97,7 @@ This story addresses a gap identified in the US-API-001 code review. Currently, 
   - [ ] Test: Logout with invalid token format returns 400
   - [ ] Test: Logout with already-blacklisted token returns 400
   - [ ] Test: Verify BlacklistedToken record exists in database
-  - [ ] Add tests to `quran_backend/users/tests/api/test_views.py::TestUserLogoutView`
+  - [ ] Add tests to `backend/users/tests/api/test_views.py::TestUserLogoutView`
 
 - [ ] **Task 6**: Performance Verification (AC #7)
   - [ ] Check database indexes on BlacklistedToken table
@@ -187,9 +187,9 @@ This story addresses a gap identified in the US-API-001 code review. Currently, 
 - Error response format from `api/exceptions.py`
 
 **Related Code**:
-- `UserLogoutView` at `quran_backend/users/api/views.py:84-113`
+- `UserLogoutView` at `backend/users/api/views.py:84-113`
 - JWT settings at `config/settings/base.py:345-357`
-- Login tests at `quran_backend/users/tests/api/test_views.py:181-226`
+- Login tests at `backend/users/tests/api/test_views.py:181-226`
 
 ### References
 

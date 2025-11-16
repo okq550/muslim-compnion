@@ -1,4 +1,4 @@
-# EPIC: Quran Backend - First Release
+# EPIC: Muslim Companion - First Release
 
 ## Epic Overview:
 
@@ -27,7 +27,7 @@ The implementation follows a structured approach with 7 epics:
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release
+**Epic:** Muslim Companion - First Release
 **Module:** Infrastructure / Project Setup
 **Priority:** Critical (Phase 1 - Foundation)
 **Functional Requirements:** N/A (Infrastructure)
@@ -43,7 +43,7 @@ The project needs to be initialized using the Cookiecutter Django template to pr
 
 1.  **Project Configuration:**
 
-    - Project name: quran_backend
+    - Project name: muslim_companion
     - Python version: 3.14
     - Django version: 5.2.8 LTS
     - Use Docker: Yes
@@ -68,7 +68,7 @@ The project needs to be initialized using the Cookiecutter Django template to pr
 #### Acceptance Criteria:
 
 ✅ Run `cookiecutter gh:cookiecutter/cookiecutter-django` with correct prompts
-✅ Project structure created with project_slug=quran_backend
+✅ Project structure created with project_slug=muslim_companion
 ✅ Docker configuration includes web, PostgreSQL, Redis, Celery services
 ✅ `docker-compose up` builds all containers successfully
 ✅ Database migrations apply without errors
@@ -114,8 +114,8 @@ The project needs to be initialized using the Cookiecutter Django template to pr
 - Ensure Python 3.14 is installed locally
 - Configure prompts exactly as specified:
   - python_version: 3.14
-  - project_name: Quran Backend
-  - project_slug: quran_backend
+  - project_name: Muslim Companion
+  - project_slug: muslim_companion
   - use_docker: y
   - use_drf: y
   - use_celery: y
@@ -158,7 +158,7 @@ The project needs to be initialized using the Cookiecutter Django template to pr
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Infrastructure / Cross-Cutting  
 **Priority:** High (Phase 1 - MVP Core)  
 **Functional Requirements:** FR-033  
@@ -275,7 +275,7 @@ data protected from unauthorized access.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Infrastructure / Cross-Cutting  
 **Priority:** High (All Phases)  
 **Functional Requirements:** FR-034  
@@ -394,7 +394,7 @@ issues that might arise during app usage.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Infrastructure / Cross-Cutting  
 **Priority:** Medium (Phase 1)  
 **Functional Requirements:** FR-035  
@@ -511,7 +511,7 @@ decisions
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Infrastructure / Cross-Cutting  
 **Priority:** Low (Phase 2)  
 **Functional Requirements:** FR-036  
@@ -633,7 +633,7 @@ all users
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Infrastructure / Cross-Cutting  
 **Priority:** Medium (Phase 1)  
 **Functional Requirements:** FR-038  
@@ -749,7 +749,7 @@ usage patterns.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Infrastructure / Cross-Cutting  
 **Priority:** High (Phase 1)  
 **Functional Requirements:** FR-037  
@@ -869,7 +869,7 @@ system health
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Infrastructure / Cross-Cutting  
 **Priority:** High (Phase 1)  
 **Functional Requirements:** FR-039  
@@ -995,7 +995,7 @@ issues.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release
+**Epic:** Muslim Companion - First Release
 **Module:** Infrastructure / Cross-Cutting
 **Priority:** High (Technical Debt - Phase 1)
 **Functional Requirements:** FR-041 (Documentation & Support)
@@ -1129,7 +1129,7 @@ The backend APIs implemented in Epic 1 require comprehensive documentation to en
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Quran Text & Content Management  
 **Priority:** Critical (Phase 1 - MVP Core)  
 **Functional Requirements:** FR-001, FR-028  
@@ -1266,7 +1266,7 @@ sources.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Quran Text & Content Management  
 **Priority:** High (Phase 1 - MVP Core)  
 **Functional Requirements:** FR-002  
@@ -1374,7 +1374,7 @@ familiar with
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Quran Text & Content Management  
 **Priority:** Medium (Phase 1 - MVP Core)  
 **Functional Requirements:** FR-003  
@@ -1485,7 +1485,7 @@ memorization
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Quran Text & Content Management  
 **Priority:** Medium (Phase 1 - MVP Core)  
 **Functional Requirements:** FR-004  
@@ -1590,7 +1590,7 @@ completing the Quran in a month (one Juz per day during Ramadan).
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Quran Text & Content Management  
 **Priority:** Medium (Phase 2)  
 **Functional Requirements:** FR-005  
@@ -1708,7 +1708,7 @@ reciter
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Recitation Management  
 **Priority:** High (Phase 1 - MVP Core)  
 **Functional Requirements:** FR-006  
@@ -1852,7 +1852,7 @@ external source
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Recitation Management  
 **Priority:** Critical (Phase 1 - MVP Core)  
 **Functional Requirements:** FR-007  
@@ -1995,7 +1995,7 @@ listening to the Quran
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Recitation Management  
 **Priority:** High (Phase 1 - MVP Core)  
 **Functional Requirements:** FR-008  
@@ -2137,7 +2137,7 @@ reciter
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Recitation Management  
 **Priority:** High (Phase 1 - MVP Core)  
 **Functional Requirements:** FR-009  
@@ -2263,7 +2263,7 @@ text being displayed and provide standard playback controls.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Recitation Management  
 **Priority:** Medium (Phase 1 - MVP Core)  
 **Functional Requirements:** FR-010  
@@ -2372,7 +2372,7 @@ with the ability to track progress through the Surah.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Recitation Management  
 **Priority:** Medium (Phase 3 - Offline Support)  
 **Functional Requirements:** FR-011, FR-029  
@@ -2491,7 +2491,7 @@ connection
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release
+**Epic:** Muslim Companion - First Release
 **Module:** Recitation Management
 **Priority:** Medium (Phase 2)
 **Functional Requirements:** FR-012
@@ -2600,7 +2600,7 @@ users with poor connections get lower quality that streams reliably.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Translation Management  
 **Priority:** High (Phase 1 - MVP Core)  
 **Functional Requirements:** FR-013  
@@ -2729,7 +2729,7 @@ translations
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Translation Management  
 **Priority:** High (Phase 1 - MVP Core)  
 **Functional Requirements:** FR-014  
@@ -2845,7 +2845,7 @@ translator information
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Translation Management  
 **Priority:** High (Phase 1 - MVP Core)  
 **Functional Requirements:** FR-015  
@@ -2958,7 +2958,7 @@ Arabic
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Translation Management  
 **Priority:** High (Phase 1 - MVP Core)  
 **Functional Requirements:** FR-016  
@@ -3074,7 +3074,7 @@ helps me understand best
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Translation Management  
 **Priority:** Medium (Phase 1 - MVP Core)  
 **Functional Requirements:** FR-017  
@@ -3180,7 +3180,7 @@ transition should be smooth and immediate.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Translation Management  
 **Priority:** Medium (Phase 3 - Offline Support)  
 **Functional Requirements:** FR-018  
@@ -3295,7 +3295,7 @@ verses
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Tafseer Management  
 **Priority:** Medium (Phase 2)  
 **Functional Requirements:** FR-019  
@@ -3420,7 +3420,7 @@ sources
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Tafseer Management  
 **Priority:** Medium (Phase 2)  
 **Functional Requirements:** FR-020  
@@ -3537,7 +3537,7 @@ preference
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Tafseer Management  
 **Priority:** Medium (Phase 2)  
 **Functional Requirements:** FR-021  
@@ -3650,7 +3650,7 @@ reading
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Tafseer Management  
 **Priority:** Medium (Phase 2)  
 **Functional Requirements:** FR-022  
@@ -3769,7 +3769,7 @@ meaning
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Tafseer Management  
 **Priority:** Low (Phase 2)  
 **Functional Requirements:** FR-022  
@@ -3875,7 +3875,7 @@ comparative study and deeper understanding.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Tafseer Management  
 **Priority:** Low (Phase 3 - Offline Support)  
 **Functional Requirements:** FR-022  
@@ -3989,7 +3989,7 @@ specific Tafseer sources and manage their offline Tafseer library.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Bookmark Management  
 **Priority:** High (Phase 2)  
 **Functional Requirements:** FR-023  
@@ -4097,7 +4097,7 @@ bookmark any verse and provide easy access to their bookmarked verses.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Bookmark Management  
 **Priority:** High (Phase 2)  
 **Functional Requirements:** FR-024  
@@ -4206,7 +4206,7 @@ stopped, similar to placing a physical bookmark in a printed Quran.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Bookmark Management  
 **Priority:** Medium (Phase 2)  
 **Functional Requirements:** FR-025  
@@ -4314,7 +4314,7 @@ This helps users manage and find their bookmarks efficiently.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Bookmark Management  
 **Priority:** High (Phase 2)  
 **Functional Requirements:** FR-026  
@@ -4431,7 +4431,7 @@ bookmarked content or manage their bookmarks.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Bookmark Management  
 **Priority:** Medium (Phase 2)  
 **Functional Requirements:** FR-027  
@@ -4535,7 +4535,7 @@ safeguards against accidental deletion.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Bookmark Management  
 **Priority:** Low (Phase 2)  
 **Functional Requirements:** FR-027  
@@ -4650,7 +4650,7 @@ Surah name, category, or notes content.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Offline Content Management  
 **Priority:** High (Phase 3 - Offline Support)  
 **Functional Requirements:** FR-028, FR-030  
@@ -4764,7 +4764,7 @@ everything
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Offline Content Management  
 **Priority:** Medium (Phase 3 - Offline Support)  
 **Functional Requirements:** FR-029  
@@ -4880,7 +4880,7 @@ reciter
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Offline Content Management  
 **Priority:** Medium (Phase 3 - Offline Support)  
 **Functional Requirements:** FR-030  
@@ -4997,7 +4997,7 @@ need offline
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Offline Content Management  
 **Priority:** High (Phase 3 - Offline Support)  
 **Functional Requirements:** FR-031  
@@ -5111,7 +5111,7 @@ content
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Offline Content Management  
 **Priority:** Low (Phase 3 - Offline Support)  
 **Functional Requirements:** FR-032  
@@ -5224,7 +5224,7 @@ option to update while preserving their offline access.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Offline Content Management  
 **Priority:** Low (Phase 3 - Offline Support)  
 **Functional Requirements:** FR-032  

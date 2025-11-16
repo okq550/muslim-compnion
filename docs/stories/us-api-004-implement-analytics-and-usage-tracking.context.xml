@@ -15,13 +15,13 @@
     <soThat>we can improve the user experience and make data-driven decisions</soThat>
     <tasks>
 ### Task 1: Create AnalyticsEvent Model and Migrations (AC #6)
-- Create quran_backend/analytics/ Django app
+- Create backend/analytics/ Django app
 - Define AnalyticsEvent model with event_type, event_data (JSONField), user_id_hash, session_id, timestamp, country_code
 - Add database indexes on event_type+timestamp and timestamp
 - Register model in Django admin (read-only)
 
 ### Task 2: Implement Analytics Service (AC #1, #2, #7)
-- Create quran_backend/analytics/services.py with AnalyticsService class
+- Create backend/analytics/services.py with AnalyticsService class
 - Implement track_event(user, event_type, event_data, request) - checks is_analytics_enabled, hashes user ID
 - Implement aggregation methods: get_popular_features(), get_most_read_surahs(), get_error_rates()
 
@@ -36,7 +36,7 @@
 - Ensure tracking failures don't break user functionality (try/except)
 
 ### Task 5: Create Privacy Policy Endpoint (AC #5)
-- Create quran_backend/legal/ Django app
+- Create backend/legal/ Django app
 - Create PrivacyPolicy model or static content
 - Create endpoint: GET /api/v1/legal/privacy-policy/
 - Draft privacy policy content with legal/compliance team
@@ -158,7 +158,7 @@
       </doc>
       <doc>
         <path>docs/architecture.md</path>
-        <title>Architecture Document - Quran Backend API</title>
+        <title>Architecture Document - Muslim Companion API</title>
         <section>Technology Stack - Monitoring & Error Tracking</section>
         <snippet>Sentry configured for application monitoring, error tracking, and performance monitoring. Real-time alerts, release tracking, user context. Performance monitoring with traces_sample_rate=0.1 (10% sampling).</snippet>
       </doc>
@@ -172,56 +172,56 @@
 
     <code>
       <artifact>
-        <path>quran_backend/quran_backend/users/models.py</path>
+        <path>backend/backend/users/models.py</path>
         <kind>model</kind>
         <symbol>User.is_analytics_enabled</symbol>
         <lines>35-39</lines>
         <reason>Analytics consent field ALREADY EXISTS in User model (BooleanField, default=False). This field controls whether analytics events are tracked for the user.</reason>
       </artifact>
       <artifact>
-        <path>quran_backend/quran_backend/users/models.py</path>
+        <path>backend/backend/users/models.py</path>
         <kind>model</kind>
         <symbol>UserProfile</symbol>
         <lines>55-89</lines>
         <reason>User profile model with preferred_language and timezone fields. Can be extended with analytics consent tracking or used as-is with User.is_analytics_enabled.</reason>
       </artifact>
       <artifact>
-        <path>quran_backend/quran_backend/core/exceptions.py</path>
+        <path>backend/backend/core/exceptions.py</path>
         <kind>service</kind>
         <symbol>custom_exception_handler</symbol>
         <lines>1-214</lines>
         <reason>Existing error handling infrastructure from US-API-002. Analytics can track error_occurred events by integrating with this exception handler.</reason>
       </artifact>
       <artifact>
-        <path>quran_backend/quran_backend/core/middleware/error_handler.py</path>
+        <path>backend/backend/core/middleware/error_handler.py</path>
         <kind>middleware</kind>
         <symbol>ErrorHandlingMiddleware</symbol>
         <lines>24-171</lines>
         <reason>Error handling middleware that could be extended to track analytics events for errors. Already logs to Sentry.</reason>
       </artifact>
       <artifact>
-        <path>quran_backend/quran_backend/core/tests/test_error_handling.py</path>
+        <path>backend/backend/core/tests/test_error_handling.py</path>
         <kind>test</kind>
         <symbol>TestCustomExceptionHandler</symbol>
         <lines>1-410</lines>
         <reason>Comprehensive test patterns from US-API-002. Follow similar testing approach for analytics tests (APIClient, mocking, assertions).</reason>
       </artifact>
       <artifact>
-        <path>quran_backend/config/settings/base.py</path>
+        <path>backend/config/settings/base.py</path>
         <kind>config</kind>
         <symbol>INSTALLED_APPS</symbol>
         <lines>64-95</lines>
-        <reason>Django apps configuration. Need to add 'quran_backend.analytics' and 'quran_backend.legal' to LOCAL_APPS.</reason>
+        <reason>Django apps configuration. Need to add 'backend.analytics' and 'backend.legal' to LOCAL_APPS.</reason>
       </artifact>
       <artifact>
-        <path>quran_backend/config/settings/base.py</path>
+        <path>backend/config/settings/base.py</path>
         <kind>config</kind>
         <symbol>CELERY Configuration</symbol>
         <lines>82</lines>
         <reason>django_celery_beat is already installed for scheduled tasks. Use Celery Beat to schedule weekly analytics cleanup task.</reason>
       </artifact>
       <artifact>
-        <path>quran_backend/config/settings/production.py</path>
+        <path>backend/config/settings/production.py</path>
         <kind>config</kind>
         <symbol>Sentry Integration</symbol>
         <lines>216-256</lines>
@@ -278,7 +278,7 @@ def track_event(user: User, event_type: str, event_data: dict, request: HttpRequ
         None (fails gracefully on errors)
     """
       </signature>
-      <path>quran_backend/analytics/services.py (to be created)</path>
+      <path>backend/analytics/services.py (to be created)</path>
     </interface>
 
     <interface>
@@ -291,7 +291,7 @@ is_analytics_enabled = BooleanField(
     help_text=_("User has consented to usage analytics tracking."),
 )
       </signature>
-      <path>quran_backend/quran_backend/users/models.py (line 35-39, ALREADY EXISTS)</path>
+      <path>backend/backend/users/models.py (line 35-39, ALREADY EXISTS)</path>
     </interface>
 
     <interface>
@@ -302,7 +302,7 @@ Request: {"consent_given": true, "consent_version": "1.0"}
 Response: {"message": "Analytics preference updated"}
 Permissions: IsAuthenticated
       </signature>
-      <path>quran_backend/analytics/api/views.py (to be created)</path>
+      <path>backend/analytics/api/views.py (to be created)</path>
     </interface>
 
     <interface>
@@ -313,7 +313,7 @@ Request: None
 Response: {"content": "...", "version": "1.0", "effective_date": "2025-11-01"}
 Permissions: AllowAny (public)
       </signature>
-      <path>quran_backend/legal/api/views.py (to be created)</path>
+      <path>backend/legal/api/views.py (to be created)</path>
     </interface>
 
     <interface>
@@ -324,7 +324,7 @@ Request: None
 Response: {"message": "All your analytics data has been deleted"}
 Permissions: IsAuthenticated
       </signature>
-      <path>quran_backend/analytics/api/views.py (to be created)</path>
+      <path>backend/analytics/api/views.py (to be created)</path>
     </interface>
 
     <interface>
@@ -335,7 +335,7 @@ Request: None
 Response: [{"event_type": "surah_viewed", "count": 1234}, ...]
 Permissions: IsAdminUser
       </signature>
-      <path>quran_backend/analytics/api/views.py (to be created)</path>
+      <path>backend/analytics/api/views.py (to be created)</path>
     </interface>
 
     <interface>
@@ -350,7 +350,7 @@ def cleanup_old_analytics_events() -> str:
     deleted_count, _ = AnalyticsEvent.objects.filter(timestamp__lt=cutoff_date).delete()
     return f"Deleted {deleted_count} analytics events older than {cutoff_date}"
       </signature>
-      <path>quran_backend/analytics/tasks.py (to be created)</path>
+      <path>backend/analytics/tasks.py (to be created)</path>
     </interface>
   </interfaces>
 
@@ -360,13 +360,13 @@ Follow pytest-django testing patterns from US-API-002. Use APIClient for endpoin
     </standards>
 
     <locations>
-quran_backend/quran_backend/analytics/tests/test_analytics.py
-quran_backend/quran_backend/analytics/tests/test_models.py
-quran_backend/quran_backend/analytics/tests/test_services.py
-quran_backend/quran_backend/analytics/tests/api/test_consent.py
-quran_backend/quran_backend/analytics/tests/api/test_privacy.py
-quran_backend/quran_backend/analytics/tests/api/test_aggregation.py
-quran_backend/quran_backend/analytics/tests/test_tasks.py
+backend/backend/analytics/tests/test_analytics.py
+backend/backend/analytics/tests/test_models.py
+backend/backend/analytics/tests/test_services.py
+backend/backend/analytics/tests/api/test_consent.py
+backend/backend/analytics/tests/api/test_privacy.py
+backend/backend/analytics/tests/api/test_aggregation.py
+backend/backend/analytics/tests/test_tasks.py
     </locations>
 
     <ideas>

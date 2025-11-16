@@ -10,7 +10,7 @@ so that **app performance is optimal, server load is reduced, and users experien
 
 ## Background
 
-This story implements a comprehensive Redis-based caching strategy for the Quran Backend API, optimizing performance for frequently accessed static content (Quran text, reciter lists, translations) and reducing database load. The caching layer is critical for achieving the <100ms response time target for cached data and supporting the offline-first architecture.
+This story implements a comprehensive Redis-based caching strategy for the Muslim Companion API, optimizing performance for frequently accessed static content (Quran text, reciter lists, translations) and reducing database load. The caching layer is critical for achieving the <100ms response time target for cached data and supporting the offline-first architecture.
 
 **Parent Epic**: EPIC 1 - Cross-Cutting / Infrastructure Stories
 **Priority**: P0 (Critical - All Phases)
@@ -77,7 +77,7 @@ This story implements a comprehensive Redis-based caching strategy for the Quran
                 'IGNORE_EXCEPTIONS': True,  # Graceful degradation
                 'MAX_ENTRIES': 10000,
             },
-            'KEY_PREFIX': 'quran_backend',
+            'KEY_PREFIX': 'muslim_companion',
             'TIMEOUT': 604800,  # 7 days default TTL for static content
         }
     }
@@ -88,7 +88,7 @@ This story implements a comprehensive Redis-based caching strategy for the Quran
 
 ### Task 2: Create Cache Manager Service (AC #1, #2, #3)
 
-- [x] Create `quran_backend/core/services/cache_manager.py`
+- [x] Create `backend/core/services/cache_manager.py`
 - [x] Implement `CacheManager` class with methods:
   - [x] `get(key: str) -> Optional[Any]` - Retrieve from cache
   - [x] `set(key: str, value: Any, ttl: int = None)` - Store in cache
@@ -108,7 +108,7 @@ This story implements a comprehensive Redis-based caching strategy for the Quran
 
 ### Task 3: Implement Cache Invalidation Signals (AC #3)
 
-- [x] Create `quran_backend/core/signals.py`
+- [x] Create `backend/core/signals.py`
 - [x] Define signal handlers for cache invalidation:
   - [x] `invalidate_quran_cache(sender, instance, **kwargs)` - On Quran text update
   - [x] `invalidate_reciter_cache(sender, instance, **kwargs)` - On reciter update
@@ -129,7 +129,7 @@ This story implements a comprehensive Redis-based caching strategy for the Quran
 
 ### Task 4: Implement Cache Decorators and Mixins (AC #2, #6)
 
-- [x] Create `quran_backend/core/decorators.py`
+- [x] Create `backend/core/decorators.py`
 - [x] Implement `@cache_response` decorator for views:
   ```python
   def cache_response(cache_key_func, ttl=604800):
@@ -203,7 +203,7 @@ This story implements a comprehensive Redis-based caching strategy for the Quran
 
 ### Task 8: Comprehensive Caching Tests (AC #1-6)
 
-- [x] Create `quran_backend/core/tests/test_caching.py`
+- [x] Create `backend/core/tests/test_caching.py`
 - [x] Test CacheManager methods:
   - [x] `test_cache_get_set()` - Store and retrieve data
   - [x] `test_cache_delete()` - Remove single key
@@ -249,7 +249,7 @@ This story implements a comprehensive Redis-based caching strategy for the Quran
 
 **Caching Strategy** (Tech Spec ADR-003):
 - Redis as primary cache layer (in-memory, high performance)
-- Cache key namespacing: `quran_backend:{resource_type}:{identifier}`
+- Cache key namespacing: `muslim_companion:{resource_type}:{identifier}`
 - TTL-based expiration (static: 7 days, dynamic: 1 hour)
 - LRU eviction policy when memory limit reached
 
@@ -304,7 +304,7 @@ CACHES = {
                 'retry_on_timeout': True,
             },
         },
-        'KEY_PREFIX': 'quran_backend',
+        'KEY_PREFIX': 'muslim_companion',
         'TIMEOUT': 604800,  # 7 days (static content default)
     }
 }
@@ -314,7 +314,7 @@ CACHES = {
 ```python
 CELERY_BEAT_SCHEDULE = {
     'warm-cache-daily': {
-        'task': 'quran_backend.core.tasks.warm_quran_cache',
+        'task': 'backend.core.tasks.warm_quran_cache',
         'schedule': crontab(hour=1, minute=0),  # 1:00 AM UTC daily
     },
 }
@@ -378,9 +378,9 @@ def test_cached_response_faster_than_db(self):
 **From Story us-api-002-implement-error-handling-and-user-feedback.md (Status: done)**
 
 **Error Handling Infrastructure Available**:
-- Custom exception handler in `quran_backend/core/exceptions.py`
-- Error handling middleware in `quran_backend/core/middleware/error_handler.py`
-- Retry logic decorator in `quran_backend/core/utils/retry.py`
+- Custom exception handler in `backend/core/exceptions.py`
+- Error handling middleware in `backend/core/middleware/error_handler.py`
+- Retry logic decorator in `backend/core/utils/retry.py`
 - Sentry integration configured with data scrubbing
 
 **Reuse Patterns**:
@@ -391,9 +391,9 @@ def test_cached_response_faster_than_db(self):
 - Return standardized error responses (use existing error format)
 
 **Integration Points**:
-- `quran_backend/core/exceptions.py` - Add CacheError if needed
-- `quran_backend/core/middleware/error_handler.py` - Handle RedisError gracefully
-- `quran_backend/core/utils/retry.py` - Reuse retry decorator for cache operations
+- `backend/core/exceptions.py` - Add CacheError if needed
+- `backend/core/middleware/error_handler.py` - Handle RedisError gracefully
+- `backend/core/utils/retry.py` - Reuse retry decorator for cache operations
 - Sentry configured in `config/settings/production.py` - Cache metrics integrate seamlessly
 
 **Testing Patterns**:
@@ -403,17 +403,17 @@ def test_cached_response_faster_than_db(self):
 - Pattern: `self.client.get(url)` for API endpoint tests
 
 **Files to Reference**:
-- `quran_backend/core/exceptions.py` (custom exceptions, error codes)
-- `quran_backend/core/middleware/error_handler.py` (error middleware pattern)
-- `quran_backend/core/utils/retry.py` (retry decorator - apply to cache ops)
-- `quran_backend/core/tests/test_error_handling.py` (test patterns for error scenarios)
+- `backend/core/exceptions.py` (custom exceptions, error codes)
+- `backend/core/middleware/error_handler.py` (error middleware pattern)
+- `backend/core/utils/retry.py` (retry decorator - apply to cache ops)
+- `backend/core/tests/test_error_handling.py` (test patterns for error scenarios)
 
 **Technical Debt from Previous Story**:
 - Task 10 (API Documentation) incomplete in US-API-002
 - Consider adding cache behavior to API documentation this story
 
 **New Services/Patterns Created** (from US-API-002):
-- `quran_backend/core/` app structure established
+- `backend/core/` app structure established
 - `core/middleware/` for middleware components
 - `core/utils/` for utility functions
 - `core/tests/` for core infrastructure tests
@@ -529,22 +529,22 @@ None
 ### File List
 
 **New Files Created:**
-- `quran_backend/core/services/__init__.py` - Services module init
-- `quran_backend/core/services/cache_manager.py` - CacheManager service class
-- `quran_backend/core/signals.py` - Cache invalidation signal handlers
-- `quran_backend/core/decorators.py` - Cache decorators and mixins
-- `quran_backend/core/health.py` - Health check utilities
-- `quran_backend/core/metrics.py` - Cache metrics tracking
-- `quran_backend/core/tasks.py` - Celery tasks for cache operations
-- `quran_backend/core/management/__init__.py` - Management module init
-- `quran_backend/core/management/commands/__init__.py` - Commands module init
-- `quran_backend/core/management/commands/warm_cache.py` - Cache warming command
-- `quran_backend/core/tests/test_caching.py` - Comprehensive cache tests
+- `backend/core/services/__init__.py` - Services module init
+- `backend/core/services/cache_manager.py` - CacheManager service class
+- `backend/core/signals.py` - Cache invalidation signal handlers
+- `backend/core/decorators.py` - Cache decorators and mixins
+- `backend/core/health.py` - Health check utilities
+- `backend/core/metrics.py` - Cache metrics tracking
+- `backend/core/tasks.py` - Celery tasks for cache operations
+- `backend/core/management/__init__.py` - Management module init
+- `backend/core/management/commands/__init__.py` - Commands module init
+- `backend/core/management/commands/warm_cache.py` - Cache warming command
+- `backend/core/tests/test_caching.py` - Comprehensive cache tests
 
 **Modified Files:**
-- `quran_backend/docker-compose.local.yml` - Added Redis maxmemory configuration
-- `quran_backend/config/settings/local.py` - Updated cache configuration
-- `quran_backend/config/settings/production.py` - Updated cache configuration
-- `quran_backend/config/settings/base.py` - Added CELERY_BEAT_SCHEDULE
-- `quran_backend/core/middleware/error_handler.py` - Added Redis error handling
-- `quran_backend/core/utils/retry.py` - Enhanced retry_on_cache_error decorator
+- `backend/docker-compose.local.yml` - Added Redis maxmemory configuration
+- `backend/config/settings/local.py` - Updated cache configuration
+- `backend/config/settings/production.py` - Updated cache configuration
+- `backend/config/settings/base.py` - Added CELERY_BEAT_SCHEDULE
+- `backend/core/middleware/error_handler.py` - Added Redis error handling
+- `backend/core/utils/retry.py` - Enhanced retry_on_cache_error decorator

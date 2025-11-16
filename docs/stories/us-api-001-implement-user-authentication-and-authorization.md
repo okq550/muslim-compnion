@@ -30,14 +30,14 @@ so that **my bookmarks and preferences are protected and private**.
 ## Tasks / Subtasks
 
 - [x] **Task 1**: Extend Custom User Model (AC: #1, #14, #15)
-  - [x] Modify `quran_backend/users/models.py` to extend AbstractUser with UUID primary key
+  - [x] Modify `backend/users/models.py` to extend AbstractUser with UUID primary key
   - [x] Add `is_analytics_enabled` boolean field (default=False) for analytics consent
   - [x] Set `USERNAME_FIELD = 'email'` for email-based authentication
   - [x] Create UserProfile model with one-to-one relationship to User
   - [x] Add fields: `preferred_language` (CharField, default='ar'), `timezone` (CharField, default='UTC')
   - [x] Run migrations: `docker-compose exec django python manage.py makemigrations`
   - [x] Run migrations: `docker-compose exec django python manage.py migrate`
-  - [x] Write unit tests for User and UserProfile models in `quran_backend/users/tests/test_models.py`
+  - [x] Write unit tests for User and UserProfile models in `backend/users/tests/test_models.py`
 
 - [x] **Task 2**: Configure JWT Authentication with djangorestframework-simplejwt (AC: #2, #7, #8, #9)
   - [x] Verify `djangorestframework-simplejwt==5.3.1` is in requirements/base.txt (pre-installed by Cookiecutter)
@@ -52,65 +52,65 @@ so that **my bookmarks and preferences are protected and private**.
   - [x] Restart Django container to apply settings: `docker-compose restart django`
 
 - [x] **Task 3**: Implement User Registration Endpoint (AC: #1, #6, #13)
-  - [x] Create `UserRegistrationSerializer` in `quran_backend/users/serializers.py`:
+  - [x] Create `UserRegistrationSerializer` in `backend/users/serializers.py`:
     - Fields: `email`, `password`, `password_confirm`
     - Validate email format and uniqueness
     - Validate password strength (min 8 chars, complexity: uppercase, lowercase, digit)
     - Validate password and password_confirm match
     - Hash password using `user.set_password()` (Django PBKDF2)
-  - [x] Create `UserRegistrationView` (APIView or GenericAPIView) in `quran_backend/users/views.py`:
+  - [x] Create `UserRegistrationView` (APIView or GenericAPIView) in `backend/users/views.py`:
     - POST method only, `permission_classes = [AllowAny]`
     - Create User and UserProfile records in single transaction
     - Generate JWT tokens using `RefreshToken.for_user(user)`
     - Return response: `{ "user": {...}, "tokens": { "access": "...", "refresh": "..." } }` with HTTP 201
-  - [x] Add URL route in `quran_backend/users/urls.py`: `/api/v1/auth/register/`
+  - [x] Add URL route in `backend/users/urls.py`: `/api/v1/auth/register/`
   - [x] Write integration test: POST with valid data returns 201, tokens, and user profile
   - [x] Write validation tests: invalid email, weak password, mismatched passwords return 400 errors
 
 - [ ] **Task 4**: Implement Login Endpoint (AC: #2, #7, #8)
-  - [ ] Create `UserLoginSerializer` in `quran_backend/users/serializers.py`:
+  - [ ] Create `UserLoginSerializer` in `backend/users/serializers.py`:
     - Fields: `email`, `password`
     - Authenticate user using `django.contrib.auth.authenticate()`
     - Return error if authentication fails
-  - [ ] Create `UserLoginView` (APIView or TokenObtainPairView) in `quran_backend/users/views.py`:
+  - [ ] Create `UserLoginView` (APIView or TokenObtainPairView) in `backend/users/views.py`:
     - POST method only, `permission_classes = [AllowAny]`
     - Validate credentials, check if user is_active
     - Generate JWT tokens using `RefreshToken.for_user(user)`
     - Return response: `{ "tokens": { "access": "...", "refresh": "..." } }` with HTTP 200
-  - [ ] Add URL route in `quran_backend/users/urls.py`: `/api/v1/auth/login/`
+  - [ ] Add URL route in `backend/users/urls.py`: `/api/v1/auth/login/`
   - [ ] Write integration test: POST with valid credentials returns 200 and tokens
   - [ ] Write test: POST with invalid credentials returns 401 error
 
 - [ ] **Task 5**: Implement Logout Endpoint (AC: #3)
-  - [ ] Create `UserLogoutView` (APIView) in `quran_backend/users/views.py`:
+  - [ ] Create `UserLogoutView` (APIView) in `backend/users/views.py`:
     - POST method only, `permission_classes = [IsAuthenticated]`
     - Accept refresh token in request body
     - Blacklist refresh token (or simply return success if not using blacklist)
     - Return response: `{ "message": "Successfully logged out" }` with HTTP 200
-  - [ ] Add URL route in `quran_backend/users/urls.py`: `/api/v1/auth/logout/`
+  - [ ] Add URL route in `backend/users/urls.py`: `/api/v1/auth/logout/`
   - [ ] Write integration test: POST with valid refresh token returns 200
   - [ ] Write test: POST without authentication returns 401
 
 - [ ] **Task 6**: Implement Token Refresh Endpoint (AC: #9)
   - [ ] Use built-in `TokenRefreshView` from `rest_framework_simplejwt.views`
-  - [ ] Add URL route in `quran_backend/users/urls.py`: `/api/v1/auth/token/refresh/`
+  - [ ] Add URL route in `backend/users/urls.py`: `/api/v1/auth/token/refresh/`
   - [ ] Write integration test: POST with valid refresh token returns new access token
   - [ ] Write test: POST with expired or invalid refresh token returns 401
 
 - [ ] **Task 7**: Implement Password Reset Endpoints (AC: #4, #5)
-  - [ ] Create `PasswordResetRequestSerializer` in `quran_backend/users/serializers.py`:
+  - [ ] Create `PasswordResetRequestSerializer` in `backend/users/serializers.py`:
     - Field: `email`
     - Validate email exists in database
-  - [ ] Create `PasswordResetRequestView` (APIView) in `quran_backend/users/views.py`:
+  - [ ] Create `PasswordResetRequestView` (APIView) in `backend/users/views.py`:
     - POST method only, `permission_classes = [AllowAny]`
     - Generate password reset token using Django's `PasswordResetTokenGenerator`
     - Send password reset email (async via Celery task - optional for MVP)
     - Return response: `{ "message": "Password reset email sent" }` with HTTP 200
-  - [ ] Create `PasswordResetConfirmSerializer` in `quran_backend/users/serializers.py`:
+  - [ ] Create `PasswordResetConfirmSerializer` in `backend/users/serializers.py`:
     - Fields: `token`, `new_password`, `new_password_confirm`
     - Validate token using `PasswordResetTokenGenerator.check_token()`
     - Validate new password strength
-  - [ ] Create `PasswordResetConfirmView` (APIView) in `quran_backend/users/views.py`:
+  - [ ] Create `PasswordResetConfirmView` (APIView) in `backend/users/views.py`:
     - POST method only, `permission_classes = [AllowAny]`
     - Validate token and update user password
     - Return response: `{ "message": "Password reset successful" }` with HTTP 200
@@ -118,7 +118,7 @@ so that **my bookmarks and preferences are protected and private**.
   - [ ] Write integration tests for both endpoints
 
 - [ ] **Task 8**: Implement Rate Limiting on Auth Endpoints (AC: #11, #12)
-  - [ ] Create custom throttle class `AuthRateThrottle` in `quran_backend/users/throttling.py`:
+  - [ ] Create custom throttle class `AuthRateThrottle` in `backend/users/throttling.py`:
     - Inherit from `rest_framework.throttling.AnonRateThrottle`
     - Set rate: `5/15min` (5 requests per 15 minutes per IP)
   - [ ] Create `AccountLockoutThrottle` class for persistent lockout (10 failures in 1 hour):
@@ -131,14 +131,14 @@ so that **my bookmarks and preferences are protected and private**.
 
 - [ ] **Task 9**: Implement Authorization Middleware (AC: #10)
   - [ ] JWT authentication already provides user object in `request.user`
-  - [ ] Create `IsOwnerPermission` class in `quran_backend/users/permissions.py`:
+  - [ ] Create `IsOwnerPermission` class in `backend/users/permissions.py`:
     - Check if `request.user == object.user` for user-specific resources
   - [ ] Apply permission to user profile views and any user-specific endpoints
   - [ ] Write test: User A cannot access User B's profile (returns 403)
   - [ ] Write test: Authenticated user can access own profile (returns 200)
 
 - [ ] **Task 10**: Standardized Error Responses (AC: #16)
-  - [ ] Create error response utility in `quran_backend/users/utils.py`:
+  - [ ] Create error response utility in `backend/users/utils.py`:
     - Function `format_error_response(code, message, details, request_id)`
     - Support Arabic and English messages based on request `Accept-Language` header
   - [ ] Update all authentication views to use standardized error format:
@@ -163,7 +163,7 @@ so that **my bookmarks and preferences are protected and private**.
   - [ ] Test rate limiting: 6th login attempt within 15 minutes returns 429
   - [ ] Test account lockout: 10 failed logins trigger 1-hour lockout
   - [ ] Test authorization: User cannot access other user's profile
-  - [ ] Run full test suite: `docker-compose exec django pytest quran_backend/users/tests/`
+  - [ ] Run full test suite: `docker-compose exec django pytest backend/users/tests/`
   - [ ] Verify all tests pass before marking story complete
 
 ## Dev Notes
@@ -205,7 +205,7 @@ This story implements JWT-based authentication using `djangorestframework-simple
 
 **Expected File Structure:**
 ```
-quran_backend/
+backend/
 ├── users/
 │   ├── models.py                 # User, UserProfile models
 │   ├── serializers.py            # Registration, Login, PasswordReset serializers
@@ -264,13 +264,13 @@ quran_backend/
 **Test Execution:**
 ```bash
 # Run all user tests
-docker-compose exec django pytest quran_backend/users/tests/ -v
+docker-compose exec django pytest backend/users/tests/ -v
 
 # Run with coverage
-docker-compose exec django pytest quran_backend/users/tests/ --cov=quran_backend/users --cov-report=html
+docker-compose exec django pytest backend/users/tests/ --cov=backend/users --cov-report=html
 
 # Run specific test file
-docker-compose exec django pytest quran_backend/users/tests/test_views.py -v
+docker-compose exec django pytest backend/users/tests/test_views.py -v
 ```
 
 ### Learnings from Previous Story
@@ -278,9 +278,9 @@ docker-compose exec django pytest quran_backend/users/tests/test_views.py -v
 **From Story us-api-000-initialize-django-project-with-cookiecutter-django (Status: done)**
 
 - **Existing Foundation**: Django 5.2.8 LTS project initialized with Docker Compose, PostgreSQL 16, Redis, Celery, and DRF pre-configured
-- **Users App Created**: Cookiecutter Django includes a custom users app at `quran_backend/users/` with basic User model extending AbstractUser - use this as starting point, no need to create from scratch
+- **Users App Created**: Cookiecutter Django includes a custom users app at `backend/users/` with basic User model extending AbstractUser - use this as starting point, no need to create from scratch
 - **JWT Dependency Available**: `djangorestframework-simplejwt==5.3.1` should be pre-installed in requirements/base.txt from Cookiecutter template - verify and configure
-- **Testing Framework Ready**: pytest-django configured with 31/31 tests passing - follow existing test patterns in `quran_backend/users/tests/`
+- **Testing Framework Ready**: pytest-django configured with 31/31 tests passing - follow existing test patterns in `backend/users/tests/`
 - **Environment Configuration**: Use `.envs/.local/.django` for environment variables (SECRET_KEY, DATABASE_URL already configured)
 - **Sentry Integrated**: Sentry SDK configured for error tracking - authentication failures will automatically be logged
 - **Arabic i18n Configured**: LANGUAGE_CODE='ar', LocaleMiddleware active - error messages should respect Accept-Language header
@@ -289,11 +289,11 @@ docker-compose exec django pytest quran_backend/users/tests/test_views.py -v
 - **Docker Workflow Established**: Use `docker-compose exec django <command>` for all Django management commands (migrations, tests, shell)
 
 **Reuse Patterns:**
-- **User Model Location**: Modify existing `quran_backend/users/models.py` rather than creating new file
-- **Test Structure**: Follow existing test organization in `quran_backend/users/tests/` with `test_models.py`, `test_views.py`, etc.
+- **User Model Location**: Modify existing `backend/users/models.py` rather than creating new file
+- **Test Structure**: Follow existing test organization in `backend/users/tests/` with `test_models.py`, `test_views.py`, etc.
 - **Serializer Patterns**: Use DRF serializers with built-in validation (required, unique, format validators)
 - **View Patterns**: Use DRF APIView or GenericAPIView with `permission_classes` and `throttle_classes` decorators
-- **URL Routing**: Add auth endpoints to `quran_backend/users/urls.py`, ensure included in `config/urls.py`
+- **URL Routing**: Add auth endpoints to `backend/users/urls.py`, ensure included in `config/urls.py`
 
 **Technical Debt to Address:**
 - Previous story noted: "Pre-commit hooks configured but not activated" - consider activating during this story to enforce code quality
@@ -387,22 +387,22 @@ Successfully implemented complete authentication and authorization system with t
 ### Files Modified/Created
 
 **Models**:
-- `quran_backend/users/models.py` - Extended User model, added UserProfile
+- `backend/users/models.py` - Extended User model, added UserProfile
 
 **API Layer**:
-- `quran_backend/users/api/serializers.py` - Registration, Login, Password Reset serializers
-- `quran_backend/users/api/views.py` - All authentication views
-- `quran_backend/users/api/throttling.py` - Rate limiting configuration
-- `quran_backend/users/api/exceptions.py` - Standardized error responses
+- `backend/users/api/serializers.py` - Registration, Login, Password Reset serializers
+- `backend/users/api/views.py` - All authentication views
+- `backend/users/api/throttling.py` - Rate limiting configuration
+- `backend/users/api/exceptions.py` - Standardized error responses
 
 **Configuration**:
-- `quran_backend/config/settings/base.py` - JWT settings, exception handler
-- `quran_backend/config/api_router.py` - Authentication URL routes
-- `quran_backend/pyproject.toml` - Added djangorestframework-simplejwt dependency
+- `backend/config/settings/base.py` - JWT settings, exception handler
+- `backend/config/api_router.py` - Authentication URL routes
+- `backend/pyproject.toml` - Added djangorestframework-simplejwt dependency
 
 **Tests**:
-- `quran_backend/users/tests/test_models.py` - User/UserProfile model tests
-- `quran_backend/users/tests/api/test_views.py` - Authentication API tests
+- `backend/users/tests/test_models.py` - User/UserProfile model tests
+- `backend/users/tests/api/test_views.py` - Authentication API tests
 
 **Migrations**:
 - `0001_initial.py` - User model with UUID PK, email auth, UserProfile

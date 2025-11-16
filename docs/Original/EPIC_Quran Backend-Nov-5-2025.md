@@ -1,4 +1,4 @@
-# EPIC: Quran Backend - First Release
+# EPIC: Muslim Companion - First Release
 
 ## Epic Overview:
 
@@ -17,7 +17,7 @@ reciters with various styles, multi-language translations, Tafseer
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Quran Text & Content Management  
 **Priority:** Critical (Phase 1 - MVP Core)  
 **Dependencies:**
@@ -131,7 +131,7 @@ sources.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Quran Text & Content Management  
 **Priority:** High (Phase 1 - MVP Core)  
 **Dependencies:**
@@ -238,7 +238,7 @@ familiar with
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Quran Text & Content Management  
 **Priority:** Medium (Phase 1 - MVP Core)  
 **Dependencies:**
@@ -348,7 +348,7 @@ memorization
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Quran Text & Content Management  
 **Priority:** Medium (Phase 1 - MVP Core)  
 **Dependencies:**
@@ -452,7 +452,7 @@ completing the Quran in a month (one Juz per day during Ramadan).
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Quran Text & Content Management  
 **Priority:** Medium (Phase 2)  
 **Dependencies:**
@@ -569,7 +569,7 @@ reciter
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Recitation Management  
 **Priority:** High (Phase 1 - MVP Core)  
 **Dependencies:**
@@ -687,7 +687,7 @@ external source
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Recitation Management  
 **Priority:** Critical (Phase 1 - MVP Core)  
 **Dependencies:**
@@ -801,7 +801,7 @@ listening to the Quran
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Recitation Management  
 **Priority:** High (Phase 1 - MVP Core)  
 **Dependencies:**
@@ -942,7 +942,7 @@ reciter
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Recitation Management  
 **Priority:** High (Phase 1 - MVP Core)  
 **Dependencies:**
@@ -1067,7 +1067,7 @@ text being displayed and provide standard playback controls.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Recitation Management  
 **Priority:** Medium (Phase 1 - MVP Core)  
 **Dependencies:**
@@ -1175,7 +1175,7 @@ with the ability to track progress through the Surah.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Recitation Management  
 **Priority:** Medium (Phase 3 - Offline Support)  
 **Dependencies:**
@@ -1293,7 +1293,7 @@ connection
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Recitation Management  
 **Dependencies:**
 
@@ -1400,7 +1400,7 @@ users with poor connections get lower quality that streams reliably.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Translation Management  
 **Priority:** High (Phase 1 - MVP Core)  
 **Dependencies:**
@@ -1515,7 +1515,7 @@ translations
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Translation Management  
 **Priority:** High (Phase 1 - MVP Core)  
 **Dependencies:**
@@ -1630,7 +1630,7 @@ translator information
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Translation Management  
 **Priority:** High (Phase 1 - MVP Core)  
 **Dependencies:**
@@ -1742,7 +1742,7 @@ Arabic
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Translation Management  
 **Priority:** High (Phase 1 - MVP Core)  
 **Dependencies:**
@@ -1857,7 +1857,7 @@ helps me understand best
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Translation Management  
 **Priority:** Medium (Phase 1 - MVP Core)  
 **Dependencies:**
@@ -1962,7 +1962,7 @@ transition should be smooth and immediate.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Translation Management  
 **Priority:** Medium (Phase 3 - Offline Support)  
 **Dependencies:**
@@ -2076,7 +2076,7 @@ verses
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Tafseer Management  
 **Priority:** Medium (Phase 2)  
 **Dependencies:**
@@ -2195,7 +2195,7 @@ sources
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Tafseer Management  
 **Priority:** Medium (Phase 2)  
 **Dependencies:**
@@ -2311,7 +2311,7 @@ preference
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Tafseer Management  
 **Priority:** Medium (Phase 2)  
 **Dependencies:**
@@ -2423,7 +2423,7 @@ reading
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Tafseer Management  
 **Priority:** Medium (Phase 2)  
 **Dependencies:**
@@ -2541,7 +2541,7 @@ meaning
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Tafseer Management  
 **Priority:** Low (Phase 2)  
 **Dependencies:**
@@ -2646,7 +2646,7 @@ comparative study and deeper understanding.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Tafseer Management  
 **Priority:** Low (Phase 3 - Offline Support)  
 **Dependencies:**
@@ -2759,7 +2759,7 @@ specific Tafseer sources and manage their offline Tafseer library.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Bookmark Management  
 **Priority:** High (Phase 2)  
 **Dependencies:**
@@ -2866,7 +2866,7 @@ bookmark any verse and provide easy access to their bookmarked verses.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Bookmark Management  
 **Priority:** High (Phase 2)  
 **Dependencies:**
@@ -2974,7 +2974,7 @@ stopped, similar to placing a physical bookmark in a printed Quran.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Bookmark Management  
 **Priority:** Medium (Phase 2)  
 **Dependencies:**
@@ -3081,7 +3081,7 @@ This helps users manage and find their bookmarks efficiently.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Bookmark Management  
 **Priority:** High (Phase 2)  
 **Dependencies:**
@@ -3197,7 +3197,7 @@ bookmarked content or manage their bookmarks.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Bookmark Management  
 **Priority:** Medium (Phase 2)  
 **Dependencies:**
@@ -3300,7 +3300,7 @@ safeguards against accidental deletion.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Bookmark Management  
 **Priority:** Low (Phase 2)  
 **Dependencies:**
@@ -3414,7 +3414,7 @@ Surah name, category, or notes content.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Offline Content Management  
 **Priority:** High (Phase 3 - Offline Support)  
 **Dependencies:**
@@ -3527,7 +3527,7 @@ everything
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Offline Content Management  
 **Priority:** Medium (Phase 3 - Offline Support)  
 **Dependencies:**
@@ -3642,7 +3642,7 @@ reciter
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Offline Content Management  
 **Priority:** Medium (Phase 3 - Offline Support)  
 **Dependencies:**
@@ -3758,7 +3758,7 @@ need offline
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Offline Content Management  
 **Priority:** High (Phase 3 - Offline Support)  
 **Dependencies:**
@@ -3871,7 +3871,7 @@ content
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Offline Content Management  
 **Priority:** Low (Phase 3 - Offline Support)  
 **Dependencies:**
@@ -3983,7 +3983,7 @@ option to update while preserving their offline access.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Offline Content Management  
 **Priority:** Low (Phase 3 - Offline Support)  
 **Dependencies:**
@@ -4100,7 +4100,7 @@ The offline mode toggle provides explicit control over this behavior.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Infrastructure / Cross-Cutting  
 **Priority:** High (Phase 1 - MVP Core)  
 **Dependencies:**
@@ -4216,7 +4216,7 @@ data protected from unauthorized access.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Infrastructure / Cross-Cutting  
 **Priority:** High (All Phases)  
 **Dependencies:**
@@ -4334,7 +4334,7 @@ issues that might arise during app usage.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Infrastructure / Cross-Cutting  
 **Priority:** Medium (Phase 1)  
 **Dependencies:**
@@ -4450,7 +4450,7 @@ decisions
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Infrastructure / Cross-Cutting  
 **Priority:** Low (Phase 2)  
 **Dependencies:**
@@ -4571,7 +4571,7 @@ all users
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Infrastructure / Cross-Cutting  
 **Priority:** Medium (Phase 1)  
 **Dependencies:**
@@ -4686,7 +4686,7 @@ usage patterns.
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Infrastructure / Cross-Cutting  
 **Priority:** High (Phase 1)  
 **Dependencies:**
@@ -4805,7 +4805,7 @@ system health
 
 #### User Story Details:
 
-**Epic:** Quran Backend - First Release  
+**Epic:** Muslim Companion - First Release  
 **Module:** Infrastructure / Cross-Cutting  
 **Priority:** High (Phase 1)  
 **Dependencies:**

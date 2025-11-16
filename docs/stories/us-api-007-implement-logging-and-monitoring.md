@@ -10,7 +10,7 @@ so that **I can detect issues, troubleshoot problems, and ensure system health**
 
 ## Background
 
-This story implements comprehensive logging and monitoring infrastructure for the Quran Backend API, enabling system administrators to detect issues, troubleshoot problems, and ensure continuous system health. The implementation includes structured JSON logging with correlation IDs, log rotation and retention policies, continuous health monitoring of critical components (Database, Redis, Celery), alerting on critical issues, and a monitoring dashboard for real-time system visibility.
+This story implements comprehensive logging and monitoring infrastructure for the Muslim Companion API, enabling system administrators to detect issues, troubleshoot problems, and ensure continuous system health. The implementation includes structured JSON logging with correlation IDs, log rotation and retention policies, continuous health monitoring of critical components (Database, Redis, Celery), alerting on critical issues, and a monitoring dashboard for real-time system visibility.
 
 Building upon the error handling infrastructure established in US-API-002, this story extends Sentry integration with custom instrumentation, implements structured logging patterns, and creates health check endpoints for proactive monitoring. The system must maintain 99.9% uptime (NFR-037) with zero tolerance for Quran content errors, requiring robust observability to detect and resolve issues before they impact users.
 
@@ -42,7 +42,7 @@ Building upon the error handling infrastructure established in US-API-002, this 
      {
        "timestamp": "2025-11-09T10:30:00Z",
        "level": "INFO",
-       "logger": "quran_backend.users.api.views",
+       "logger": "backend.users.api.views",
        "message": "User login successful",
        "request_id": "550e8400-e29b-41d4-a716-446655440000",
        "user_id": "user-uuid",
@@ -131,7 +131,7 @@ Building upon the error handling infrastructure established in US-API-002, this 
 ### Task 1: Configure Structured JSON Logging (AC #1, #2, #3)
 
 - [ ] Install `python-json-logger` package for JSON log formatting
-- [ ] Create `quran_backend/core/logging/__init__.py` module
+- [ ] Create `backend/core/logging/__init__.py` module
 - [ ] Implement `StructuredJsonFormatter` class:
   - [ ] Extend `pythonjsonlogger.jsonlogger.JsonFormatter`
   - [ ] Add correlation ID (request_id) to all log records
@@ -150,12 +150,12 @@ Building upon the error handling infrastructure established in US-API-002, this 
       'disable_existing_loggers': False,
       'formatters': {
           'json': {
-              '()': 'quran_backend.core.logging.StructuredJsonFormatter',
+              '()': 'backend.core.logging.StructuredJsonFormatter',
           },
       },
       'filters': {
           'sensitive_data_filter': {
-              '()': 'quran_backend.core.logging.SensitiveDataFilter',
+              '()': 'backend.core.logging.SensitiveDataFilter',
           },
       },
       'handlers': {
@@ -166,7 +166,7 @@ Building upon the error handling infrastructure established in US-API-002, this 
           },
           'file': {
               'class': 'logging.handlers.RotatingFileHandler',
-              'filename': 'logs/quran_backend.log',
+              'filename': 'logs/backend.log',
               'maxBytes': 100 * 1024 * 1024,  # 100MB
               'backupCount': 90,  # 90 days retention
               'formatter': 'json',
@@ -174,7 +174,7 @@ Building upon the error handling infrastructure established in US-API-002, this 
           },
       },
       'loggers': {
-          'quran_backend': {
+          'muslim_companion': {
               'handlers': ['console', 'file'],
               'level': 'INFO',
           },
@@ -195,7 +195,7 @@ Building upon the error handling infrastructure established in US-API-002, this 
 
 ### Task 2: Implement Request/Response Logging Middleware (AC #1, #2)
 
-- [ ] Create `quran_backend/core/middleware/request_logger.py`
+- [ ] Create `backend/core/middleware/request_logger.py`
 - [ ] Implement `RequestLoggingMiddleware` class:
   - [ ] Log all incoming requests (INFO level):
     - [ ] Endpoint, HTTP method, user ID (if authenticated), IP address
@@ -213,8 +213,8 @@ Building upon the error handling infrastructure established in US-API-002, this 
   ```python
   MIDDLEWARE = [
       ...
-      'quran_backend.core.middleware.error_handler.ErrorHandlingMiddleware',
-      'quran_backend.core.middleware.request_logger.RequestLoggingMiddleware',
+      'backend.core.middleware.error_handler.ErrorHandlingMiddleware',
+      'backend.core.middleware.request_logger.RequestLoggingMiddleware',
       ...
   ]
   ```
@@ -244,7 +244,7 @@ Building upon the error handling infrastructure established in US-API-002, this 
 
 ### Task 4: Implement Health Check Endpoint (AC #5)
 
-- [ ] Create `quran_backend/core/views.py` for health check
+- [ ] Create `backend/core/views.py` for health check
 - [ ] Implement `health_check` view function:
   - [ ] Check PostgreSQL connectivity:
     ```python
@@ -279,7 +279,7 @@ Building upon the error handling infrastructure established in US-API-002, this 
 - [ ] Create health check URL:
   ```python
   # config/urls.py
-  from quran_backend.core.views import health_check
+  from backend.core.views import health_check
 
   urlpatterns = [
       path('api/v1/health/', health_check, name='health-check'),
@@ -357,7 +357,7 @@ Building upon the error handling infrastructure established in US-API-002, this 
   ```
 - [ ] Configure separate logger for audit events:
   ```python
-  'quran_backend.audit': {
+  'backend.audit': {
       'handlers': ['audit'],
       'level': 'INFO',
       'propagate': False,
@@ -399,7 +399,7 @@ Building upon the error handling infrastructure established in US-API-002, this 
 
 ### Task 8: Comprehensive Logging and Monitoring Tests (AC #1-7)
 
-- [ ] Create `quran_backend/core/tests/test_logging.py`
+- [ ] Create `backend/core/tests/test_logging.py`
 - [ ] Test structured JSON logging:
   - [ ] Log messages output in valid JSON format
   - [ ] Correlation IDs included in log records
@@ -422,7 +422,7 @@ Building upon the error handling infrastructure established in US-API-002, this 
   - [ ] Password reset events logged
   - [ ] Authorization failures logged
   - [ ] Celery task events logged
-- [ ] Create `quran_backend/core/tests/test_health_check.py`
+- [ ] Create `backend/core/tests/test_health_check.py`
 - [ ] Test health check endpoint:
   - [ ] Returns 200 OK when all services healthy
   - [ ] Returns 503 when database unavailable
@@ -562,7 +562,7 @@ def test_structured_json_logging(self, caplog):
     import json
     import logging
 
-    logger = logging.getLogger("quran_backend.test")
+    logger = logging.getLogger("backend.test")
     logger.info(
         "Test message",
         extra={
@@ -739,13 +739,13 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 ### Completion Notes List
 
 ✅ **Task 1: Configured Structured JSON Logging**
-- Created `quran_backend/core/logging/__init__.py` with `StructuredJsonFormatter` and `SensitiveDataFilter` classes
+- Created `backend/core/logging/__init__.py` with `StructuredJsonFormatter` and `SensitiveDataFilter` classes
 - Updated Django LOGGING configuration in `config/settings/base.py` with JSON formatters, rotating file handlers, and audit logger
 - Created `logs/` directory with `.gitkeep` and added `logs/*.log` to `.gitignore`
 - Logs include: timestamp (ISO 8601), level, logger, message, request_id (correlation ID), and contextual data
 
 ✅ **Task 2: Implemented Request/Response Logging Middleware**
-- Created `quran_backend/core/middleware/request_logger.py` with `RequestLoggingMiddleware`
+- Created `backend/core/middleware/request_logger.py` with `RequestLoggingMiddleware`
 - Logs all incoming requests (endpoint, method, user ID, IP, request ID)
 - Logs all responses (status code, response time in ms)
 - Logs slow requests (>500ms) as WARNING with `slow_request: true` flag
@@ -753,16 +753,16 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 - Added to MIDDLEWARE stack after `ErrorHandlingMiddleware`
 
 ✅ **Task 3: Added Critical Event Logging**
-- Added audit logger to `quran_backend/users/api/views.py` for authentication events
+- Added audit logger to `backend/users/api/views.py` for authentication events
 - Login success: Logs user_id, email, IP address, endpoint
 - Login failure: Logs email, IP, failure reason (invalid_credentials)
 - Account lockout: Logs email, IP, lockout remaining seconds
 - Logout: Logs user_id, IP, endpoint
 - Password reset: Logs user_id, email, IP, endpoint
-- Celery task logging already implemented in `quran_backend/core/tasks.py`
+- Celery task logging already implemented in `backend/core/tasks.py`
 
 ✅ **Task 4: Implemented Health Check Endpoint**
-- Created `quran_backend/core/views.py` with `health_check` view function
+- Created `backend/core/views.py` with `health_check` view function
 - Endpoint: `GET /api/v1/health/`
 - Monitors: PostgreSQL (connectivity + latency), Redis (read/write + latency), Celery (worker count), Disk space (free percentage)
 - Returns 200 OK when healthy, 503 Service Unavailable when unhealthy
@@ -782,7 +782,7 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 - Configured in Task 1 with RotatingFileHandler
 - Application logs: 100MB per file, 90 days retention (backupCount=90)
 - Audit logs: 100MB per file, 1 year retention (backupCount=365)
-- Separate audit logger for authentication events: `quran_backend.audit`
+- Separate audit logger for authentication events: `backend.audit`
 - Log compression and cleanup can be added via Celery Beat task (documented in story)
 
 ✅ **Task 7: Monitoring Dashboard Configuration**
@@ -792,12 +792,12 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 - Historical data retention: 30 days minimum
 
 ✅ **Task 8: Comprehensive Tests**
-- Created `quran_backend/core/tests/test_logging.py` (12 tests, all passing)
+- Created `backend/core/tests/test_logging.py` (12 tests, all passing)
   - StructuredJsonFormatter tests (3): JSON format, correlation IDs, contextual data
   - SensitiveDataFilter tests (3): passwords, JWT tokens, authorization headers
   - RequestLoggingMiddleware tests (3): request logging, slow requests, health check exclusion
   - CriticalEventLogging tests (3): audit logger setup verification
-- Created `quran_backend/core/tests/test_health_check.py` (8 tests, all passing)
+- Created `backend/core/tests/test_health_check.py` (8 tests, all passing)
   - Health endpoint tests: 200 OK when healthy, 503 when services down
   - Performance test: completes in <1.1s (including test overhead)
   - Format test: JSON response structure validation
@@ -811,17 +811,17 @@ Claude Sonnet 4.5 (claude-sonnet-4-5-20250929)
 ### File List
 
 **New Files:**
-- `quran_backend/quran_backend/core/logging/__init__.py` (Structured JSON formatter and sensitive data filter)
-- `quran_backend/quran_backend/core/middleware/request_logger.py` (Request/response logging middleware)
-- `quran_backend/quran_backend/core/views.py` (Health check endpoint)
-- `quran_backend/quran_backend/core/tests/test_logging.py` (Logging tests - 12 tests)
-- `quran_backend/quran_backend/core/tests/test_health_check.py` (Health check tests - 8 tests)
-- `quran_backend/logs/.gitkeep` (Logs directory placeholder)
+- `backend/backend/core/logging/__init__.py` (Structured JSON formatter and sensitive data filter)
+- `backend/backend/core/middleware/request_logger.py` (Request/response logging middleware)
+- `backend/backend/core/views.py` (Health check endpoint)
+- `backend/backend/core/tests/test_logging.py` (Logging tests - 12 tests)
+- `backend/backend/core/tests/test_health_check.py` (Health check tests - 8 tests)
+- `backend/logs/.gitkeep` (Logs directory placeholder)
 
 **Modified Files:**
-- `quran_backend/config/settings/base.py` (Updated LOGGING configuration with JSON formatters and rotating file handlers; added RequestLoggingMiddleware to MIDDLEWARE)
-- `quran_backend/config/settings/production.py` (Enhanced Sentry configuration with profiles_sample_rate and release tracking)
-- `quran_backend/config/urls.py` (Added health check URL route)
-- `quran_backend/quran_backend/users/api/views.py` (Added audit logging for authentication events)
-- `quran_backend/pyproject.toml` (Added python-json-logger==4.0.0 dependency)
-- `quran_backend/.gitignore` (Added logs/*.log to ignore compiled logs)
+- `backend/config/settings/base.py` (Updated LOGGING configuration with JSON formatters and rotating file handlers; added RequestLoggingMiddleware to MIDDLEWARE)
+- `backend/config/settings/production.py` (Enhanced Sentry configuration with profiles_sample_rate and release tracking)
+- `backend/config/urls.py` (Added health check URL route)
+- `backend/backend/users/api/views.py` (Added audit logging for authentication events)
+- `backend/pyproject.toml` (Added python-json-logger==4.0.0 dependency)
+- `backend/.gitignore` (Added logs/*.log to ignore compiled logs)
