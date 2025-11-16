@@ -1,8 +1,6 @@
 
 # define an alias for the specific python version used in this file.
-FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim AS python-build-stage
-
-ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
+FROM python:3.14-slim-bookworm AS python-build-stage
 
 ARG APP_HOME=/app
 
@@ -15,18 +13,19 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
   # psycopg dependencies
   libpq-dev
 
+# Create virtual environment
+RUN python -m venv ${APP_HOME}/.venv
+
+# Upgrade pip
+RUN ${APP_HOME}/.venv/bin/pip install --upgrade pip
 
 # Requirements are installed here to ensure they will be cached.
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --locked --no-install-project --no-dev
-COPY . ${APP_HOME}
+COPY requirements/base.txt ${APP_HOME}/requirements/base.txt
+COPY requirements/production.txt ${APP_HOME}/requirements/production.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    ${APP_HOME}/.venv/bin/pip install -r requirements/production.txt
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --locked --no-dev
+COPY . ${APP_HOME}
 
 # Python 'run' stage
 FROM python:3.13-slim-bookworm AS python-run-stage

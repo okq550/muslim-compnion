@@ -22,7 +22,8 @@ def track_rate_limit_violation(user_id_or_ip, endpoint, context=None):
         context: Additional context dict (optional)
 
     Returns:
-        dict: Violation tracking info including total count and whether threshold exceeded
+        dict: Violation tracking info including "
+        "total count and whether threshold exceeded
     """
     if context is None:
         context = {}
@@ -55,7 +56,8 @@ def track_rate_limit_violation(user_id_or_ip, endpoint, context=None):
         if violation_count >= settings.RATE_LIMIT_ABUSE_THRESHOLD:
             # Critical alert for repeat offenders
             logger.critical(
-                "Rate limit abuse detected: %s exceeded threshold (%d violations in 1 hour, threshold: %d)",
+                "Rate limit abuse detected: %s exceeded threshold "
+                "(%d violations in 1 hour, threshold: %d)",
                 user_id_or_ip,
                 violation_count,
                 settings.RATE_LIMIT_ABUSE_THRESHOLD,

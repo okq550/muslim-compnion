@@ -1,5 +1,5 @@
 # define an alias for the specific python version used in this file.
-FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim AS python
+FROM python:3.14-slim-bookworm AS python
 
 # Python build stage
 FROM python AS python-build-stage
@@ -7,9 +7,6 @@ FROM python AS python-build-stage
 ARG APP_HOME=/app
 
 WORKDIR ${APP_HOME}
-
-# we need to move the virtualenv outside of the $APP_HOME directory because it will be overriden by the docker compose mount
-ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
 
 # Install apt packages
 RUN apt-get update && apt-get install --no-install-recommends -y \
@@ -20,18 +17,19 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
   gettext \
   wait-for-it
 
+# Create virtual environment
+RUN python -m venv ${APP_HOME}/.venv
+
+# Upgrade pip
+RUN ${APP_HOME}/.venv/bin/pip install --upgrade pip
+
 # Requirements are installed here to ensure they will be cached.
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    --mount=type=bind,source=uv.lock,target=uv.lock:rw \
-    uv sync --no-install-project
+COPY requirements/base.txt ${APP_HOME}/requirements/base.txt
+COPY requirements/local.txt ${APP_HOME}/requirements/local.txt
+RUN --mount=type=cache,target=/root/.cache/pip \
+    ${APP_HOME}/.venv/bin/pip install -r requirements/local.txt
 
 COPY . ${APP_HOME}
-
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    --mount=type=bind,source=uv.lock,target=uv.lock:rw \
-    uv sync
 
 # devcontainer dependencies and utils
 RUN apt-get update && apt-get install --no-install-recommends -y \

@@ -30,8 +30,8 @@ services:
     image: quran_backend_production_postgres
     container_name: quran_backend_local_postgres
     volumes:
-      - quran_backend_local_postgres_data:/var/lib/postgresql/data
-      - quran_backend_local_postgres_data_backups:/backups
+      - ./postgres_data:/var/lib/postgresql/data
+      - ./postgres_data_backups:/backups
     env_file:
       - ./.envs/.local/.postgres
     ports:
@@ -42,7 +42,7 @@ services:
     container_name: quran_backend_local_redis
     command: redis-server --maxmemory 500mb --maxmemory-policy allkeys-lru
     volumes:
-      - quran_backend_local_redis_data:/data
+      - ./redis_data:/data
 
   celeryworker:
     <<: *django

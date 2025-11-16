@@ -50,7 +50,9 @@
       "Bash(DJANGO_READ_DOT_ENV_FILE=True DJANGO_SETTINGS_MODULE=config.settings.local DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres python manage.py:*)",
       "Bash(python:*)",
       "Bash(docker logs:*)",
-      "Bash(ruff format:*)"
+      "Bash(ruff format:*)",
+      "Bash(timeout 60 docker compose:*)",
+      "Bash(source:*)"
     ],
     "deny": [],
     "ask": []

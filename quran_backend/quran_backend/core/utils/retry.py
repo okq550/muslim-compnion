@@ -12,7 +12,7 @@ Implements AC #5 from US-API-002:
 import functools
 import logging
 import time
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import redis
 import requests
@@ -21,6 +21,9 @@ from django_redis.exceptions import ConnectionInterrupted
 
 from quran_backend.core.exceptions import NetworkError
 from quran_backend.core.exceptions import TransientError
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +42,8 @@ def retry_with_exponential_backoff(
     Args:
         max_retries: Maximum number of retry attempts (default: 3)
         delays: Tuple of delay durations in seconds for each retry (default: (1, 2, 4))
-        exceptions: Tuple of exception types to retry on (default: (TransientError, NetworkError))
+        exceptions: Tuple of exception types to retry on "
+        "(default: (TransientError, NetworkError))
 
     Usage:
         @retry_with_exponential_backoff()
@@ -66,7 +70,8 @@ def retry_with_exponential_backoff(
                 last_exception = exc
                 attempts = 1
                 logger.info(
-                    "Function %s failed on first attempt: %s. Will retry up to %d times.",
+                    "Function %s failed on first attempt: %s. "
+                    "Will retry up to %d times.",
                     func.__name__,
                     exc,
                     max_retries,
@@ -114,7 +119,8 @@ def retry_with_exponential_backoff(
 
             # All retries exhausted
             logger.error(
-                "Function %s failed after %d total attempts (1 initial + %d retries). Raising last exception.",
+                "Function %s failed after %d total attempts (1 initial + %d retries). "
+                "Raising last exception.",
                 func.__name__,
                 attempts,
                 max_retries,
