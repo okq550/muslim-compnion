@@ -1,6 +1,6 @@
 # Story 1.8: Create Comprehensive API Documentation
 
-Status: review
+Status: done
 
 ## Story
 
@@ -225,7 +225,7 @@ Building upon the foundation established in Epic 1 (authentication, error handli
       **Rate Limit:** 5 requests per minute per IP address
       """
   ```
-- [ ] Use `@extend_schema` decorator for complex endpoints:
+- [x] Use `@extend_schema` decorator for complex endpoints:
   ```python
   from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 
@@ -747,6 +747,17 @@ claude-sonnet-4-5-20250929
 - Documented rate limits and error response format
 - Documented health monitoring endpoint
 
+✅ **Code Review Resolution (2025-11-16)**: Addressed MEDIUM severity finding
+- Added @extend_schema decorator to ThrottledTokenRefreshView (muslim-companion/backend/users/api/views.py:574-651)
+- Decorator includes: operation_id, summary, description, request/response serializers (TokenRefreshRequestSerializer, TokenRefreshResponseSerializer)
+- Error responses documented: 400 (invalid token), 401 (blacklisted), 429 (rate limit exceeded)
+- Request/response examples added with OpenApiExample
+- Authentication tag included for proper grouping
+- Verified token refresh endpoint appears in OpenAPI schema at /api/v1/auth/token/refresh/
+- All 17 API documentation tests still passing (100% pass rate)
+- Token refresh functionality test passing: test_token_refresh_with_valid_token_returns_new_access_token
+- AC #4 (Authentication Flow Documented) now fully satisfied
+
 ### File List
 
 **Modified Files:**
@@ -764,10 +775,12 @@ claude-sonnet-4-5-20250929
 
 ## Change Log
 
-| Date       | Version | Description                             |
-|------------|---------|-----------------------------------------|
-| 2025-11-12 | 1.1     | Senior Developer Review notes appended  |
-| 2025-11-11 | 1.0     | Story implementation completed          |
+| Date       | Version | Description                                           |
+|------------|---------|-------------------------------------------------------|
+| 2025-11-16 | 1.3     | Senior Developer Re-Review: APPROVED                  |
+| 2025-11-16 | 1.2     | Addressed code review finding - token refresh @extend_schema |
+| 2025-11-12 | 1.1     | Senior Developer Review notes appended                |
+| 2025-11-11 | 1.0     | Story implementation completed                        |
 
 ---
 
@@ -944,7 +957,7 @@ The story delivers on all 11 acceptance criteria with strong documentation cover
 
 #### Code Changes Required:
 
-- [ ] [MEDIUM] Add @extend_schema decorator to ThrottledTokenRefreshView (AC #4) [file: backend/users/api/views.py:527-554]
+- [x] [MEDIUM] Add @extend_schema decorator to ThrottledTokenRefreshView (AC #4) [file: backend/users/api/views.py:527-554]
   ```python
   @extend_schema(
       operation_id="token_refresh",
@@ -980,3 +993,153 @@ The story delivers on all 11 acceptance criteria with strong documentation cover
 ---
 
 **Review Completion:** All acceptance criteria systematically validated, all tasks verified with evidence, one incomplete task identified (token refresh endpoint missing @extend_schema). Overall implementation is high quality with 17/17 tests passing. Recommend addressing the MEDIUM severity finding before marking story as DONE.
+
+---
+
+## Senior Developer Review (AI) - Re-Review
+
+**Reviewer:** Osama
+**Date:** 2025-11-16
+**Outcome:** APPROVE ✅
+
+### Summary
+
+Re-review of US-API-008 after code review resolution (2025-11-16). The MEDIUM severity finding from the previous review (2025-11-12) has been fully addressed. The token refresh endpoint (ThrottledTokenRefreshView) now includes a comprehensive `@extend_schema` decorator with complete documentation.
+
+All 11 acceptance criteria are now fully implemented, all 13 tasks are verified complete, and all 17 tests continue to pass (100% pass rate). The implementation demonstrates excellent code quality, comprehensive documentation coverage, and proper adherence to DRF Spectacular best practices.
+
+### Outcome
+
+**APPROVE ✅** - All previous findings resolved, story ready for DONE status.
+
+**Justification:** The previous MEDIUM severity finding (token refresh endpoint missing @extend_schema decorator) has been completely addressed. The implementation now includes:
+- Comprehensive @extend_schema decorator on ThrottledTokenRefreshView.post() (views.py:574-651)
+- Operation ID, summary, and detailed description
+- Request/response serializers (TokenRefreshRequestSerializer, TokenRefreshResponseSerializer)
+- Complete error response documentation (400, 401, 429) with examples
+- Request/response examples using OpenApiExample
+- Authentication tag for proper grouping in Swagger UI
+
+### Validation of Code Review Resolution
+
+✅ **Previous Finding: RESOLVED**
+
+**Finding:** [MEDIUM] Token refresh endpoint missing @extend_schema decorator (AC #4)
+
+**Resolution Verified:**
+- **Location:** muslim-companion/backend/users/api/views.py:574-651
+- **Implementation:** Complete `@extend_schema` decorator added to ThrottledTokenRefreshView.post()
+- **Evidence:**
+  - Operation ID: `token_refresh`
+  - Summary: "Refresh Access Token"
+  - Description: Comprehensive explanation including OAuth 2.0 support and rate limiting
+  - Request serializer: `TokenRefreshRequestSerializer` (defined in serializers.py:321)
+  - Response serializers: `TokenRefreshResponseSerializer` (200), `OpenApiResponse` (400, 401, 429)
+  - Error examples: Invalid token, blacklisted token, rate limit exceeded
+  - Request/response examples: Valid refresh request and successful response
+  - Tags: ["Authentication"] for proper Swagger UI grouping
+- **Test Coverage:** Token refresh functionality test passing (test_token_refresh_with_valid_token_returns_new_access_token)
+- **OpenAPI Schema:** Token refresh endpoint confirmed present at `/api/v1/auth/token/refresh/`
+- **Status:** ✅ FULLY RESOLVED
+
+### Acceptance Criteria Coverage - Final Validation
+
+| AC # | Description | Status | Evidence |
+|------|-------------|--------|----------|
+| AC #1 | OpenAPI 3.0 Specification Generated | ✅ IMPLEMENTED | config/settings/base.py:461-485, config/urls.py:42, tests pass |
+| AC #2 | Interactive API Documentation Accessible | ✅ IMPLEMENTED | config/urls.py:44-52, core/throttling.py:34-36,73-75, tests pass |
+| AC #3 | Request/Response Examples Provided | ✅ IMPLEMENTED | users/api/views.py @extend_schema decorators with OpenApiExample |
+| AC #4 | Authentication Flow Documented | ✅ **NOW COMPLETE** | All auth endpoints documented including token refresh (views.py:574-651) |
+| AC #5 | Error Codes and Responses Documented | ✅ IMPLEMENTED | core/api/serializers.py:22-55, ErrorResponseSerializer |
+| AC #6 | Rate Limiting Rules Documented | ✅ IMPLEMENTED | README.md:179-188, view docstrings, throttling.py |
+| AC #7 | Code Examples in Multiple Languages | ✅ IMPLEMENTED | README.md:126-158, Swagger UI auto-generation |
+| AC #8 | Getting Started Guide | ✅ IMPLEMENTED | README.md:102-188 |
+| AC #9 | Documentation Auto-Generated from Code | ✅ IMPLEMENTED | drf-spectacular with help_text, docstrings, @extend_schema |
+| AC #10 | API Versioning Strategy Documented | ✅ IMPLEMENTED | README.md:165-173, settings/base.py:473 |
+| AC #11 | Postman/Insomnia Collection Exported | ✅ IMPLEMENTED | README.md:156-159, OpenAPI schema importable |
+
+**Summary:** ✅ **11 of 11 acceptance criteria fully implemented** (was 10/11, now 11/11)
+
+### Task Completion Validation - Final Check
+
+| Task | Status | Verification |
+|------|--------|--------------|
+| Task 1: Configure drf-spectacular | ✅ Complete | Verified - SPECTACULAR_SETTINGS comprehensive |
+| Task 2: Enhance Serializers | ✅ Complete | Verified - All fields have help_text |
+| Task 3: Enhance ViewSets | ✅ **NOW COMPLETE** | **All views including token refresh now have @extend_schema** |
+| Task 4-13: All Other Tasks | ✅ Complete | Verified - All implementations confirmed |
+
+**Summary:** ✅ **13 of 13 tasks verified complete** (was 12/13, now 13/13)
+
+### Test Coverage - Final Status
+
+**Test Results: EXCELLENT** ✅
+
+- **Total Tests:** 17/17 passing (100% pass rate)
+- **API Documentation Tests:** All pass (schema validation, Swagger UI/ReDoc accessibility, rate limiting exemption)
+- **Token Refresh Test:** test_token_refresh_with_valid_token_returns_new_access_token ✅ PASSING
+- **OpenAPI Schema:** Valid OpenAPI 3.0.3 spec with all endpoints documented
+- **No Regressions:** Fix did not introduce any new failures
+
+### Code Quality Assessment
+
+**Quality: EXCELLENT** ✅
+
+**Strengths:**
+1. ✅ Comprehensive `@extend_schema` implementation following DRF Spectacular best practices
+2. ✅ Clear, descriptive documentation with operation ID, summary, and detailed description
+3. ✅ Complete error response coverage with realistic examples (400, 401, 429)
+4. ✅ Request/response examples showing both OAuth 2.0 and SimpleJWT formats
+5. ✅ Proper authentication tagging for Swagger UI organization
+6. ✅ Consistent with other authentication endpoint documentation patterns
+7. ✅ No code smells or anti-patterns introduced
+
+**Security Notes:**
+- ✅ Examples use sanitized JWT tokens (not real credentials)
+- ✅ Error messages don't expose sensitive system information
+- ✅ Rate limiting properly documented (5 requests/minute)
+- ✅ Token blacklisting behavior clearly documented
+
+### Architectural Alignment
+
+**Alignment: EXCELLENT** ✅
+
+- ✅ Follows DRF Spectacular documentation patterns used throughout the project
+- ✅ Consistent with authentication endpoint documentation (login, logout, password reset)
+- ✅ Adheres to OpenAPI 3.0 specification standards
+- ✅ Integrates seamlessly with existing JWT authentication flow (US-API-001)
+- ✅ Complies with PRD FR-038 (RESTful API Design) and FR-NFR-029 (API Documentation)
+
+### Best Practices and References
+
+**Tech Stack:** Django 5.2.8 LTS + DRF 3.16.1 + drf-spectacular 0.29.0 + Python 3.14
+
+**Best Practices Followed:**
+1. ✅ OpenAPI 3.0 Compliance - Schema validates against specification
+2. ✅ DRF Spectacular Patterns - Proper use of `@extend_schema`, `OpenApiExample`, `OpenApiResponse`
+3. ✅ Documentation as Code - Auto-generated from decorators and serializers
+4. ✅ Comprehensive Error Documentation - All HTTP error codes with examples
+5. ✅ OAuth 2.0 Compatibility - Documented support for both OAuth 2.0 and SimpleJWT parameters
+
+**References:**
+- [drf-spectacular Documentation](https://drf-spectacular.readthedocs.io/) - Best practices followed
+- [OpenAPI 3.0 Specification](https://swagger.io/specification/) - Schema compliant
+- [Django REST Framework](https://www.django-rest-framework.org/) - DRF patterns followed
+
+### Final Recommendations
+
+**Story Status:** ✅ **READY FOR DONE**
+
+**Recommended Actions:**
+1. ✅ Mark story status as "done" in story file
+2. ✅ Update sprint-status.yaml: review → done
+3. ✅ No further code changes required
+4. ✅ Consider manual testing of Swagger UI "try it out" functionality (optional, as noted in original review)
+
+**Future Enhancements (Optional, Not Blocking):**
+- Consider adding OpenAPI schema validation to CI/CD pipeline (Task 13 deferred item)
+- Consider adding specific test for token refresh endpoint documentation coverage
+
+---
+
+**Re-Review Completion:** Previous code review finding fully resolved. All acceptance criteria and tasks now verified complete. Implementation quality is excellent with comprehensive test coverage. Story approved for DONE status.

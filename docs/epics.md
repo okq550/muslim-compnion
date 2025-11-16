@@ -1119,6 +1119,101 @@ The backend APIs implemented in Epic 1 require comprehensive documentation to en
 
 - Keep documentation in sync with code changes
 
+### US-API-009: Enhance Health Check and Add Project Metadata Endpoint
+
+**As a** DevOps engineer and monitoring system
+**I want to** enhanced health check endpoints and project metadata API
+**So that** I can better monitor application health and retrieve project information programmatically
+
+#### User Story Details:
+
+**Epic:** Muslim Companion - First Release
+**Module:** Infrastructure / Cross-Cutting
+**Priority:** Medium (Infrastructure Enhancement)
+**Functional Requirements:** FR-041 (Monitoring & Operations)
+**Dependencies:**
+
+- US-API-007 (Logging and Monitoring - health check foundation)
+- US-API-008 (API Documentation - for documenting new endpoints)
+
+#### Description:
+
+Enhance the existing health check endpoint (`/health/`) to provide more detailed component status information and add a new project metadata endpoint (`/api/meta/`) that returns project name, version, and environment information. This improves operational visibility and enables better monitoring and API discovery.
+
+#### Business Rules:
+
+1.  **Health Check Enhancements:**
+
+    - Return detailed status for each monitored component (PostgreSQL, Redis, Celery, disk space)
+    - Include component-specific metrics (response times, connection counts, etc.)
+    - Maintain backward compatibility with existing health check format
+    - Response time must remain under 1 second
+    - Return 200 OK when all components healthy, 503 Service Unavailable otherwise
+
+2.  **Project Metadata Endpoint:**
+
+    - Publicly accessible (no authentication required)
+    - Return project name, version, API version, environment
+    - Include build/deployment timestamp
+    - Cache metadata response for 24 hours
+    - Follow standard JSON:API metadata format
+
+3.  **Monitoring Integration:**
+
+    - Health check compatible with Kubernetes liveness/readiness probes
+    - Structured logging for health check failures
+    - Metrics exported to monitoring systems (Prometheus format)
+
+#### Acceptance Criteria:
+
+✅ Enhanced `/health/` endpoint returns detailed component status
+✅ Health check includes response time metrics for each component
+✅ Backward compatibility maintained for existing monitoring
+✅ New `/api/meta/` endpoint returns project metadata (name, version)
+✅ Metadata endpoint cached for 24 hours
+✅ Health check response time < 1s for all scenarios
+✅ Proper HTTP status codes (200/503) based on health state
+✅ Both endpoints documented in OpenAPI spec
+✅ Integration tests cover both endpoints
+✅ Monitoring alerts configured for health check failures
+
+#### Out of Scope:
+
+- Detailed performance metrics dashboard
+- Historical health data storage
+- Component-level restart/recovery automation
+- Multi-region health aggregation
+
+#### Definition of Done:
+
+- All acceptance criteria tested and passing
+- Health check endpoint enhanced with component details
+- Project metadata endpoint implemented and tested
+- OpenAPI documentation updated
+- Integration tests passing
+- Monitoring configuration validated
+- DevOps team has approved changes
+- Ready for production deployment
+
+#### Test Data Requirements:
+
+- Healthy system state (all components up)
+- Unhealthy system states (Redis down, PostgreSQL slow, etc.)
+- Edge cases (disk almost full, Celery queue backed up)
+
+#### Notes for Development Team:
+
+- Extend existing `HealthCheckView` from US-API-007
+- Use existing health check utilities (PostgreSQL, Redis, Celery checks)
+- Add response time measurements for each component check
+- Create new `ProjectMetadataView` for `/api/meta/` endpoint
+- Read version from `pyproject.toml` or environment variable
+- Use Redis cache for metadata response (24-hour TTL)
+- Update OpenAPI schema in US-API-008 documentation
+- Follow existing error handling patterns from US-API-002
+- Add structured logging for health check failures
+- Ensure health check can run without database dependency (for cold starts)
+
 ## EPIC 2: Quran Text & Content Management
 
 ### US-QT-001: Retrieve Quran Text by Surah

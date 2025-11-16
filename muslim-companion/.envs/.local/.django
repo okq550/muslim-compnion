@@ -19,7 +19,7 @@ CELERY_FLOWER_USER=yxkPUmjyMtiFxgEgPySfhehMhlCfJlhL
 CELERY_FLOWER_PASSWORD=H5dnyVMI3Up9sv6zvNs8q4a6yxqkQYx9WjPdXWxeyi8Grjp3QpasAyLbV6QuVNqn
 
 # MailGun
-MAILGUN_API_KEY=XYZ
+MAILGUN_API_KEY=
 MAILGUN_SENDER_DOMAIN=postmaster@sandbox7482eae816364eed821b03511b4ab794.mailgun.org
 
 # Email Configuration
