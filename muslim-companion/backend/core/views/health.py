@@ -261,8 +261,10 @@ def readiness_check(request):
     # Note: Disk is informational; doesn't affect overall readiness
 
     # Get version and environment
-    version = getattr(settings, "VERSION", "unknown")
-    environment = getattr(settings, "ENVIRONMENT", "unknown")
+    from backend.core.views.main import _get_project_version
+
+    version = _get_project_version()
+    environment = getattr(settings, "ENVIRONMENT_NAME", "unknown")
 
     # Build response
     response_data = {
