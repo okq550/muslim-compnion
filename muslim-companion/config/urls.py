@@ -10,7 +10,14 @@ from drf_spectacular.views import SpectacularRedocView
 from drf_spectacular.views import SpectacularSwaggerView
 from rest_framework.authtoken.views import obtain_auth_token
 
-from backend.core.views import health_check  # US-API-007: Health check endpoint
+from backend.core.views import health_check, project_metadata  # US-API-007/009
+from backend.core.views.health import (  # US-API-009: Granular health check endpoints
+    cache_health_check,
+    database_health_check,
+    disk_health_check,
+    liveness_check,
+    readiness_check,
+)
 
 urlpatterns = [
     # path("", TemplateView.as_view(template_name="pages/home.html"), name="home"),
@@ -34,6 +41,14 @@ urlpatterns = [
 urlpatterns += [
     # Health check endpoint (US-API-007)
     path("api/v1/health/", health_check, name="health-check"),
+    # Granular health check endpoints (US-API-009)
+    path("health/check", liveness_check, name="health-liveness"),
+    path("health/ready", readiness_check, name="health-readiness"),
+    path("health/db", database_health_check, name="health-database"),
+    path("health/cache", cache_health_check, name="health-cache"),
+    path("health/disk", disk_health_check, name="health-disk"),
+    # Project metadata endpoint (US-API-009)
+    path("api/meta/", project_metadata, name="project-metadata"),
     # API base url
     path("api/", include("config.api_router")),
     # DRF auth token

@@ -8,15 +8,22 @@ Implements AC #5 from US-API-007:
 - Return 200 OK if healthy, 503 if unhealthy
 - Complete checks in < 1 second
 - Excluded from authentication and rate limiting
+
+Implements AC #7-8 from US-API-009:
+- Project metadata endpoint (/api/meta/)
+- Version from pyproject.toml with caching
 """
 
+import importlib.metadata
 import logging
+import os
 import shutil
 import time
 from datetime import UTC
 from datetime import datetime
 
 from celery import current_app
+from django.conf import settings
 from django.core.cache import cache
 from django.db import connection
 from django.http import JsonResponse
@@ -25,6 +32,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from drf_spectacular.utils import OpenApiExample
 from drf_spectacular.utils import extend_schema
+from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 
 logger = logging.getLogger(__name__)
 
@@ -259,3 +270,135 @@ def _check_disk():
     except Exception:
         logger.exception("Disk space check failed")
         return ("unknown", 0.0)
+
+
+# ============================================================================
+# PROJECT METADATA ENDPOINT - /api/meta/
+# ============================================================================
+
+
+@extend_schema(
+    operation_id="project_metadata",
+    summary="Project Metadata and API Discovery",
+    description="""
+    Public endpoint for retrieving project metadata and API information.
+
+    **Returns:**
+    - Project name and version
+    - API version
+    - Environment (production/staging/development)
+    - Build timestamp
+    - Documentation URL
+
+    **Caching:** Response is cached in Redis for 24 hours for performance.
+
+    **Access:** Public endpoint (no authentication required)
+    """,
+    responses={
+        200: OpenApiExample(
+            "Project Metadata",
+            value={
+                "project": {
+                    "name": "Muslim Companion API",
+                    "version": "0.1.0",
+                    "api_version": "v1",
+                    "environment": "production",
+                    "build_timestamp": "2025-11-16T08:00:00Z",
+                    "documentation_url": "/api/docs/",
+                },
+            },
+        ),
+    },
+    tags=["Metadata"],
+)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+@csrf_exempt
+@never_cache
+def project_metadata(request):
+    """
+    Project metadata endpoint for API discovery.
+
+    GET /api/meta/
+
+    Returns project information including name, version, environment, and documentation URL.
+    Response is cached in Redis for 24 hours to improve performance.
+
+    Returns:
+        Response with project metadata:
+        - 200 OK always
+
+    Response format:
+        {
+            "project": {
+                "name": "Muslim Companion API",
+                "version": "0.1.0",
+                "api_version": "v1",
+                "environment": "production",
+                "build_timestamp": "2025-11-16T08:00:00Z",
+                "documentation_url": "/api/docs/"
+            }
+        }
+
+    Caching:
+        - Cache key: api:metadata:v1
+        - TTL: 24 hours (86400 seconds)
+        - Graceful degradation if Redis unavailable
+    """
+    cache_key = "api:metadata:v1"
+    cache_ttl = 86400  # 24 hours
+
+    # Try to get from cache first
+    try:
+        cached_metadata = cache.get(cache_key)
+        if cached_metadata:
+            return Response(cached_metadata, status=status.HTTP_200_OK)
+    except Exception as e:
+        logger.warning(f"Cache read failed for metadata endpoint: {e}")
+
+    # Generate metadata
+    metadata = {
+        "project": {
+            "name": "Muslim Companion API",
+            "version": _get_project_version(),
+            "api_version": "v1",
+            "environment": getattr(settings, "ENVIRONMENT", "unknown"),
+            "build_timestamp": os.environ.get("BUILD_TIMESTAMP", ""),
+            "documentation_url": "/api/docs/",
+        },
+    }
+
+    # Try to cache the response
+    try:
+        cache.set(cache_key, metadata, cache_ttl)
+    except Exception as e:
+        logger.warning(f"Cache write failed for metadata endpoint: {e}")
+
+    return Response(metadata, status=status.HTTP_200_OK)
+
+
+def _get_project_version() -> str:
+    """
+    Get project version from pyproject.toml using importlib.metadata.
+
+    Attempts to read version in this order:
+    1. importlib.metadata.version('muslim-companion')
+    2. Environment variable APP_VERSION
+    3. Fallback to 'unknown'
+
+    Returns:
+        str: Project version string
+    """
+    try:
+        # Try to get version from installed package
+        return importlib.metadata.version("muslim-companion")
+    except importlib.metadata.PackageNotFoundError:
+        pass
+
+    # Fallback to environment variable
+    version = os.environ.get("APP_VERSION")
+    if version:
+        return version
+
+    # Last resort fallback
+    return "unknown"

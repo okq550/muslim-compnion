@@ -40,7 +40,7 @@ class TestHealthCheckEndpoint:
         assert data["checks"]["celery"]["status"] in ["up", "down"]
         assert data["checks"]["disk"]["status"] in ["ok", "low"]
 
-    @patch("backend.core.views.connection")
+    @patch("backend.core.views.main.connection")
     def test_returns_503_when_database_down(self, mock_connection):
         """Test health check returns 503 when database is unavailable."""
         # Mock database connection failure
@@ -58,7 +58,7 @@ class TestHealthCheckEndpoint:
         assert data["status"] == "unhealthy"
         assert data["checks"]["database"]["status"] == "down"
 
-    @patch("backend.core.views.cache")
+    @patch("backend.core.views.main.cache")
     def test_returns_503_when_redis_unavailable(self, mock_cache):
         """Test health check returns 503 when Redis is unavailable."""
         # Mock cache operation failure
@@ -74,7 +74,7 @@ class TestHealthCheckEndpoint:
         assert data["status"] == "unhealthy"
         assert data["checks"]["cache"]["status"] == "down"
 
-    @patch("backend.core.views.current_app")
+    @patch("backend.core.views.main.current_app")
     def test_returns_503_when_no_celery_workers(self, mock_celery):
         """Test health check returns 503 when no Celery workers are active."""
         # Mock no active workers

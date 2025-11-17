@@ -89,7 +89,7 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
-    "backend.core",  # Core infrastructure (backup, caching, monitoring)
+    "backend.core.apps.CoreConfig",  # Core infrastructure (backup, caching, monitoring)
     "backend.users",
     "backend.analytics",
     "backend.legal",
