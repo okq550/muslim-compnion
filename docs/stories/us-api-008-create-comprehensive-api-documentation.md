@@ -748,7 +748,7 @@ claude-sonnet-4-5-20250929
 - Documented health monitoring endpoint
 
 ✅ **Code Review Resolution (2025-11-16)**: Addressed MEDIUM severity finding
-- Added @extend_schema decorator to ThrottledTokenRefreshView (muslim-companion/backend/users/api/views.py:574-651)
+- Added @extend_schema decorator to ThrottledTokenRefreshView (muslim_companion/backend/users/api/views.py:574-651)
 - Decorator includes: operation_id, summary, description, request/response serializers (TokenRefreshRequestSerializer, TokenRefreshResponseSerializer)
 - Error responses documented: 400 (invalid token), 401 (blacklisted), 429 (rate limit exceeded)
 - Request/response examples added with OpenApiExample
@@ -1027,7 +1027,7 @@ All 11 acceptance criteria are now fully implemented, all 13 tasks are verified 
 **Finding:** [MEDIUM] Token refresh endpoint missing @extend_schema decorator (AC #4)
 
 **Resolution Verified:**
-- **Location:** muslim-companion/backend/users/api/views.py:574-651
+- **Location:** muslim_companion/backend/users/api/views.py:574-651
 - **Implementation:** Complete `@extend_schema` decorator added to ThrottledTokenRefreshView.post()
 - **Evidence:**
   - Operation ID: `token_refresh`

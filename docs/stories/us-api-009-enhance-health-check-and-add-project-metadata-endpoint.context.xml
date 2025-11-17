@@ -1,0 +1,467 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>9</storyId>
+    <title>Implement Granular Health Checks and Project Metadata Endpoint</title>
+    <status>backlog</status>
+    <generatedAt>2025-11-16</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/us-api-009-enhance-health-check-and-add-project-metadata-endpoint.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>DevOps engineer and monitoring system</asA>
+    <iWant>granular health check endpoints (liveness, readiness, resource-specific) and project metadata API</iWant>
+    <soThat>I can efficiently monitor application health for Kubernetes orchestration and retrieve project information programmatically</soThat>
+    <tasks>
+      <task id="1" title="Implement Liveness Probe - /health/check">
+        <subtask>Create muslim_companion/core/views/health.py module</subtask>
+        <subtask>Implement LivenessCheckView(APIView) with GET method</subtask>
+        <subtask>No authentication required, no external resource checks</subtask>
+        <subtask>Response format: status and timestamp</subtask>
+        <subtask>Response time &lt; 10ms</subtask>
+        <subtask>Add route to config/urls.py: /health/check</subtask>
+        <subtask>Exclude from rate limiting</subtask>
+      </task>
+      <task id="2" title="Implement Readiness Probe - /health/ready">
+        <subtask>Implement ReadinessCheckView(APIView) checking ALL critical resources</subtask>
+        <subtask>Implement component check functions: check_database(), check_cache(), check_celery(), check_disk()</subtask>
+        <subtask>Measure response time for each component</subtask>
+        <subtask>Add version and environment to response</subtask>
+        <subtask>200 OK if all healthy, 503 if any component unhealthy</subtask>
+        <subtask>Total response time &lt; 1000ms with timeout protection</subtask>
+        <subtask>Log slow component checks (&gt; 500ms)</subtask>
+        <subtask>Add route to config/urls.py: /health/ready</subtask>
+      </task>
+      <task id="3" title="Implement Resource-Specific Health Checks">
+        <subtask>Implement DatabaseHealthView for PostgreSQL checks</subtask>
+        <subtask>Implement CacheHealthView for Redis checks</subtask>
+        <subtask>Implement DiskHealthView for disk space checks</subtask>
+        <subtask>Add routes: /health/db, /health/cache, /health/disk</subtask>
+      </task>
+      <task id="4" title="Create Project Metadata Endpoint">
+        <subtask>Implement ProjectMetadataView in core/views.py</subtask>
+        <subtask>Read version from pyproject.toml using importlib.metadata</subtask>
+        <subtask>Implement Redis caching (24-hour TTL)</subtask>
+        <subtask>Cache warming in CoreConfig.ready() method</subtask>
+        <subtask>Add route to config/urls.py: /api/meta/</subtask>
+      </task>
+      <task id="5" title="Update OpenAPI Documentation">
+        <subtask>Add schemas for all 5 health endpoints</subtask>
+        <subtask>Add schema for /api/meta/ endpoint</subtask>
+        <subtask>Update Swagger UI and ReDoc documentation</subtask>
+      </task>
+      <task id="6" title="Write Integration Tests">
+        <subtask>Create test_health_liveness.py for liveness probe tests</subtask>
+        <subtask>Create test_health_readiness.py for readiness probe tests</subtask>
+        <subtask>Create test_health_resources.py for resource-specific tests</subtask>
+        <subtask>Create test_metadata.py for metadata endpoint tests</subtask>
+      </task>
+      <task id="7" title="Configure Monitoring and Alerts">
+        <subtask>Add Sentry monitoring for health check failures</subtask>
+        <subtask>Add structured logging for all health checks</subtask>
+        <subtask>Test alert delivery</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1" title="/health/check - Liveness Probe">
+      <description>Minimal liveness check with no resource dependencies</description>
+      <requirements>
+        <requirement>No external calls, immediate return</requirement>
+        <requirement>Response format: status and timestamp</requirement>
+        <requirement>200 OK always (unless server critically failing)</requirement>
+        <requirement>Response time &lt; 10ms</requirement>
+      </requirements>
+    </criterion>
+    <criterion id="AC2" title="/health/ready - Readiness Probe">
+      <description>Full resource check for all critical components</description>
+      <requirements>
+        <requirement>Checks ALL: database, cache, Celery, disk</requirement>
+        <requirement>Returns detailed status for each component</requirement>
+        <requirement>200 OK if all healthy, 503 if any unhealthy</requirement>
+        <requirement>Response time &lt; 1000ms</requirement>
+      </requirements>
+    </criterion>
+    <criterion id="AC3" title="/health/db - Database Health Check">
+      <description>Isolated PostgreSQL connectivity check</description>
+      <requirements>
+        <requirement>Check connection, query execution, connection pool</requirement>
+        <requirement>200 OK if accessible, 503 if down/timeout</requirement>
+        <requirement>Response time &lt; 200ms</requirement>
+      </requirements>
+    </criterion>
+    <criterion id="AC4" title="/health/cache - Redis Cache Health Check">
+      <description>Isolated Redis cache connectivity check</description>
+      <requirements>
+        <requirement>Check connection, memory usage, key operations</requirement>
+        <requirement>200 OK if accessible, 503 if down/timeout</requirement>
+        <requirement>Response time &lt; 50ms</requirement>
+      </requirements>
+    </criterion>
+    <criterion id="AC5" title="/health/disk - Disk Space Health Check">
+      <description>Isolated disk space availability check</description>
+      <requirements>
+        <requirement>Check available disk space, warn on low space</requirement>
+        <requirement>200 OK if &gt; 20%, 503 if &lt; 10%</requirement>
+        <requirement>Response time &lt; 50ms</requirement>
+      </requirements>
+    </criterion>
+    <criterion id="AC6" title="Response Time and Performance Requirements">
+      <description>Performance requirements for all endpoints</description>
+      <requirements>
+        <requirement>All endpoints measure and report response times</requirement>
+        <requirement>Log slow checks (&gt; 500ms) as warnings</requirement>
+        <requirement>Timeout protection on all external resource checks</requirement>
+      </requirements>
+    </criterion>
+    <criterion id="AC7" title="/api/meta/ Returns Project Metadata">
+      <description>Public endpoint for project metadata</description>
+      <requirements>
+        <requirement>No authentication required</requirement>
+        <requirement>Return project name, version, environment, build timestamp</requirement>
+        <requirement>Version from pyproject.toml or APP_VERSION env var</requirement>
+      </requirements>
+    </criterion>
+    <criterion id="AC8" title="Metadata Endpoint Cached for 24 Hours">
+      <description>Redis caching for metadata response</description>
+      <requirements>
+        <requirement>Cache key: api:metadata:v1, TTL: 24 hours</requirement>
+        <requirement>Cache warming on application startup</requirement>
+        <requirement>Graceful degradation if Redis unavailable</requirement>
+      </requirements>
+    </criterion>
+    <criterion id="AC9" title="All Endpoints Documented in OpenAPI">
+      <description>Complete OpenAPI documentation</description>
+      <requirements>
+        <requirement>Add schemas for all 5 health endpoints and metadata endpoint</requirement>
+        <requirement>Include example responses (success and failure)</requirement>
+        <requirement>Document response fields, status codes, use cases</requirement>
+      </requirements>
+    </criterion>
+    <criterion id="AC10" title="Integration Tests Cover All Endpoints">
+      <description>Comprehensive test coverage</description>
+      <requirements>
+        <requirement>Test liveness probe response and timing</requirement>
+        <requirement>Test readiness probe with all component states</requirement>
+        <requirement>Test resource-specific endpoints (success/failure)</requirement>
+        <requirement>Test metadata response and caching</requirement>
+      </requirements>
+    </criterion>
+    <criterion id="AC11" title="Monitoring Alerts Configured">
+      <description>Alert configuration for health monitoring</description>
+      <requirements>
+        <requirement>Alert when /health/ready returns 503</requirement>
+        <requirement>Alert when response times exceed threshold</requirement>
+        <requirement>Alert when disk space &lt; 10%</requirement>
+        <requirement>Integrate with Sentry alerting</requirement>
+      </requirements>
+    </criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc path="docs/tech-spec-epic-1.md" title="Epic 1 Technical Specification" section="Health Checks">
+        <snippet>Existing health check endpoint foundation at /api/v1/health/ with database, Redis, Celery, and disk checks. Response time &lt; 1s requirement. This story enhances with granular endpoints.</snippet>
+      </doc>
+      <doc path="docs/tech-spec-epic-1.md" title="Epic 1 Technical Specification" section="Monitoring & Error Tracking">
+        <snippet>Sentry integration for application monitoring with performance tracking (10% sampling). Critical for zero-error tolerance. Alert configuration for critical issues.</snippet>
+      </doc>
+      <doc path="docs/architecture.md" title="System Architecture" section="Infrastructure & Operations">
+        <snippet>Health monitoring infrastructure design. Application Load Balancer requires health checks for orchestration. CloudWatch logs and X-Ray tracing integration.</snippet>
+      </doc>
+      <doc path="docs/stories/us-api-007-implement-logging-and-monitoring.md" title="US-API-007 Story" section="Logging and Monitoring">
+        <snippet>Foundation story that implemented health check endpoint at muslim_companion/core/views.py with database, Redis, Celery, and disk checks. This story extends with Kubernetes liveness/readiness pattern.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact path="muslim_companion/backend/core/views.py" kind="view" symbol="health_check" lines="81-155">
+        <reason>Existing health check implementation at /api/v1/health/ that checks database, cache, Celery, disk. Foundation to be extended with granular endpoints.</reason>
+      </artifact>
+      <artifact path="muslim_companion/backend/core/views.py" kind="helper" symbol="_check_database" lines="158-176">
+        <reason>PostgreSQL connectivity check with latency measurement. Reusable for /health/db endpoint.</reason>
+      </artifact>
+      <artifact path="muslim_companion/backend/core/views.py" kind="helper" symbol="_check_cache" lines="179-208">
+        <reason>Redis cache check with latency measurement. Reusable for /health/cache endpoint.</reason>
+      </artifact>
+      <artifact path="muslim_companion/backend/core/views.py" kind="helper" symbol="_check_celery" lines="211-232">
+        <reason>Celery worker status check. Needed for readiness probe.</reason>
+      </artifact>
+      <artifact path="muslim_companion/backend/core/views.py" kind="helper" symbol="_check_disk" lines="235-261">
+        <reason>Disk space check with thresholds (20% low, 10% critical). Reusable for /health/disk endpoint.</reason>
+      </artifact>
+      <artifact path="muslim_companion/backend/core/health.py" kind="service" symbol="check_cache_health" lines="19-87">
+        <reason>Existing cache health check utility with latency measurement and degradation detection. Alternative implementation pattern.</reason>
+      </artifact>
+      <artifact path="muslim_companion/backend/core/health.py" kind="service" symbol="check_database_health" lines="90-123">
+        <reason>Existing database health check utility. Alternative implementation pattern.</reason>
+      </artifact>
+      <artifact path="muslim_companion/backend/core/health.py" kind="service" symbol="get_overall_health" lines="126-174">
+        <reason>Overall health aggregation pattern showing how to combine component checks.</reason>
+      </artifact>
+      <artifact path="muslim_companion/backend/core/tests/test_health_check.py" kind="test" symbol="test_health_check">
+        <reason>Existing health check tests to be extended with granular endpoint tests.</reason>
+      </artifact>
+      <artifact path="muslim_companion/config/urls.py" kind="config" symbol="urlpatterns">
+        <reason>URL routing configuration where new health endpoints and /api/meta/ will be added.</reason>
+      </artifact>
+      <artifact path="muslim_companion/pyproject.toml" kind="config" symbol="version">
+        <reason>Project metadata source for version information needed by /api/meta/ endpoint.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <python>
+        <package name="Django" version="5.2.8" purpose="Web framework with health check support"/>
+        <package name="djangorestframework" version="3.16.1+" purpose="REST API views and serializers"/>
+        <package name="django-redis" version="latest" purpose="Redis cache backend for metadata caching"/>
+        <package name="celery" version="latest" purpose="Background tasks for cache warming"/>
+        <package name="sentry-sdk" version="1.40.0" purpose="Error tracking and monitoring alerts"/>
+        <package name="drf-spectacular" version="latest" purpose="OpenAPI schema generation and documentation"/>
+        <package name="importlib.metadata" version="stdlib" purpose="Read version from pyproject.toml"/>
+      </python>
+      <system>
+        <dependency name="PostgreSQL" version="16" purpose="Database for health checks"/>
+        <dependency name="Redis" version="latest" purpose="Cache for metadata and health monitoring"/>
+        <dependency name="shutil" version="stdlib" purpose="Disk space checks"/>
+      </system>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint category="Architecture">
+      <rule>Follow Kubernetes liveness/readiness probe pattern for health endpoints</rule>
+      <rule>Liveness probe (/health/check) must have NO external dependencies</rule>
+      <rule>Readiness probe (/health/ready) must check ALL critical resources</rule>
+      <rule>Resource-specific endpoints must be isolated and independent</rule>
+    </constraint>
+    <constraint category="Performance">
+      <rule>Liveness probe response time &lt; 10ms (no I/O operations)</rule>
+      <rule>Readiness probe total response time &lt; 1000ms</rule>
+      <rule>Database health check &lt; 200ms</rule>
+      <rule>Cache health check &lt; 50ms</rule>
+      <rule>Disk health check &lt; 50ms</rule>
+      <rule>Log slow checks (&gt; 500ms) as warnings</rule>
+      <rule>Timeout protection on all external resource checks</rule>
+    </constraint>
+    <constraint category="Response Format">
+      <rule>All health endpoints return JSON with consistent structure</rule>
+      <rule>Include timestamp in ISO 8601 format</rule>
+      <rule>Status codes: 200 OK for healthy, 503 Service Unavailable for unhealthy</rule>
+      <rule>Include component-level details in response</rule>
+    </constraint>
+    <constraint category="Metadata Endpoint">
+      <rule>Metadata endpoint must be publicly accessible (no authentication)</rule>
+      <rule>Version read from pyproject.toml or APP_VERSION environment variable</rule>
+      <rule>Redis caching required (24-hour TTL)</rule>
+      <rule>Graceful degradation when Redis unavailable</rule>
+      <rule>Cache warming on application startup</rule>
+    </constraint>
+    <constraint category="Security">
+      <rule>Health endpoints excluded from authentication</rule>
+      <rule>Health endpoints excluded from rate limiting</rule>
+      <rule>No sensitive data in health responses</rule>
+    </constraint>
+    <constraint category="Testing">
+      <rule>100% test coverage for all new endpoints</rule>
+      <rule>Test both success and failure scenarios</rule>
+      <rule>Test response time requirements</rule>
+      <rule>Test caching behavior for metadata endpoint</rule>
+    </constraint>
+    <constraint category="Monitoring">
+      <rule>Integrate with existing Sentry alerting from US-API-007</rule>
+      <rule>Alert when /health/ready returns 503</rule>
+      <rule>Alert when response times exceed thresholds</rule>
+      <rule>Alert when disk space &lt; 10%</rule>
+      <rule>Use structured logging with correlation IDs</rule>
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface name="LivenessCheckView" kind="REST API endpoint">
+      <signature>GET /health/check</signature>
+      <path>muslim_companion/backend/core/views/health.py</path>
+      <description>Kubernetes liveness probe - minimal check with no external dependencies</description>
+      <request>No parameters, no authentication</request>
+      <response>
+        {
+          "status": "ok",
+          "timestamp": "2025-11-16T10:30:00Z"
+        }
+      </response>
+    </interface>
+
+    <interface name="ReadinessCheckView" kind="REST API endpoint">
+      <signature>GET /health/ready</signature>
+      <path>muslim_companion/backend/core/views/health.py</path>
+      <description>Kubernetes readiness probe - checks all critical resources</description>
+      <request>No parameters, no authentication</request>
+      <response>
+        {
+          "status": "ready",
+          "timestamp": "2025-11-16T10:30:00Z",
+          "version": "1.0.0",
+          "environment": "production",
+          "components": {
+            "database": {"status": "up", "response_time_ms": 15, "connection_pool": "8/20 active"},
+            "cache": {"status": "up", "response_time_ms": 2, "memory_used_mb": 45, "keys": 1250},
+            "celery": {"status": "up", "workers": 2, "active_tasks": 3, "queue_depth": 12},
+            "disk": {"status": "ok", "free_percent": 45, "free_gb": 120}
+          }
+        }
+      </response>
+    </interface>
+
+    <interface name="DatabaseHealthView" kind="REST API endpoint">
+      <signature>GET /health/db</signature>
+      <path>muslim_companion/backend/core/views/health.py</path>
+      <description>Database-specific health check</description>
+    </interface>
+
+    <interface name="CacheHealthView" kind="REST API endpoint">
+      <signature>GET /health/cache</signature>
+      <path>muslim_companion/backend/core/views/health.py</path>
+      <description>Redis cache-specific health check</description>
+    </interface>
+
+    <interface name="DiskHealthView" kind="REST API endpoint">
+      <signature>GET /health/disk</signature>
+      <path>muslim_companion/backend/core/views/health.py</path>
+      <description>Disk space-specific health check</description>
+    </interface>
+
+    <interface name="ProjectMetadataView" kind="REST API endpoint">
+      <signature>GET /api/meta/</signature>
+      <path>muslim_companion/backend/core/views.py</path>
+      <description>Project metadata endpoint for API discovery</description>
+      <request>No parameters, no authentication</request>
+      <response>
+        {
+          "project": {
+            "name": "Muslim Companion API",
+            "version": "1.0.0",
+            "api_version": "v1",
+            "environment": "production",
+            "build_timestamp": "2025-11-16T08:00:00Z",
+            "documentation_url": "/api/docs/"
+          }
+        }
+      </response>
+    </interface>
+
+    <interface name="check_database" kind="Python function">
+      <signature>def check_database() -&gt; dict[str, Any]</signature>
+      <path>muslim_companion/backend/core/health.py</path>
+      <description>Reusable database health check function</description>
+    </interface>
+
+    <interface name="check_cache" kind="Python function">
+      <signature>def check_cache() -&gt; dict[str, Any]</signature>
+      <path>muslim_companion/backend/core/health.py</path>
+      <description>Reusable cache health check function</description>
+    </interface>
+
+    <interface name="check_celery" kind="Python function">
+      <signature>def check_celery() -&gt; dict[str, Any]</signature>
+      <path>muslim_companion/backend/core/health.py</path>
+      <description>Reusable Celery health check function</description>
+    </interface>
+
+    <interface name="check_disk" kind="Python function">
+      <signature>def check_disk() -&gt; dict[str, Any]</signature>
+      <path>muslim_companion/backend/core/health.py</path>
+      <description>Reusable disk space check function</description>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+      Project uses pytest testing framework with Django integration (pytest-django). Tests located in backend/*/tests/ directories. Test files follow test_*.py naming convention. Integration tests use Django TestCase or APITestCase from DRF. All tests must pass pre-commit hooks including ruff formatting and linting. Response time testing uses time.perf_counter() for high-precision measurement. Mock external dependencies (Redis, PostgreSQL) for failure scenario testing.
+    </standards>
+
+    <locations>
+      <location>muslim_companion/backend/core/tests/test_health_liveness.py</location>
+      <location>muslim_companion/backend/core/tests/test_health_readiness.py</location>
+      <location>muslim_companion/backend/core/tests/test_health_resources.py</location>
+      <location>muslim_companion/backend/core/tests/test_metadata.py</location>
+      <location>muslim_companion/backend/core/tests/test_health_check.py (existing - may need updates)</location>
+    </locations>
+
+    <ideas>
+      <idea ac="AC1">
+        Test /health/check returns 200 OK instantly with no external calls
+        Test response format includes status and timestamp
+        Test response time &lt; 10ms
+        Test endpoint is excluded from authentication and rate limiting
+      </idea>
+      <idea ac="AC2">
+        Test /health/ready with all components healthy returns 200
+        Test /health/ready with database down returns 503
+        Test /health/ready with Redis down returns 503
+        Test /health/ready with Celery down returns 503
+        Test response includes detailed component statuses
+        Test total response time &lt; 1000ms
+        Test version and environment fields populated
+      </idea>
+      <idea ac="AC3">
+        Test /health/db success scenario (database accessible)
+        Test /health/db failure scenario (database down)
+        Test response includes connection pool details
+        Test response time &lt; 200ms
+        Test 200 OK when healthy, 503 when down
+      </idea>
+      <idea ac="AC4">
+        Test /health/cache success scenario (Redis accessible)
+        Test /health/cache failure scenario (Redis down)
+        Test response includes memory usage and key count
+        Test response time &lt; 50ms
+        Test 200 OK when healthy, 503 when down
+      </idea>
+      <idea ac="AC5">
+        Test /health/disk with sufficient space (&gt; 20%) returns 200
+        Test /health/disk with low space (&lt; 20%) returns warning
+        Test /health/disk with critical space (&lt; 10%) returns 503
+        Test response includes free_percent and free_gb
+        Test response time &lt; 50ms
+      </idea>
+      <idea ac="AC6">
+        Test all endpoints measure and report response times
+        Test slow checks (&gt; 500ms) are logged as warnings
+        Test timeout protection on external resource checks
+      </idea>
+      <idea ac="AC7">
+        Test /api/meta/ returns project metadata
+        Test version field populated from pyproject.toml
+        Test fallback to APP_VERSION environment variable
+        Test environment field from settings.ENVIRONMENT
+        Test build_timestamp from environment variable
+        Test endpoint is publicly accessible (no auth)
+      </idea>
+      <idea ac="AC8">
+        Test metadata response is cached in Redis
+        Test cache key: api:metadata:v1
+        Test cache TTL: 24 hours (86400 seconds)
+        Test cache warming on application startup
+        Test graceful degradation when Redis unavailable
+        Test subsequent requests use cached response
+      </idea>
+      <idea ac="AC9">
+        Test OpenAPI schema includes all 5 health endpoints
+        Test OpenAPI schema includes /api/meta/ endpoint
+        Test example responses present for success and failure
+        Test Swagger UI displays all endpoints correctly
+      </idea>
+      <idea ac="AC10">
+        Integration test suite covers all scenarios
+        Test coverage &gt;= 100% for new code
+        Test both success and failure paths
+      </idea>
+      <idea ac="AC11">
+        Test Sentry alert triggered when /health/ready returns 503
+        Test alert triggered on response time threshold exceeded
+        Test alert triggered on disk space &lt; 10%
+        Test structured logging includes correlation IDs
+      </idea>
+    </ideas>
+  </tests>
+</story-context>

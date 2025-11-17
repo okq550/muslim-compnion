@@ -1,0 +1,1111 @@
+openapi: 3.0.3
+info:
+  title: Muslim Companion API
+  version: 1.0.0
+  description: RESTful API for Quran reading, recitation, translation, tafseer, and
+    bookmarks
+paths:
+  /api/auth-token/:
+    post:
+      operationId: api_auth_token_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AuthTokenRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AuthTokenRequest'
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthTokenRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+          description: ''
+  /api/meta/:
+    get:
+      operationId: project_metadata
+      description: "\n    Public endpoint for retrieving project metadata and API
+        information.\n\n    **Returns:**\n    - Project name and version\n    - API
+        version\n    - Environment (production/staging/development)\n    - Build timestamp\n
+        \   - Documentation URL\n\n    **Caching:** Response is cached in Redis for
+        24 hours for performance.\n\n    **Access:** Public endpoint (no authentication
+        required)\n    "
+      summary: Project Metadata and API Discovery
+      tags:
+      - "\U0001F310 Public"
+      - System Metadata
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+  /api/users/:
+    get:
+      operationId: api_users_list
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/{username}/:
+    get:
+      operationId: api_users_retrieve
+      parameters:
+      - in: path
+        name: username
+        schema:
+          type: string
+          title: اسم المستخدم
+          description: مطلوب. 150 رمزاً أو أقل، مكونة من حروف وأرقام و @/./+/-/_ فقط
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    put:
+      operationId: api_users_update
+      parameters:
+      - in: path
+        name: username
+        schema:
+          type: string
+          title: اسم المستخدم
+          description: مطلوب. 150 رمزاً أو أقل، مكونة من حروف وأرقام و @/./+/-/_ فقط
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: api_users_partial_update
+      parameters:
+      - in: path
+        name: username
+        schema:
+          type: string
+          title: اسم المستخدم
+          description: مطلوب. 150 رمزاً أو أقل، مكونة من حروف وأرقام و @/./+/-/_ فقط
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/me/:
+    get:
+      operationId: api_users_me_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/analytics/consent/:
+    post:
+      operationId: analytics_consent
+      description: Enable or disable analytics tracking for the authenticated user.
+      summary: Update Analytics Consent
+      tags:
+      - "\U0001F510 User"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalyticsConsentRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AnalyticsConsentRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AnalyticsConsentRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Consent Updated Successfully
+        '400':
+          description: Validation Error
+  /api/users/analytics/delete-my-data/:
+    delete:
+      operationId: delete_my_analytics_data
+      description: Delete all analytics data for the authenticated user (GDPR Right
+        to Erasure).
+      summary: Delete My Analytics Data
+      tags:
+      - "\U0001F510 User"
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Analytics Data Deleted
+        '500':
+          description: Internal Server Error
+  /api/v1/analytics/error-rates/:
+    get:
+      operationId: error_rates
+      description: |-
+        ⚠️ **Admin Only** - Requires staff privileges (is_staff=True)
+
+        Retrieve error counts by endpoint (admin-only).
+      summary: Get Error Rates
+      tags:
+      - "\U0001F464 Admin"
+      - System Analytics
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Error Rates
+        '500':
+          description: Internal Server Error
+  /api/v1/analytics/popular-features/:
+    get:
+      operationId: popular_features
+      description: Retrieve top 10 features by event count (admin-only).
+      summary: Get Popular Features
+      tags:
+      - "\U0001F464 Admin"
+      - System Analytics
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Popular Features
+        '500':
+          description: Internal Server Error
+  /api/v1/analytics/popular-surahs/:
+    get:
+      operationId: popular_surahs
+      description: Retrieve top 10 most viewed Surahs (admin-only).
+      summary: Get Popular Surahs
+      tags:
+      - "\U0001F464 Admin"
+      - System Analytics
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          description: Popular Surahs
+        '500':
+          description: Internal Server Error
+  /api/v1/auth/login/:
+    post:
+      operationId: user_login
+      description: Authenticate user and receive JWT access and refresh tokens.
+      summary: User Login
+      tags:
+      - "\U0001F310 Public"
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+            examples:
+              ValidLoginRequest:
+                value:
+                  email: user@example.com
+                  password: SecurePass123
+                summary: Valid Login Request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserLogin'
+              examples:
+                SuccessfulLoginResponse:
+                  value:
+                    tokens:
+                      access_token: eyJ0eXAiOiJKV1QiLCJhbGc...
+                      refresh_token: eyJ0eXAiOiJKV1QiLCJhbGc...
+                  summary: Successful Login Response
+          description: ''
+        '400':
+          description: Invalid Credentials
+        '423':
+          description: Account Locked
+        '429':
+          description: Rate Limit Exceeded
+  /api/v1/auth/logout/:
+    post:
+      operationId: user_logout
+      description: Blacklist refresh token to prevent further token refreshes.
+      summary: User Logout
+      tags:
+      - "\U0001F510 User"
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+                  description: JWT refresh token to blacklist
+              required:
+              - refresh_token
+            examples:
+              LogoutRequest:
+                value:
+                  refresh_token: eyJ0eXAiOiJKV1QiLCJhbGc...
+                summary: Logout Request
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - tokenAuth: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: Successful Logout
+        '400':
+          description: Invalid Token
+  /api/v1/auth/password/reset/:
+    post:
+      operationId: password_reset_request
+      description: Send password reset email if account exists. Always returns success
+        for security.
+      summary: Request Password Reset
+      tags:
+      - "\U0001F310 Public"
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
+            examples:
+              PasswordResetRequest:
+                value:
+                  email: user@example.com
+                summary: Password Reset Request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
+        required: true
+      responses:
+        '200':
+          description: Success Response
+        '429':
+          description: Rate Limit Exceeded
+  /api/v1/auth/password/reset/confirm/:
+    post:
+      operationId: password_reset_confirm
+      description: Validate reset token and set new password.
+      summary: Confirm Password Reset
+      tags:
+      - "\U0001F310 Public"
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+            examples:
+              PasswordResetConfirmation:
+                value:
+                  uid: MQ
+                  token: abc123-def456
+                  new_password: NewSecurePass123
+                  new_password_confirm: NewSecurePass123
+                summary: Password Reset Confirmation
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+        required: true
+      responses:
+        '200':
+          description: Success Response
+        '400':
+          description: Invalid Token or Password
+  /api/v1/auth/register/:
+    post:
+      operationId: user_register
+      description: Create a new user account with email and password. Returns JWT
+        tokens.
+      summary: User Registration
+      tags:
+      - "\U0001F310 Public"
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+            examples:
+              ValidRegistrationRequest:
+                value:
+                  email: user@example.com
+                  password: SecurePass123
+                  password_confirm: SecurePass123
+                summary: Valid Registration Request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRegistration'
+              examples:
+                SuccessfulRegistrationResponse:
+                  value:
+                    user:
+                      id: 550e8400-e29b-41d4-a716-446655440000
+                      email: user@example.com
+                      username: user
+                    tokens:
+                      access_token: eyJ0eXAiOiJKV1QiLCJhbGc...
+                      refresh_token: eyJ0eXAiOiJKV1QiLCJhbGc...
+                  summary: Successful Registration Response
+          description: ''
+        '400':
+          description: Validation Error
+  /api/v1/auth/token/refresh/:
+    post:
+      operationId: token_refresh
+      description: Exchange a valid refresh token for a new access token. The refresh
+        token must be valid and not blacklisted. Supports both OAuth 2.0 standard
+        'refresh_token' parameter and SimpleJWT 'refresh' parameter. Rate limited
+        to 5 requests per minute.
+      summary: Refresh Access Token
+      tags:
+      - "\U0001F510 User"
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequestRequest'
+            examples:
+              ValidRefreshRequest:
+                value:
+                  refresh_token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+                summary: Valid Token Refresh Request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefreshResponse'
+              examples:
+                SuccessfulRefreshResponse:
+                  value:
+                    access_token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+                    refresh_token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+                  summary: Successful Token Refresh Response
+          description: ''
+        '400':
+          description: Invalid Token
+        '401':
+          description: Token Blacklisted
+        '429':
+          description: Rate Limit Exceeded
+  /api/v1/legal/privacy-policy/:
+    get:
+      operationId: privacy_policy
+      description: Retrieve the latest active privacy policy (public endpoint).
+      summary: Get Privacy Policy
+      tags:
+      - "\U0001F310 Public"
+      - Legal & Privacy
+      responses:
+        '200':
+          description: Privacy Policy
+        '500':
+          description: Internal Server Error
+  /api/v1/users/profile/:
+    get:
+      operationId: users_profile_retrieve
+      description: Get current authenticated user's profile information.
+      summary: Retrieve User Profile
+      tags:
+      - "\U0001F510 User"
+      - User Profile
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+    patch:
+      operationId: users_profile_partial_update
+      description: Update current authenticated user's profile (partial update).
+      summary: Update User Profile
+      tags:
+      - "\U0001F510 User"
+      - User Profile
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserProfileRequest'
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - tokenAuth: []
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+          description: ''
+  /health/cache:
+    get:
+      operationId: health_cache_check
+      description: "\n    Isolated Redis cache connectivity and performance check.\n\n
+        \   **Checks:**\n    - Redis connection availability\n    - Memory usage and
+        eviction policy\n    - Key operations (SET/GET)\n\n    **Performance:** <
+        50ms response time\n    "
+      summary: Redis Cache-Specific Health Check
+      tags:
+      - "\U0001F310 Public"
+      - Health & Monitoring
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+  /health/check:
+    get:
+      operationId: health_liveness_check
+      description: "\n    Kubernetes liveness probe endpoint for container orchestration.\n\n
+        \   **Purpose:** Checks if the server process is alive and accepting requests.\n\n
+        \   **Behavior:** Returns immediately with no external resource checks (database,
+        Redis, etc.).\n\n    **Use Cases:**\n    - Kubernetes liveness probe configuration\n
+        \   - Load balancer health checks\n    - Container restart decisions\n\n    **Performance:**
+        < 10ms response time (no I/O operations)\n    "
+      summary: Liveness Probe - Minimal Server Availability Check
+      tags:
+      - "\U0001F310 Public"
+      - Health & Monitoring
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+  /health/db:
+    get:
+      operationId: health_database_check
+      description: "\n    Isolated PostgreSQL database connectivity and performance
+        check.\n\n    **Checks:**\n    - Database connection availability\n    - Query
+        execution time\n    - Connection pool status\n\n    **Performance:** < 200ms
+        response time\n    "
+      summary: Database-Specific Health Check
+      tags:
+      - "\U0001F310 Public"
+      - Health & Monitoring
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+  /health/disk:
+    get:
+      operationId: health_disk_check
+      description: "\n    Isolated disk space availability check.\n\n    **Checks:**\n
+        \   - Available disk space percentage\n    - Free disk space in GB\n    -
+        Warning and critical thresholds\n\n    **Thresholds:**\n    - > 20% free:
+        OK\n    - < 20% free: Warning (low disk space)\n    - < 10% free: Critical
+        (503 error)\n\n    **Performance:** < 50ms response time\n    "
+      summary: Disk Space Health Check
+      tags:
+      - "\U0001F310 Public"
+      - Health & Monitoring
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+  /health/ready:
+    get:
+      operationId: health_readiness_check
+      description: "\n    Kubernetes readiness probe endpoint for production traffic
+        routing.\n\n    **Purpose:** Checks if the server is ready to handle production
+        traffic.\n\n    **Behavior:** Checks ALL critical resources (database, cache,
+        Celery, disk).\n\n    **Use Cases:**\n    - Kubernetes readiness probe configuration\n
+        \   - Production traffic routing decisions\n    - Detailed system health monitoring\n\n
+        \   **Performance:** < 1000ms total response time (includes all resource checks)\n
+        \   "
+      summary: Readiness Probe - Full Resource Health Check
+      tags:
+      - "\U0001F310 Public"
+      - Health & Monitoring
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+components:
+  schemas:
+    AnalyticsConsentRequest:
+      type: object
+      description: Serializer for analytics consent request.
+      properties:
+        consent_given:
+          type: boolean
+          description: User consent for analytics tracking (true/false)
+        consent_version:
+          type: string
+          minLength: 1
+          default: '1.0'
+          description: Privacy policy version user consented to
+      required:
+      - consent_given
+    AuthToken:
+      type: object
+      properties:
+        token:
+          type: string
+          readOnly: true
+          title: الرمز
+      required:
+      - token
+    AuthTokenRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+          minLength: 1
+          title: اسم المستخدم
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          title: كلمة المرور
+      required:
+      - password
+      - username
+    PasswordResetConfirmRequest:
+      type: object
+      description: |-
+        Serializer for password reset confirmation.
+
+        Validates the password reset token and sets the new password.
+        Requires the same password strength requirements as registration.
+      properties:
+        token:
+          type: string
+          minLength: 1
+          description: Password reset token received via email
+        uid:
+          type: string
+          minLength: 1
+          description: User identifier (base64-encoded) received via email
+        new_password:
+          type: string
+          writeOnly: true
+          minLength: 8
+          description: New password (min 8 characters, must include uppercase, lowercase,
+            and digit)
+        new_password_confirm:
+          type: string
+          writeOnly: true
+          minLength: 1
+          description: New password confirmation (must match new_password)
+      required:
+      - new_password
+      - new_password_confirm
+      - token
+      - uid
+    PasswordResetRequestRequest:
+      type: object
+      description: |-
+        Serializer for password reset request.
+
+        Initiates password reset flow by sending reset email to the user.
+        For security, the response does not reveal whether the email exists in the system.
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          description: Email address associated with the account (reset instructions
+            will be sent here)
+      required:
+      - email
+    PatchedUserProfileRequest:
+      type: object
+      description: |-
+        Serializer for user profile including analytics preferences.
+
+        Allows users to manage their profile settings including:
+        - Preferred language (Arabic or English)
+        - Timezone for localized date/time display
+        - Analytics consent (opt-in/opt-out for usage tracking)
+      properties:
+        preferred_language:
+          type: string
+          minLength: 1
+          description: Preferred language for API responses (ar for Arabic, en for
+            English)
+          maxLength: 10
+        timezone:
+          type: string
+          minLength: 1
+          description: User's timezone for localized date/time display (e.g., 'UTC',
+            'Asia/Riyadh')
+          maxLength: 50
+        is_analytics_enabled:
+          type: boolean
+          description: User consent for usage analytics tracking (true to opt-in,
+            false to opt-out)
+    PatchedUserRequest:
+      type: object
+      description: |-
+        Serializer for user data.
+
+        Provides basic user information including username, name, and profile URL.
+        Used for user profile retrieval and updates.
+      properties:
+        username:
+          type: string
+          minLength: 1
+          title: اسم المستخدم
+          description: مطلوب. 150 رمزاً أو أقل، مكونة من حروف وأرقام و @/./+/-/_ فقط
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        name:
+          type: string
+          title: Name of User
+          maxLength: 255
+    TokenRefreshRequestRequest:
+      type: object
+      description: |-
+        Serializer for token refresh request (OAuth 2.0 compliant).
+
+        Accepts refresh token and returns a new access token.
+        Supports both 'refresh_token' (OAuth 2.0 standard) and 'refresh' (SimpleJWT default).
+      properties:
+        refresh_token:
+          type: string
+          writeOnly: true
+          minLength: 1
+          description: JWT refresh token (valid for 14 days)
+      required:
+      - refresh_token
+    TokenRefreshResponse:
+      type: object
+      description: |-
+        Serializer for token refresh response (OAuth 2.0 compliant).
+
+        Returns new access token and optionally a new refresh token.
+      properties:
+        access_token:
+          type: string
+          readOnly: true
+          description: New JWT access token (valid for 30 minutes)
+        refresh_token:
+          type: string
+          readOnly: true
+          description: New JWT refresh token (only if rotation is enabled)
+      required:
+      - access_token
+      - refresh_token
+    User:
+      type: object
+      description: |-
+        Serializer for user data.
+
+        Provides basic user information including username, name, and profile URL.
+        Used for user profile retrieval and updates.
+      properties:
+        username:
+          type: string
+          title: اسم المستخدم
+          description: مطلوب. 150 رمزاً أو أقل، مكونة من حروف وأرقام و @/./+/-/_ فقط
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        name:
+          type: string
+          title: Name of User
+          maxLength: 255
+        url:
+          type: string
+          format: uri
+          readOnly: true
+          description: API endpoint URL for this user's profile
+      required:
+      - url
+      - username
+    UserLogin:
+      type: object
+      description: |-
+        Serializer for user login with email and password.
+
+        Authenticates user credentials and returns JWT access and refresh tokens.
+        Account lockout policy: 10 failed attempts result in a 30-minute lockout.
+
+        Returns:
+        - access_token: JWT access token (valid for 30 minutes)
+        - refresh_token: JWT refresh token (valid for 14 days)
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address (used for authentication)
+      required:
+      - email
+    UserLoginRequest:
+      type: object
+      description: |-
+        Serializer for user login with email and password.
+
+        Authenticates user credentials and returns JWT access and refresh tokens.
+        Account lockout policy: 10 failed attempts result in a 30-minute lockout.
+
+        Returns:
+        - access_token: JWT access token (valid for 30 minutes)
+        - refresh_token: JWT refresh token (valid for 14 days)
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          description: User's email address (used for authentication)
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          description: User's password
+      required:
+      - email
+      - password
+    UserProfile:
+      type: object
+      description: |-
+        Serializer for user profile including analytics preferences.
+
+        Allows users to manage their profile settings including:
+        - Preferred language (Arabic or English)
+        - Timezone for localized date/time display
+        - Analytics consent (opt-in/opt-out for usage tracking)
+      properties:
+        preferred_language:
+          type: string
+          description: Preferred language for API responses (ar for Arabic, en for
+            English)
+          maxLength: 10
+        timezone:
+          type: string
+          description: User's timezone for localized date/time display (e.g., 'UTC',
+            'Asia/Riyadh')
+          maxLength: 50
+        is_analytics_enabled:
+          type: boolean
+          description: User consent for usage analytics tracking (true to opt-in,
+            false to opt-out)
+    UserRegistration:
+      type: object
+      description: |-
+        Serializer for user registration with email and password.
+
+        Validates email uniqueness and password strength requirements:
+        - Minimum 8 characters
+        - At least one uppercase letter
+        - At least one lowercase letter
+        - At least one digit
+
+        Returns JWT access and refresh tokens upon successful registration.
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address (used for authentication and notifications)
+      required:
+      - email
+    UserRegistrationRequest:
+      type: object
+      description: |-
+        Serializer for user registration with email and password.
+
+        Validates email uniqueness and password strength requirements:
+        - Minimum 8 characters
+        - At least one uppercase letter
+        - At least one lowercase letter
+        - At least one digit
+
+        Returns JWT access and refresh tokens upon successful registration.
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          description: User's email address (used for authentication and notifications)
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+          description: User password (min 8 characters, must include uppercase, lowercase,
+            and digit)
+        password_confirm:
+          type: string
+          writeOnly: true
+          minLength: 1
+          description: Password confirmation (must match password)
+      required:
+      - email
+      - password
+      - password_confirm
+    UserRequest:
+      type: object
+      description: |-
+        Serializer for user data.
+
+        Provides basic user information including username, name, and profile URL.
+        Used for user profile retrieval and updates.
+      properties:
+        username:
+          type: string
+          minLength: 1
+          title: اسم المستخدم
+          description: مطلوب. 150 رمزاً أو أقل، مكونة من حروف وأرقام و @/./+/-/_ فقط
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        name:
+          type: string
+          title: Name of User
+          maxLength: 255
+      required:
+      - username
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Token-based authentication with required prefix "Token"
+tags:
+- name: "\U0001F310 Public"
+  description: '**Public APIs** - No authentication required. Accessible to all users,
+    monitoring systems, and anonymous clients.'
+- name: "\U0001F510 User"
+  description: '**User APIs** - Requires valid JWT token. User-facing features for
+    authenticated app users (non-admin).'
+- name: "\U0001F464 Admin"
+  description: '**Admin APIs** - Requires JWT token with staff privileges (is_staff=True).
+    System management and administrative functions.'
+- name: Health & Monitoring
+  description: System health checks and status monitoring endpoints for operations
+    teams and monitoring systems.
+- name: System Metadata
+  description: API version, environment information, and system metadata endpoints.
+- name: Authentication
+  description: User authentication and authorization endpoints (login, register, password
+    reset, token management).
+- name: Legal & Privacy
+  description: Privacy policy, terms of service, and legal documentation endpoints.
+- name: User Profile
+  description: User profile management endpoints for authenticated users.
+- name: Analytics & Insights
+  description: User analytics consent, personal data management, and usage insights.
+- name: System Analytics
+  description: Admin endpoints for system-wide analytics, error tracking, and performance
+    monitoring.

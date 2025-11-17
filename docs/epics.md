@@ -1125,22 +1125,123 @@ The backend APIs implemented in Epic 1 require comprehensive documentation to en
 **I want to** enhanced health check endpoints and project metadata API
 **So that** I can better monitor application health and retrieve project information programmatically
 
+### US-API-010: Implement Domain-Driven API Tagging with Access Level Indicators
+
+**As a** API consumer and developer
+**I want to** have clear visual indicators and domain-based grouping for API endpoints with access level labels
+**So that** I can easily identify which APIs are public, authenticated, or admin-only and find endpoints by business domain
+
 #### User Story Details:
 
 **Epic:** Muslim Companion - First Release
 **Module:** Infrastructure / Cross-Cutting
-**Priority:** Medium (Infrastructure Enhancement)
-**Functional Requirements:** FR-041 (Monitoring & Operations)
+**Priority:** Medium (API Documentation Enhancement)
+**Functional Requirements:** FR-041 (Documentation & Support)
 **Dependencies:**
 
-- US-API-007 (Logging and Monitoring - health check foundation)
-- US-API-008 (API Documentation - for documenting new endpoints)
+- US-API-008 (API Documentation - OpenAPI foundation)
+- US-API-009 (Health checks and metadata endpoints)
 
 #### Description:
 
-Enhance the existing health check endpoint (`/health/`) to provide more detailed component status information and add a new project metadata endpoint (`/api/meta/`) that returns project name, version, and environment information. This improves operational visibility and enables better monitoring and API discovery.
+The current API documentation lacks clear visual indicators for access control levels and domain-based organization. API consumers cannot easily identify which endpoints are publicly accessible, require authentication, or are admin-only. Additionally, endpoints are not grouped by business domain (Quran, Recitation, Translation, etc.), making API discovery difficult.
+
+This story implements a mixed icon + text tagging strategy that provides both visual clarity (emoji icons) and professional labels for access levels (Public, Authenticated, Admin) combined with domain-based grouping (Quran Content, Recitation, Bookmarks, etc.). This enhances API documentation usability and aligns with the 7-epic structure of the Muslim Companion project.
 
 #### Business Rules:
+
+1. **Dual-Tag System:**
+   - Every endpoint must have TWO tags: Access Level tag + Domain tag
+   - Access level tag always appears first
+   - Domain tag reflects business domain alignment
+
+2. **Access Level Tags (Required):**
+   - `🌐 Public` - No authentication required
+   - `🔐 Authenticated` - Requires valid JWT token (regular users)
+   - `👤 Admin` - Requires JWT token + staff privileges (is_staff=True)
+
+3. **Domain Tags (Required):**
+   - Authentication - Login, registration, password management
+   - Quran Content - Text retrieval, search, verses
+   - Recitation - Audio playback, reciters
+   - Translation - Multi-language translations
+   - Tafseer - Quranic interpretations
+   - Bookmarks - User bookmarks and favorites
+   - Offline Content - Download management
+   - Analytics & Insights - Usage tracking, metrics
+   - Legal & Privacy - Privacy policy, terms
+   - Health & Monitoring - System health checks
+   - System Metadata - Project version, environment
+
+4. **OpenAPI Schema Requirements:**
+   - Public endpoints must have `auth=[]` in schema
+   - Admin endpoints must have description banner: "⚠️ **Admin Only**"
+   - Tag descriptions must explain access requirements
+   - Security schemes must distinguish regular vs admin JWT usage
+
+#### Acceptance Criteria:
+
+✅ All existing endpoints re-tagged with dual-tag system (access + domain)
+✅ `SPECTACULAR_SETTINGS` updated with 11 domain tag definitions and 3 access level tag descriptions
+✅ Public endpoints (`🌐 Public`) have `auth=[]` in OpenAPI schema
+✅ Admin endpoints (`👤 Admin`) have permission checks and warning banners in descriptions
+✅ Swagger UI displays endpoints grouped by tags with filtering enabled
+✅ Tag descriptions visible in API documentation explain access requirements
+✅ All health check endpoints tagged as `🌐 Public` + `Health & Monitoring`
+✅ All analytics endpoints correctly tagged (user vs admin access levels)
+✅ Authentication endpoints have appropriate public vs authenticated tags
+✅ Documentation generated successfully with no schema errors
+✅ Future-ready: Tag structure supports upcoming Epics 2-7 domains
+
+#### Out of Scope:
+
+- Implementing role-based access control (RBAC) beyond is_staff check
+- Custom permission classes for fine-grained admin roles
+- API versioning strategy
+- Deprecation policies for future API changes
+- Rate limiting configuration per tag group
+
+#### Definition of Done:
+
+- All acceptance criteria tested and passing
+- All 18+ existing endpoints re-tagged correctly
+- `SPECTACULAR_SETTINGS` configuration updated and validated
+- Swagger UI displays tags correctly with descriptions
+- No OpenAPI schema validation errors
+- Admin endpoints have proper permission classes (`IsAdminUser`)
+- Public endpoints have proper permission classes (`AllowAny`)
+- Code reviewed and approved
+- Merged to main branch
+- Ready for Epic 2 implementation with consistent tagging pattern
+
+#### Test Data Requirements:
+
+- Sample public endpoint requests (no auth)
+- Sample authenticated endpoint requests (valid JWT)
+- Sample admin endpoint requests (JWT with is_staff=True)
+- Sample unauthorized access attempts (403 responses)
+
+#### Notes for Development Team:
+
+- Update all `@extend_schema` decorators with new tag structure
+- Add tag definitions to `config/settings/base.py` SPECTACULAR_SETTINGS
+- Enable tag filtering in Swagger UI settings
+- Verify permission classes match access level tags
+- Add `auth=[]` to all public endpoint schemas
+- Use consistent emoji icons: 🌐 (Public), 🔐 (Authenticated), 👤 (Admin)
+- Test Swagger UI rendering after changes
+- Document tagging pattern for future developers (Epic 2-7)
+- Consider creating a tagging helper/decorator for consistency
+
+## EPIC 2: Quran Text & Content Management
+
+###US-QT-001: Retrieve Quran Text by Surah
+
+**As a** Quran app user
+**I want to** view the complete text of any Surah in Othmani script
+**So that** I can read the Quran in its authentic Arabic form
+
+#### User Story Details:
 
 1.  **Health Check Enhancements:**
 

@@ -32,7 +32,7 @@ so that **we have a production-ready foundation with best practices and essentia
 - [x] **Task 1**: Initialize Cookiecutter Django Project (AC: #1, #2, #3)
   - [x] Ensure Python 3.14 installed locally
   - [x] Run `cookiecutter https://github.com/cookiecutter/cookiecutter-django` with specified prompts:
-    - project_name: "muslim-companion"
+    - project_name: "muslim_companion"
     - project_slug: "muslim_companion"
     - description: "Muslim Companion API for Islamic Spiritual Companion App"
     - use_docker: y

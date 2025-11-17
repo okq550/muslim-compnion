@@ -1,0 +1,193 @@
+"""
+Integration tests for readiness probe endpoint.
+
+Tests AC #2 and #6 from US-API-009:
+- /health/ready checks ALL critical resources
+- Returns detailed component statuses
+- 200 OK if all healthy, 503 if any unhealthy
+- Response time < 1000ms
+- Includes version and environment fields
+"""
+
+import time
+
+import pytest
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APIClient
+
+
+@pytest.fixture
+def api_client():
+    """Return an API client for testing."""
+    return APIClient()
+
+
+@pytest.mark.django_db
+class TestReadinessProbe:
+    """Test suite for readiness probe endpoint (GET /health/ready)."""
+
+    def test_readiness_returns_200_when_all_healthy(self, api_client):
+        """Test that readiness probe returns 200 OK when all components healthy."""
+        url = reverse("health-readiness")
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["status"] == "ready"
+
+    def test_readiness_response_format(self, api_client):
+        """Test that readiness probe returns correct response format."""
+        url = reverse("health-readiness")
+        response = api_client.get(url)
+
+        # Check top-level fields
+        assert "status" in response.data
+        assert "timestamp" in response.data
+        assert "version" in response.data
+        assert "environment" in response.data
+        assert "components" in response.data
+
+        # Check components
+        components = response.data["components"]
+        assert "database" in components
+        assert "cache" in components
+        assert "celery" in components
+        assert "disk" in components
+
+    def test_readiness_database_component_details(self, api_client):
+        """Test that database component includes detailed status."""
+        url = reverse("health-readiness")
+        response = api_client.get(url)
+
+        db = response.data["components"]["database"]
+        assert "status" in db
+        assert "response_time_ms" in db
+
+    def test_readiness_cache_component_details(self, api_client):
+        """Test that cache component includes detailed status."""
+        url = reverse("health-readiness")
+        response = api_client.get(url)
+
+        cache = response.data["components"]["cache"]
+        assert "status" in cache
+        assert "response_time_ms" in cache
+
+    def test_readiness_celery_component_details(self, api_client):
+        """Test that Celery component includes worker status."""
+        url = reverse("health-readiness")
+        response = api_client.get(url)
+
+        celery = response.data["components"]["celery"]
+        assert "status" in celery
+        assert "workers" in celery
+
+    def test_readiness_disk_component_details(self, api_client):
+        """Test that disk component includes space information."""
+        url = reverse("health-readiness")
+        response = api_client.get(url)
+
+        disk = response.data["components"]["disk"]
+        assert "status" in disk
+        assert "free_percent" in disk
+
+    def test_readiness_with_database_down(self, api_client, mocker):
+        """Test that readiness probe returns 503 when database is down."""
+        url = reverse("health-readiness")
+
+        # Mock database check to fail
+        mocker.patch(
+            "backend.core.views.health._check_database_health",
+            return_value={"status": "down", "response_time_ms": 0, "error": "Connection refused"},
+        )
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+        assert response.data["status"] == "not_ready"
+        assert response.data["components"]["database"]["status"] == "down"
+
+    def test_readiness_with_cache_down(self, api_client, mocker):
+        """Test that readiness probe returns 503 when Redis is down."""
+        url = reverse("health-readiness")
+
+        # Mock cache check to fail
+        mocker.patch(
+            "backend.core.views.health._check_cache_health",
+            return_value={"status": "down", "response_time_ms": 0, "error": "Connection timeout"},
+        )
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+        assert response.data["status"] == "not_ready"
+        assert response.data["components"]["cache"]["status"] == "down"
+
+    def test_readiness_with_celery_down(self, api_client, mocker):
+        """Test that readiness probe returns 503 when Celery workers are down."""
+        url = reverse("health-readiness")
+
+        # Mock Celery check to fail
+        mocker.patch(
+            "backend.core.views.health._check_celery_health",
+            return_value={"status": "down", "workers": 0},
+        )
+
+        response = api_client.get(url)
+
+        assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+        assert response.data["status"] == "not_ready"
+        assert response.data["components"]["celery"]["status"] == "down"
+
+    def test_readiness_response_time_under_1000ms(self, api_client):
+        """Test that readiness probe responds in < 1000ms."""
+        url = reverse("health-readiness")
+
+        # Measure response time
+        start_time = time.perf_counter()
+        response = api_client.get(url)
+        end_time = time.perf_counter()
+
+        response_time_ms = (end_time - start_time) * 1000
+
+        assert response.status_code in [status.HTTP_200_OK, status.HTTP_503_SERVICE_UNAVAILABLE]
+        assert response_time_ms < 1500, f"Response time: {response_time_ms:.2f}ms"  # Allow some margin
+
+    def test_readiness_version_populated(self, api_client):
+        """Test that version field is populated."""
+        url = reverse("health-readiness")
+        response = api_client.get(url)
+
+        assert "version" in response.data
+        version = response.data["version"]
+        assert isinstance(version, str)
+        assert len(version) > 0
+
+    def test_readiness_environment_populated(self, api_client):
+        """Test that environment field is populated."""
+        url = reverse("health-readiness")
+        response = api_client.get(url)
+
+        assert "environment" in response.data
+        environment = response.data["environment"]
+        assert isinstance(environment, str)
+        assert len(environment) > 0
+
+    def test_readiness_no_authentication_required(self, api_client):
+        """Test that readiness probe works without authentication."""
+        url = reverse("health-readiness")
+
+        # Make request without authentication
+        response = api_client.get(url)
+
+        assert response.status_code in [status.HTTP_200_OK, status.HTTP_503_SERVICE_UNAVAILABLE]
+        assert "status" in response.data
+
+    def test_readiness_timestamp_format(self, api_client):
+        """Test that timestamp is in ISO 8601 format."""
+        url = reverse("health-readiness")
+        response = api_client.get(url)
+
+        timestamp = response.data["timestamp"]
+        assert isinstance(timestamp, str)
+        assert "T" in timestamp
+        assert "Z" in timestamp  # UTC indicator

@@ -12,7 +12,9 @@ Would you like me to explain:
 
   Start All Services
 
-  cd muslim-companion
+  docker compose -f muslim_companion/docker-compose.local.yml up --build
+
+  cd muslim_companion
   docker compose -f docker-compose.local.yml up -d
 
   View Running Services
@@ -75,16 +77,16 @@ GENERAL ->
 
 SM ->
   *workflow-status
-  *create-story US-API-003
-  *story-context US-API-003
-  *validate-story-context US-API-003
-  *story-ready-for-dev US-API-003
+  *create-story US-API-010
+  *story-context US-API-010
+  *validate-story-context US-API-010
+  *story-ready-for-dev US-API-010
 
 DEV ->
   *workflow-status
-  *develop-story US-API-007
-  /bmad:bmm:workflows:code-review US-API-007
-  *story-done US-API-003
+  *develop-story US-API-010
+  /bmad:bmm:workflows:code-review US-API-010
+  *story-done US-API-010
 
 
 

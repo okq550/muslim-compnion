@@ -1,0 +1,464 @@
+# Story 1.10: Implement Domain-Driven API Tagging with Access Level Indicators
+
+Status: ready-for-dev
+
+## Story
+
+As an **API consumer and developer**,
+I want **clear visual indicators and domain-based grouping for API endpoints with access level labels**,
+so that **I can easily identify which APIs are public, authenticated, or admin-only and find endpoints by business domain**.
+
+## Background
+
+The current API documentation (implemented in US-API-008) lacks clear visual indicators for access control levels and audience-based organization. API consumers (especially frontend developers) cannot easily:
+- Identify which endpoints are publicly accessible vs require authentication
+- Distinguish between regular user endpoints and admin-only endpoints
+- Find all user-facing endpoints grouped together
+- Find all admin-only endpoints grouped together
+- Navigate domain-based grouping (Quran, Recitation, etc.)
+
+This story implements a three-tier grouping strategy that provides:
+1. **Tier 1 - Audience Grouping**: Public APIs → User APIs → Admin APIs
+2. **Tier 2 - Visual Indicators**: Emoji icons (🌐, 🔐, 👤) for quick identification
+3. **Tier 3 - Domain Sub-Grouping**: Business domains within each audience tier
+
+This creates a frontend-developer-friendly structure where:
+- **Public APIs**: Grouped together (health checks, metadata, public auth)
+- **User APIs**: All authenticated user endpoints grouped together (bookmarks, profile, analytics consent, etc.)
+- **Admin APIs**: All admin-only endpoints grouped together (user management, system analytics, content import)
+
+This enhances API documentation usability and establishes a consistent tagging pattern for future development (Epics 2-7).
+
+**Parent Epic**: EPIC 1 - Cross-Cutting / Infrastructure Stories
+**Priority**: P1 (Medium - API Documentation Enhancement)
+**Functional Requirement**: FR-041 (Documentation & Support)
+**Dependencies**:
+- US-API-008 (API Documentation - OpenAPI foundation)
+- US-API-009 (Health checks and metadata endpoints to be re-tagged)
+**Effort**: Small (2-3 hours)
+
+## Acceptance Criteria
+
+### Three-Tier Tag System Implementation (AC #1-3)
+
+1. **All Existing Endpoints Re-Tagged with Audience + Domain Tags**
+   - Every endpoint has exactly TWO tags: Audience tag + Domain tag
+   - Audience tag always appears first in tag array: `🌐 Public`, `🔐 User`, or `👤 Admin`
+   - Domain tag reflects business domain within that audience
+   - Format examples:
+     - Public: `tags=["🌐 Public", "Health & Monitoring"]`
+     - User: `tags=["🔐 User", "Bookmarks"]`
+     - Admin: `tags=["👤 Admin", "System Analytics"]`
+   - All 18+ existing endpoints updated
+
+2. **SPECTACULAR_SETTINGS Updated with Audience-Centric Tag Definitions**
+   - Add `"TAGS"` configuration with tag definitions grouped by audience:
+     - **3 Audience tags** (Tier 1):
+       - `🌐 Public` - No authentication, accessible to all
+       - `🔐 User` - Authenticated users, user-facing features
+       - `👤 Admin` - Admin-only, system management
+     - **Domain tags** (Tier 2) grouped by audience:
+       - Public Domains: Health & Monitoring, System Metadata, Authentication (public), Legal & Privacy
+       - User Domains: Authentication (user), Quran Content, Recitation, Translation, Tafseer, Bookmarks, Offline Content, Analytics & Insights (user)
+       - Admin Domains: User Management, Content Management, System Analytics, Administration
+   - Each tag has `name` and `description` fields
+   - Descriptions explain audience and domain purpose
+   - Enable tag filtering in Swagger UI: `"filter": True`
+   - Enable tag sorting: `"tagsSorter": "alpha"`
+
+3. **Public Endpoints Have auth=[] in OpenAPI Schema**
+   - All endpoints tagged with `🌐 Public` have `auth=[]` in `@extend_schema`
+   - This explicitly marks them as no authentication required
+   - Health check endpoints: /health/check, /health/ready, /health/db, /health/cache, /health/disk
+   - Metadata endpoint: /api/meta/
+   - Public auth endpoints: /api/v1/auth/register/, /api/v1/auth/login/, /api/v1/auth/password/reset/
+   - Legal endpoints: /api/v1/legal/privacy-policy/
+
+### Access Control Indicators (AC #4-6)
+
+4. **Admin Endpoints Have Permission Checks and Warning Banners**
+   - All endpoints tagged with `👤 Admin` use `permission_classes = [IsAdminUser]`
+   - Description includes banner: `"⚠️ **Admin Only** - Requires staff privileges (is_staff=True)"`
+   - Currently applies to: `/api/v1/analytics/error-rates/` endpoint
+   - Security scheme: `security=[{"jwtAuth": []}]` (same JWT, checked for is_staff)
+
+5. **Swagger UI Displays Endpoints Grouped by Tags**
+   - Tags appear in Swagger UI grouped by access level and domain
+   - Tag filtering enabled (filter box in UI)
+   - Tags sorted alphabetically
+   - Tag descriptions visible when expanded
+   - Endpoints collapsed under tag groups
+
+6. **Tag Descriptions Visible and Explain Audience/Access Requirements**
+   - Each tag in Swagger UI shows description on hover/expand
+   - Audience tag descriptions explain authentication and target user
+   - Domain tag descriptions explain business domain and intended use
+   - Examples:
+     - `🌐 Public`: "**Public APIs** - No authentication required. Accessible to all users, monitoring systems, and anonymous clients."
+     - `🔐 User`: "**User APIs** - Requires valid JWT token. User-facing features for authenticated app users (non-admin)."
+     - `👤 Admin`: "**Admin APIs** - Requires JWT token with staff privileges (is_staff=True). System management and administrative functions."
+
+### Endpoint-Specific Re-Tagging (AC #7-9)
+
+7. **All Health Check Endpoints Tagged Correctly**
+   - `/health/check` → `["🌐 Public", "Health & Monitoring"]`
+   - `/health/ready` → `["🌐 Public", "Health & Monitoring"]`
+   - `/health/db` → `["🌐 Public", "Health & Monitoring"]`
+   - `/health/cache` → `["🌐 Public", "Health & Monitoring"]`
+   - `/health/disk` → `["🌐 Public", "Health & Monitoring"]`
+   - `/api/v1/health/` (legacy) → `["🌐 Public", "Health & Monitoring"]`
+
+8. **All Analytics Endpoints Tagged by Audience (User vs Admin)**
+   - User analytics (personal data):
+     - `/api/v1/analytics/consent/` → `["🔐 User", "Analytics & Insights"]`
+     - `/api/v1/analytics/delete-my-data/` → `["🔐 User", "Analytics & Insights"]`
+     - `/api/v1/analytics/popular-features/` → `["🔐 User", "Analytics & Insights"]`
+     - `/api/v1/analytics/popular-surahs/` → `["🔐 User", "Analytics & Insights"]`
+   - Admin analytics (system-wide):
+     - `/api/v1/analytics/error-rates/` → `["👤 Admin", "System Analytics"]` + IsAdminUser permission
+
+9. **Authentication Endpoints Tagged by Audience**
+   - Public authentication (no auth required):
+     - `/api/v1/auth/register/` → `["🌐 Public", "Authentication"]`
+     - `/api/v1/auth/login/` → `["🌐 Public", "Authentication"]`
+     - `/api/v1/auth/password/reset/` → `["🌐 Public", "Authentication"]`
+     - `/api/v1/auth/password/reset/confirm/` → `["🌐 Public", "Authentication"]`
+   - User authentication (requires JWT):
+     - `/api/v1/auth/logout/` → `["🔐 User", "Authentication"]`
+     - `/api/v1/auth/token/refresh/` → `["🔐 User", "Authentication"]`
+     - `/api/v1/users/profile/` → `["🔐 User", "User Profile"]`
+
+### Documentation Quality (AC #10-11)
+
+10. **Documentation Generated Successfully with No Schema Errors**
+    - Run `python manage.py spectacular --file schema.yml --validate`
+    - No validation errors or warnings
+    - Schema generates successfully
+    - Swagger UI renders without errors at `/api/docs/`
+    - ReDoc renders without errors at `/api/redoc/`
+
+11. **Future-Ready: Tag Structure Supports Upcoming Epics 2-7**
+    - Domain tags defined for all 7 epics:
+      - Quran Content (Epic 2)
+      - Recitation (Epic 3)
+      - Translation (Epic 4)
+      - Tafseer (Epic 5)
+      - Bookmarks (Epic 6)
+      - Offline Content (Epic 7)
+    - Tag pattern documented for future developers
+    - Tagging examples provided in code comments
+
+## Tasks / Subtasks
+
+### Task 1: Update SPECTACULAR_SETTINGS Configuration (AC #2)
+
+- [x] Add `"TAGS"` array to `config/settings/base.py` SPECTACULAR_SETTINGS
+- [ ] Define 3 audience tags (Tier 1) with descriptions:
+  - [ ] `🌐 Public` - "**Public APIs** - No authentication required. Accessible to all users, monitoring systems, and anonymous clients."
+  - [ ] `🔐 User` - "**User APIs** - Requires valid JWT token. User-facing features for authenticated app users (non-admin)."
+  - [ ] `👤 Admin` - "**Admin APIs** - Requires JWT token with staff privileges (is_staff=True). System management and administrative functions."
+- [ ] Define domain tags (Tier 2) grouped by audience:
+  - [ ] **Public Domains**: Health & Monitoring, System Metadata, Authentication, Legal & Privacy
+  - [ ] **User Domains**: Authentication, User Profile, Quran Content, Recitation, Translation, Tafseer, Bookmarks, Offline Content, Analytics & Insights
+  - [ ] **Admin Domains**: User Management, Content Management, System Analytics, Administration
+- [ ] Update Swagger UI settings:
+  - [ ] Add `"filter": True` to enable tag filtering
+  - [ ] Add `"tagsSorter": "alpha"` to sort tags alphabetically
+- [ ] Update security scheme description to mention user vs admin JWT usage
+
+### Task 2: Re-Tag Health Check Endpoints (AC #3, #7)
+
+- [ ] Update `backend/core/views/main.py` - `health_check` function:
+  - [ ] Change `tags=["Health"]` to `tags=["🌐 Public", "Health & Monitoring"]`
+  - [ ] Add `auth=[]` to @extend_schema
+- [ ] Update `backend/core/views/health.py` - all 5 health check functions:
+  - [ ] `liveness_check`: `tags=["🌐 Public", "Health & Monitoring"]` + `auth=[]`
+  - [ ] `readiness_check`: `tags=["🌐 Public", "Health & Monitoring"]` + `auth=[]`
+  - [ ] `database_health_check`: `tags=["🌐 Public", "Health & Monitoring"]` + `auth=[]`
+  - [ ] `cache_health_check`: `tags=["🌐 Public", "Health & Monitoring"]` + `auth=[]`
+  - [ ] `disk_health_check`: `tags=["🌐 Public", "Health & Monitoring"]` + `auth=[]`
+
+### Task 3: Re-Tag Metadata Endpoint (AC #3)
+
+- [ ] Update `backend/core/views/main.py` - `project_metadata` function:
+  - [ ] Change `tags=["Metadata"]` to `tags=["🌐 Public", "System Metadata"]`
+  - [ ] Add `auth=[]` to @extend_schema
+
+### Task 4: Re-Tag Authentication Endpoints (AC #9)
+
+- [ ] Update `backend/users/api/views.py` - all auth views:
+  - [ ] Public authentication (no auth):
+    - [ ] `UserRegistrationView`: `tags=["🌐 Public", "Authentication"]` + `auth=[]`
+    - [ ] `UserLoginView`: `tags=["🌐 Public", "Authentication"]` + `auth=[]`
+    - [ ] `PasswordResetRequestView`: `tags=["🌐 Public", "Authentication"]` + `auth=[]`
+    - [ ] `PasswordResetConfirmView`: `tags=["🌐 Public", "Authentication"]` + `auth=[]`
+  - [ ] User authentication (requires JWT):
+    - [ ] `UserLogoutView`: `tags=["🔐 User", "Authentication"]`
+    - [ ] `ThrottledTokenRefreshView`: `tags=["🔐 User", "Authentication"]`
+    - [ ] `UserProfileViewSet`: `tags=["🔐 User", "User Profile"]`
+
+### Task 5: Re-Tag Analytics Endpoints by Audience (AC #4, #8)
+
+- [ ] Update `backend/analytics/api/views.py` - separate user vs admin analytics:
+  - [ ] User analytics endpoints (personal data):
+    - [ ] `AnalyticsConsentView`: `tags=["🔐 User", "Analytics & Insights"]`
+    - [ ] `DeleteMyAnalyticsDataView`: `tags=["🔐 User", "Analytics & Insights"]`
+    - [ ] `PopularFeaturesView`: `tags=["🔐 User", "Analytics & Insights"]`
+    - [ ] `PopularSurahsView`: `tags=["🔐 User", "Analytics & Insights"]`
+  - [ ] Admin analytics endpoints (system-wide):
+    - [ ] `ErrorRatesView`: `tags=["👤 Admin", "System Analytics"]`
+- [ ] Verify `ErrorRatesView` has `permission_classes = [IsAdminUser]`
+- [ ] Add admin warning to `ErrorRatesView` description:
+  - [ ] Add `"⚠️ **Admin Only** - Requires staff privileges (is_staff=True)"` to description
+
+### Task 6: Re-Tag Legal Endpoints (AC #3)
+
+- [ ] Update `backend/legal/api/views.py`:
+  - [ ] `PrivacyPolicyView`: `tags=["🌐 Public", "Legal & Privacy"]` + `auth=[]`
+
+### Task 7: Validate and Test Documentation (AC #10)
+
+- [ ] Run schema validation: `python manage.py spectacular --file schema.yml --validate`
+- [ ] Verify no validation errors or warnings
+- [ ] Access Swagger UI at `/api/docs/` and verify:
+  - [ ] All tags display correctly with icons and text
+  - [ ] Tag filtering works (search box present)
+  - [ ] Tag descriptions visible on expand
+  - [ ] Endpoints grouped under correct tags
+  - [ ] Public endpoints show "no authentication" indicator
+  - [ ] Admin endpoints show lock icon and warning
+- [ ] Access ReDoc at `/api/redoc/` and verify rendering
+- [ ] Test schema generation without errors
+
+### Task 8: Document Tagging Pattern (AC #11)
+
+- [ ] Add code comment template to one view file as example:
+  ```python
+  # Tagging Pattern for Muslim Companion API
+  # ========================================
+  # Three-Tier Tag System: Audience (Tier 1) + Domain (Tier 2)
+  # Every endpoint requires TWO tags: Audience tag + Domain tag
+  #
+  # TIER 1 - Audience Tags (ALWAYS FIRST):
+  #   🌐 Public - No auth required (add auth=[] to schema)
+  #   🔐 User - Authenticated users, user-facing features (IsAuthenticated)
+  #   👤 Admin - Admin-only, requires is_staff=True (IsAdminUser)
+  #
+  # TIER 2 - Domain Tags (grouped by audience):
+  #
+  #   Public Domains:
+  #     Health & Monitoring, System Metadata, Authentication, Legal & Privacy
+  #
+  #   User Domains (non-admin authenticated):
+  #     Authentication, User Profile, Quran Content, Recitation, Translation,
+  #     Tafseer, Bookmarks, Offline Content, Analytics & Insights
+  #
+  #   Admin Domains (admin-only):
+  #     User Management, Content Management, System Analytics, Administration
+  #
+  # Examples:
+  # @extend_schema(
+  #     tags=["🔐 User", "Bookmarks"],  # User-facing bookmark feature
+  #     summary="Create bookmark",
+  #     ...
+  # )
+  #
+  # @extend_schema(
+  #     tags=["👤 Admin", "System Analytics"],  # Admin-only analytics
+  #     summary="View system error rates",
+  #     description="⚠️ **Admin Only** - Requires staff privileges",
+  #     ...
+  # )
+  # class ErrorRatesView(APIView):
+  #     permission_classes = [IsAdminUser]
+  ```
+- [ ] Update development team notes in this story with final tagging pattern
+
+## Out of Scope
+
+- Implementing role-based access control (RBAC) beyond is_staff check
+- Custom permission classes for fine-grained admin roles (e.g., moderator, content_admin)
+- API versioning strategy (v1, v2 endpoints)
+- Deprecation policies for future API changes
+- Rate limiting configuration per tag group
+- Custom Swagger UI theme or branding
+
+## Definition of Done
+
+- [ ] All acceptance criteria tested and passing
+- [ ] All 18+ existing endpoints re-tagged correctly (audience + domain dual-tag system)
+- [ ] `SPECTACULAR_SETTINGS` configuration updated with 3 audience tags + 11 domain tags (14 total)
+- [ ] Swagger UI displays three-tier grouping: Public → User → Admin sections
+- [ ] Tag filtering works correctly in Swagger UI
+- [ ] No OpenAPI schema validation errors (`python manage.py spectacular --validate` passes)
+- [ ] Admin endpoints (e.g., `/api/v1/analytics/error-rates/`) have `IsAdminUser` permission and 👤 Admin tag
+- [ ] User endpoints (e.g., bookmarks, profile) have `IsAuthenticated` permission and 🔐 User tag
+- [ ] All public endpoints have `AllowAny` permission and `auth=[]` in schema with 🌐 Public tag
+- [ ] Tag descriptions visible and accurate in Swagger UI
+- [ ] Code comment template added documenting three-tier tagging pattern
+- [ ] Frontend developer can easily identify user-facing vs admin-only APIs
+- [ ] Code reviewed and approved
+- [ ] Merged to main branch
+- [ ] Ready for Epic 2 implementation with consistent tagging pattern established
+
+## Dev Notes
+
+### Architecture Alignment
+
+**Source**: `docs/architecture.md` - Section 8 (API Design & Documentation)
+
+This story enhances the API documentation structure established in US-API-008 by adding semantic organization and access control visibility.
+
+### Technical Context
+
+**From US-API-008** (API Documentation):
+- OpenAPI 3.0 schema generation with drf-spectacular
+- Swagger UI at `/api/docs/`
+- ReDoc at `/api/redoc/`
+- JWT authentication security scheme configured
+- `SPECTACULAR_SETTINGS` in `config/settings/base.py`
+
+**From US-API-009** (Health Checks):
+- 6 new health/metadata endpoints to be re-tagged
+- Public endpoints requiring `auth=[]`
+
+### Key Implementation Details
+
+1. **Tag Array Format**:
+   ```python
+   tags=["🌐 Public", "Health & Monitoring"]  # Audience first, domain second
+   tags=["🔐 User", "Bookmarks"]             # User-facing authenticated endpoints
+   tags=["👤 Admin", "System Analytics"]     # Admin-only endpoints
+   ```
+
+2. **Public Endpoint Pattern**:
+   ```python
+   @extend_schema(
+       tags=["🌐 Public", "Domain Name"],
+       auth=[],  # Explicitly no auth required
+       ...
+   )
+   @permission_classes([AllowAny])
+   ```
+
+3. **User Endpoint Pattern** (authenticated non-admin):
+   ```python
+   @extend_schema(
+       tags=["🔐 User", "Domain Name"],
+       description="User-facing feature for authenticated app users...",
+       security=[{"jwtAuth": []}],
+       ...
+   )
+   class SomeUserView(APIView):
+       permission_classes = [IsAuthenticated]
+   ```
+
+4. **Admin Endpoint Pattern**:
+   ```python
+   @extend_schema(
+       tags=["👤 Admin", "Domain Name"],
+       description="⚠️ **Admin Only** - Requires staff privileges...",
+       security=[{"jwtAuth": []}],
+       ...
+   )
+   class SomeAdminView(APIView):
+       permission_classes = [IsAdminUser]
+   ```
+
+5. **SPECTACULAR_SETTINGS Structure**:
+   ```python
+   "TAGS": [
+       {
+           "name": "🌐 Public",
+           "description": "**Public APIs** - No authentication required..."
+       },
+       ...
+   ]
+   ```
+
+### File Modifications Expected
+
+**Modified Files**:
+- `config/settings/base.py` - Add TAGS configuration
+- `backend/core/views/main.py` - Re-tag health_check and project_metadata
+- `backend/core/views/health.py` - Re-tag all 5 health check endpoints
+- `backend/users/api/views.py` - Re-tag all auth endpoints
+- `backend/analytics/api/views.py` - Re-tag all analytics endpoints, add admin warning
+- `backend/legal/api/views.py` - Re-tag privacy policy endpoint
+
+**No New Files**: This is a refactoring/enhancement story
+
+### Testing Strategy
+
+**Manual Testing**:
+- Access `/api/docs/` and verify tag grouping
+- Test tag filter functionality
+- Verify public endpoints accessible without auth
+- Verify admin endpoint requires staff user
+- Check tag descriptions display correctly
+
+**Validation Testing**:
+- Run `python manage.py spectacular --validate`
+- Verify schema generates without errors
+- Test Swagger UI rendering
+- Test ReDoc rendering
+
+### Dependencies
+
+**Django Packages**:
+- drf-spectacular (already installed from US-API-008)
+- Django REST Framework (already installed)
+
+**No Additional Packages Required**
+
+### Tag Reference Table
+
+| Audience Tier | Icon | Text | Use When | Permission Class |
+|--------------|------|------|----------|-----------------|
+| Public | 🌐 | Public | No auth required, accessible to all | AllowAny |
+| User | 🔐 | User | JWT required, user-facing features (non-admin) | IsAuthenticated |
+| Admin | 👤 | Admin | JWT + is_staff=True, system management | IsAdminUser |
+
+| Domain | Epic | Examples |
+|--------|------|----------|
+| Authentication | 1 | Login, register, password reset |
+| Quran Content | 2 | Surah, verses, search |
+| Recitation | 3 | Audio playback, reciters |
+| Translation | 4 | Translations in multiple languages |
+| Tafseer | 5 | Quranic interpretation |
+| Bookmarks | 6 | User bookmarks |
+| Offline Content | 7 | Downloads, sync |
+| Analytics & Insights | 1 | Usage tracking, metrics |
+| Legal & Privacy | 1 | Privacy policy, terms |
+| Health & Monitoring | 1 | Health checks |
+| System Metadata | 1 | API version, environment |
+
+## Change Log
+
+- 2025-11-17: Initial story created by Product Manager (John)
+- Status: backlog → awaiting development
+
+## Dev Agent Record
+
+### Context Reference
+
+- docs/stories/us-api-010-implement-domain-driven-api-tagging-with-access-level-indicators.context.xml
+
+### Completion Notes
+
+<!-- Developer will fill this in during/after implementation -->
+
+### Debug Log References
+
+<!-- Links to specific log entries, errors encountered, solutions applied -->
+
+### File List
+
+**New Files**:
+<!-- List files created (NEW) -->
+
+**Modified Files**:
+<!-- List files changed (MODIFIED) -->
+
+**Deleted Files**:
+<!-- List files removed (DELETED) -->

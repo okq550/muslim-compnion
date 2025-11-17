@@ -1,0 +1,179 @@
+<story-context id="bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1.10</storyId>
+    <title>Implement Domain-Driven API Tagging with Access Level Indicators</title>
+    <status>backlog</status>
+    <generatedAt>2025-11-17</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/us-api-010-implement-domain-driven-api-tagging-with-access-level-indicators.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>API consumer and developer</asA>
+    <iWant>clear visual indicators and domain-based grouping for API endpoints with access level labels</iWant>
+    <soThat>I can easily identify which APIs are public, authenticated, or admin-only and find endpoints by business domain</soThat>
+    <tasks>
+      <task n="1">Update SPECTACULAR_SETTINGS Configuration - Add TAGS array with 3 audience tags (Public/User/Admin) and 11 domain tags grouped by audience</task>
+      <task n="2">Re-Tag Health Check Endpoints - Update all 6 health endpoints with ["🌐 Public", "Health &amp; Monitoring"] tags and auth=[]</task>
+      <task n="3">Re-Tag Metadata Endpoint - Update project_metadata with ["🌐 Public", "System Metadata"] and auth=[]</task>
+      <task n="4">Re-Tag Authentication Endpoints - Separate public auth (register/login) vs user auth (logout/refresh) with appropriate audience tags</task>
+      <task n="5">Re-Tag Analytics Endpoints by Audience - Split user analytics (consent, delete, popular features) vs admin analytics (error rates)</task>
+      <task n="6">Re-Tag Legal Endpoints - Update privacy policy endpoint with Public tag</task>
+      <task n="7">Validate and Test Documentation - Run schema validation and verify Swagger UI tag grouping and filtering</task>
+      <task n="8">Document Tagging Pattern - Add code comment template showing three-tier tag system for future developers</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC1">All 18+ existing endpoints re-tagged with TWO tags: Audience tag (Public/User/Admin) first, Domain tag second</criterion>
+    <criterion id="AC2">SPECTACULAR_SETTINGS updated with 3 audience tags + 11 domain tags, each with name and description fields</criterion>
+    <criterion id="AC3">All Public endpoints have auth=[] in @extend_schema (health checks, metadata, public auth, legal)</criterion>
+    <criterion id="AC4">Admin endpoints have IsAdminUser permission and warning banner in description</criterion>
+    <criterion id="AC5">Swagger UI displays endpoints grouped by tags with filtering enabled and tags sorted alphabetically</criterion>
+    <criterion id="AC6">Tag descriptions visible in Swagger UI explaining audience and access requirements</criterion>
+    <criterion id="AC7">All 6 health check endpoints tagged as ["🌐 Public", "Health &amp; Monitoring"]</criterion>
+    <criterion id="AC8">Analytics endpoints split by audience - User (consent, delete, popular) vs Admin (error rates with IsAdminUser)</criterion>
+    <criterion id="AC9">Authentication endpoints split by audience - Public (register, login, password reset) vs User (logout, token refresh)</criterion>
+    <criterion id="AC10">Schema validation passes without errors (python manage.py spectacular --validate)</criterion>
+    <criterion id="AC11">Tag structure supports future Epics 2-7 with domain tags defined for all business domains</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>System Architecture Document</title>
+        <section>API Design &amp; Documentation</section>
+        <snippet>API documentation/OpenAPI specs must be maintained for all endpoints. Documentation updates required when modifying API interfaces.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-1.md</path>
+        <title>Epic 1 Technical Specification</title>
+        <section>Authentication Endpoints &amp; Error Response Format</section>
+        <snippet>Defines standard API endpoint patterns, error response format, and endpoint security requirements. All endpoints follow consistent structure.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/us-api-008-create-comprehensive-api-documentation.context.xml</path>
+        <title>US-API-008 Story Context (API Documentation Foundation)</title>
+        <section>OpenAPI Schema Generation</section>
+        <snippet>Implemented OpenAPI 3.0 schema with drf-spectacular, Swagger UI at /api/docs/, JWT authentication security scheme, SPECTACULAR_SETTINGS in config/settings/base.py</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/us-api-009-enhance-health-check-and-add-project-metadata-endpoint.context.xml</path>
+        <title>US-API-009 Story Context (Health Checks &amp; Metadata)</title>
+        <section>Granular Health Check Endpoints</section>
+        <snippet>Added 6 public health/metadata endpoints requiring auth=[] in OpenAPI schema: /health/check, /health/ready, /health/db, /health/cache, /health/disk, /api/meta/</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>muslim_companion/config/settings/base.py</path>
+        <kind>configuration</kind>
+        <symbol>SPECTACULAR_SETTINGS</symbol>
+        <lines>461-486</lines>
+        <reason>Needs TAGS array added with 3 audience tags + 11 domain tags. Currently has SWAGGER_UI_SETTINGS and security scheme configured.</reason>
+      </artifact>
+      <artifact>
+        <path>muslim_companion/backend/core/views/health.py</path>
+        <kind>view</kind>
+        <symbol>liveness_check, readiness_check, database_health_check, cache_health_check, disk_health_check</symbol>
+        <lines>70-569</lines>
+        <reason>5 health check endpoints currently tagged with ["Health"]. Need to update to ["🌐 Public", "Health &amp; Monitoring"] and add auth=[]</reason>
+      </artifact>
+      <artifact>
+        <path>muslim_companion/backend/core/views/main.py</path>
+        <kind>view</kind>
+        <symbol>health_check, project_metadata</symbol>
+        <lines>various</lines>
+        <reason>Legacy health check and new metadata endpoint need re-tagging with Public audience tag and appropriate domain tags</reason>
+      </artifact>
+      <artifact>
+        <path>muslim_companion/backend/users/api/views.py</path>
+        <kind>view</kind>
+        <symbol>UserRegistrationView, UserLoginView, UserLogoutView, PasswordResetRequestView, UserProfileViewSet</symbol>
+        <lines>various</lines>
+        <reason>Authentication endpoints need separation into Public (register/login/password reset) vs User (logout/token refresh/profile)</reason>
+      </artifact>
+      <artifact>
+        <path>muslim_companion/backend/analytics/api/views.py</path>
+        <kind>view</kind>
+        <symbol>AnalyticsConsentView, ErrorRatesView, PopularFeaturesView, PopularSurahsView</symbol>
+        <lines>various</lines>
+        <reason>Analytics endpoints need separation by audience: User analytics (consent, popular features) vs Admin analytics (error rates with IsAdminUser)</reason>
+      </artifact>
+      <artifact>
+        <path>muslim_companion/backend/legal/api/views.py</path>
+        <kind>view</kind>
+        <symbol>PrivacyPolicyView</symbol>
+        <lines>various</lines>
+        <reason>Legal endpoint needs Public tag with auth=[] for anonymous access</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <python>
+        <package name="django" version="5.2.8"/>
+        <package name="djangorestframework" version="3.16.1"/>
+        <package name="drf-spectacular" version="0.29.0"/>
+      </python>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint>All endpoints must have exactly TWO tags: Audience tag (first) + Domain tag (second)</constraint>
+    <constraint>Public endpoints MUST include auth=[] in @extend_schema to explicitly mark no authentication required</constraint>
+    <constraint>Admin endpoints MUST use permission_classes = [IsAdminUser] and include warning banner in description</constraint>
+    <constraint>Tag descriptions must explain both audience and access requirements clearly</constraint>
+    <constraint>Maintain existing DRF decorator patterns (@extend_schema, @api_view, @permission_classes)</constraint>
+    <constraint>OpenAPI schema must validate without errors using: python manage.py spectacular --validate</constraint>
+    <constraint>Tagging pattern must be documented in code comments for future Epic 2-7 development</constraint>
+  </constraints>
+  <interfaces>
+    <interface>
+      <name>@extend_schema decorator</name>
+      <kind>DRF Spectacular Decorator</kind>
+      <signature>@extend_schema(tags=["Audience", "Domain"], auth=[], summary="...", description="...")</signature>
+      <path>drf-spectacular package</path>
+      <usage>Applied to all API view functions and classes to generate OpenAPI schema with tags, auth requirements, and documentation</usage>
+    </interface>
+    <interface>
+      <name>SPECTACULAR_SETTINGS["TAGS"]</name>
+      <kind>OpenAPI Tag Configuration</kind>
+      <signature>TAGS = [{"name": "Tag Name", "description": "Tag description explaining audience and purpose"}]</signature>
+      <path>muslim_companion/config/settings/base.py</path>
+      <usage>Defines all available tags with descriptions for Swagger UI display and filtering</usage>
+    </interface>
+    <interface>
+      <name>permission_classes</name>
+      <kind>DRF Permission Decorator</kind>
+      <signature>@permission_classes([AllowAny | IsAuthenticated | IsAdminUser])</signature>
+      <path>rest_framework.permissions</path>
+      <usage>Controls access to API endpoints: AllowAny (Public), IsAuthenticated (User), IsAdminUser (Admin)</usage>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>
+      Testing framework: pytest with pytest-django plugin. Test classes use @pytest.mark.django_db decorator for database access.
+      Test structure: One test class per acceptance criterion with descriptive test method names (test_feature_behavior_expected_outcome).
+      Assertions use pytest's assert statements. API testing uses Django REST Framework test client with reverse() for URL resolution.
+      OpenAPI schema validation uses schema generation endpoint (reverse("api-schema")) and validates JSON structure.
+    </standards>
+    <locations>
+      <location>muslim_companion/backend/core/tests/test_api_documentation.py - Existing OpenAPI schema tests (US-API-008)</location>
+      <location>muslim_companion/backend/core/tests/ - Core infrastructure tests directory</location>
+      <location>muslim_companion/backend/users/tests/api/ - User/auth endpoint tests</location>
+      <location>muslim_companion/backend/analytics/tests/api/ - Analytics endpoint tests</location>
+    </locations>
+    <ideas>
+      <test criterion="AC1" priority="high">Validate all 18+ endpoints have exactly TWO tags in generated schema by parsing schema JSON and checking tags array length for each endpoint</test>
+      <test criterion="AC2" priority="high">Verify SPECTACULAR_SETTINGS["TAGS"] contains all 14 tag definitions (3 audience + 11 domain) with name and description fields</test>
+      <test criterion="AC3" priority="high">Validate Public endpoints have auth=[] in schema by checking security field is empty array for /health/*, /api/meta/, public auth endpoints</test>
+      <test criterion="AC4" priority="high">Verify ErrorRatesView has IsAdminUser permission and admin warning in schema description</test>
+      <test criterion="AC5" priority="medium">Test Swagger UI renders tags correctly by fetching /api/docs/ and checking for tag filter UI elements and tag grouping</test>
+      <test criterion="AC6" priority="medium">Verify tag descriptions present in schema tags section for all 14 tags</test>
+      <test criterion="AC7-9" priority="high">Verify specific endpoint tag assignments match requirements (health checks, analytics split, auth split)</test>
+      <test criterion="AC10" priority="critical">Run management command test for schema validation (manage.py spectacular --validate) ensuring no errors or warnings</test>
+      <test criterion="AC11" priority="low">Verify all Epic 2-7 domain tags defined in TAGS configuration for future use</test>
+    </ideas>
+  </tests>
+</story-context>

@@ -9,7 +9,7 @@
 
 ## Summary
 
-This review covers the comprehensive JWT authentication system implementation for the muslim-companion Quran API backend. The implementation includes user registration, login/logout, password reset, JWT token management with blacklisting, account lockout protection, and bilingual error localization (Arabic/English).
+This review covers the comprehensive JWT authentication system implementation for the muslim_companion Quran API backend. The implementation includes user registration, login/logout, password reset, JWT token management with blacklisting, account lockout protection, and bilingual error localization (Arabic/English).
 
 **Overall Assessment:** The implementation demonstrates strong security practices with comprehensive test coverage. The code is well-structured, follows Django best practices, and includes multiple layers of protection against common authentication vulnerabilities.
 

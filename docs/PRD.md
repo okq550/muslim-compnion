@@ -1183,4 +1183,4 @@ The 10 canonical Qira'at (recitation methods) each have 2 Riwayahs (transmission
 
 ---
 
-**Document Path:** `/Users/sam/code/src/github.com/okq550@gmail.com/Projects-Work/muslim-companion/docs/PRD.md`
+**Document Path:** `/Users/sam/code/src/github.com/okq550@gmail.com/Projects-Work/muslim_companion/docs/PRD.md`
