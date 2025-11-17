@@ -33,6 +33,36 @@ logger = logging.getLogger(__name__)
 
 
 # ============================================================================
+# HELPER FUNCTIONS
+# ============================================================================
+
+
+def _get_app_metadata() -> dict[str, str]:
+    """
+    Get application version and environment metadata.
+
+    Returns consistent version and environment information across all health endpoints.
+    Uses the same logic as the /api/meta/ endpoint for consistency.
+
+    Returns:
+        dict: Contains 'version' and 'environment' keys
+
+    Example:
+        {
+            "version": "0.1.0",
+            "environment": "local"
+        }
+    """
+    # Import here to avoid circular imports
+    from backend.core.views.main import _get_project_version
+
+    return {
+        "version": _get_project_version(),
+        "environment": getattr(settings, "ENVIRONMENT_NAME", "unknown"),
+    }
+
+
+# ============================================================================
 # LIVENESS PROBE - /health/check
 # ============================================================================
 
@@ -260,18 +290,15 @@ def readiness_check(request):
     components["disk"] = disk_check
     # Note: Disk is informational; doesn't affect overall readiness
 
-    # Get version and environment
-    from backend.core.views.main import _get_project_version
-
-    version = _get_project_version()
-    environment = getattr(settings, "ENVIRONMENT_NAME", "unknown")
+    # Get application metadata (version and environment)
+    app_metadata = _get_app_metadata()
 
     # Build response
     response_data = {
         "status": overall_status,
         "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
-        "version": version,
-        "environment": environment,
+        "version": app_metadata["version"],
+        "environment": app_metadata["environment"],
         "components": components,
     }
 
