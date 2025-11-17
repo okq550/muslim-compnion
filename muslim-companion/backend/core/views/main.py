@@ -362,7 +362,7 @@ def project_metadata(request):
             "name": "Muslim Companion API",
             "version": _get_project_version(),
             "api_version": "v1",
-            "environment": getattr(settings, "ENVIRONMENT", "unknown"),
+            "environment": getattr(settings, "ENVIRONMENT_NAME", "unknown"),
             "build_timestamp": os.environ.get("BUILD_TIMESTAMP", ""),
             "documentation_url": "/api/docs/",
         },
@@ -382,7 +382,7 @@ def _get_project_version() -> str:
     Get project version from pyproject.toml using importlib.metadata.
 
     Attempts to read version in this order:
-    1. importlib.metadata.version('muslim-companion')
+    1. importlib.metadata.version('muslim_companion')
     2. Environment variable APP_VERSION
     3. Fallback to 'unknown'
 
@@ -390,8 +390,8 @@ def _get_project_version() -> str:
         str: Project version string
     """
     try:
-        # Try to get version from installed package
-        return importlib.metadata.version("muslim-companion")
+        # Try to get version from installed package (package name uses underscores)
+        return importlib.metadata.version("muslim_companion")
     except importlib.metadata.PackageNotFoundError:
         pass
 

@@ -59,7 +59,7 @@ class CoreConfig(AppConfig):
                     "name": "Muslim Companion API",
                     "version": _get_project_version(),
                     "api_version": "v1",
-                    "environment": getattr(settings, "ENVIRONMENT", "unknown"),
+                    "environment": getattr(settings, "ENVIRONMENT_NAME", "unknown"),
                     "build_timestamp": os.environ.get("BUILD_TIMESTAMP", ""),
                     "documentation_url": "/api/docs/",
                 },
