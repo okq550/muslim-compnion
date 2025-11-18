@@ -65,7 +65,7 @@ if env("X", default=None):
     # https://anymail.readthedocs.io/en/stable/installation/#anymail-settings-reference
     # https://anymail.readthedocs.io/en/stable/esps/mailgun/
     ANYMAIL = {
-        "MAILGUN_API_KEY": env("X"),
+        "X": env("X"),
         "MAILGUN_SENDER_DOMAIN": env("MAILGUN_SENDER_DOMAIN"),
         "MAILGUN_API_URL": env("MAILGUN_API_URL", default="https://api.mailgun.net/v3"),
     }
