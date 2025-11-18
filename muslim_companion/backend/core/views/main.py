@@ -84,7 +84,7 @@ logger = logging.getLogger(__name__)
             },
         ),
     },
-    tags=["🌐 Public", "Health & Monitoring"],
+    tags=["Public", "Health & Monitoring"],
     auth=[],
 )
 @csrf_exempt
@@ -310,7 +310,7 @@ def _check_disk():
             },
         ),
     },
-    tags=["🌐 Public", "System Metadata"],
+    tags=["Public", "System Metadata"],
     auth=[],
 )
 @api_view(["GET"])

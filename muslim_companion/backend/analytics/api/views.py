@@ -62,7 +62,7 @@ class AnalyticsConsentView(APIView):
                 ],
             ),
         },
-        tags=["🔐 User"],
+        tags=["User"],
     )
     def post(self, request):
         """Handle analytics consent request."""
@@ -139,7 +139,7 @@ class DeleteMyAnalyticsDataView(APIView):
                 ],
             ),
         },
-        tags=["🔐 User"],
+        tags=["User"],
     )
     def delete(self, request):
         """Delete all analytics data for current user."""
@@ -222,7 +222,7 @@ class PopularFeaturesView(APIView):
                 ],
             ),
         },
-        tags=["👤 Admin", "System Analytics"],
+        tags=["Admin", "System Analytics"],
     )
     def get(self, request):
         """Get popular features by event count."""
@@ -291,7 +291,7 @@ class PopularSurahsView(APIView):
                 ],
             ),
         },
-        tags=["👤 Admin", "System Analytics"],
+        tags=["Admin", "System Analytics"],
     )
     def get(self, request):
         """Get most read Surahs."""
@@ -352,7 +352,7 @@ class ErrorRatesView(APIView):
                 ],
             ),
         },
-        tags=["👤 Admin", "System Analytics"],
+        tags=["Admin", "System Analytics"],
     )
     def get(self, request):
         """Get error rates by endpoint."""

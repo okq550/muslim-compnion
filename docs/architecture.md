@@ -2054,8 +2054,8 @@ docker-compose exec django python manage.py migrate
 docker-compose exec django python manage.py createsuperuser
 
 # Import initial data
+docker-compose exec django python manage.py import_quran_metadata --source docs/Data/quran-data.xml
 docker-compose exec django python manage.py import_quran_text --source docs/Data/quran-uthmani.xml
-docker-compose exec django python manage.py import_surah_metadata --source docs/Data/Suras-Order.csv
 
 # Initialize all 25 reciters from Tanzil.net
 docker-compose exec django python manage.py initialize_reciters
@@ -3077,7 +3077,7 @@ Based on PRD and epics updates documented in `docs/prd-epics-update-summary.md`,
    - Already implemented in Surah model (v1.1) with `revelation_order` field (1-114 chronological)
    - `revelation_note` field for documenting mixed revelation Surahs
    - Database index for chronological navigation
-   - Data source: `docs/Data/Suras-Order.csv`
+   - Data source: `docs/Data/quran-data.xml` (Tanzil Project metadata - includes revelation order, Surah names, verse counts, Ruku divisions)
    - Supports US-QT-001 revelation order filtering and sorting requirements
 
 6. **US-API-000 Cookiecutter Django Initialization:**
@@ -3198,8 +3198,8 @@ All changes from `docs/prd-epics-update-summary.md` are now reflected in archite
 - Added database index for revelation_order for chronological navigation
 - Updated all API endpoint examples to include revelation_order in Surah responses
 - Supports historical context feature from PRD "Product Magic" section
-- **Data Source:** `docs/Data/Suras-Order.csv` (authoritative revelation order data)
-- Added `import_surah_metadata` management command for CSV import
+- **Data Source:** `docs/Data/quran-data.xml` (Tanzil Project - comprehensive Surah metadata including revelation order, names, verse counts, Ruku divisions, Juz/Hizb boundaries)
+- Added `import_quran_metadata` management command for XML import (replaces CSV-based `import_surah_metadata`)
 
 **Example:** Surah Al-Fatiha (Mushaf order: 1, Revelation order: 5)
 **Mixed Revelation Example:** Al-Qalam (Mushaf: 68, Revelation: 2) - "Except 17-33 and 48-50, from Medina"
@@ -3268,11 +3268,24 @@ All changes from `docs/prd-epics-update-summary.md` are now reflected in archite
   - XML format with structured metadata
   - License: Creative Commons Attribution 3.0
 
-- **Revelation Order:** `docs/Data/Suras-Order.csv` (authoritative source)
-  - Contains chronological revelation order (1-114)
-  - Includes revelation type (Meccan/Medinan)
-  - Documents exceptions where Surahs have verses from both locations
-  - Example: Al-Qalam (68) - "Except 17-33 and 48-50, from Medina"
+- **Quran Metadata:** `docs/Data/quran-data.xml` (Tanzil Project - metadata v1.0)
+  - **Comprehensive Surah Data:**
+    - `index` - Surah number (1-114)
+    - `ayas` - Number of verses per Surah
+    - `start` - Starting verse position in full Quran
+    - `name` - Arabic name (e.g., الفاتحة)
+    - `tname` - Transliterated name (e.g., Al-Faatiha)
+    - `ename` - English name (e.g., The Opening)
+    - `type` - Revelation type (Meccan/Medinan)
+    - `order` - Chronological revelation order (1-114)
+    - `rukus` - Number of Ruku divisions per Surah
+  - **Juz (Part) Boundaries:** All 30 Juz with Surah/Aya start positions
+  - **Hizb Quarter Boundaries:** All 240 quarter divisions with Surah/Aya positions
+  - **Additional Metadata:** Manzils, Pages, Sajdas (prostration positions)
+  - License: Creative Commons Attribution 3.0
+  - Source: https://tanzil.info
+
+**Note:** The `quran-data.xml` replaces the previous `Suras-Order.csv` file, providing significantly richer metadata for all Surah attributes in a single authoritative source.
 
 **Audio Files (Tanzil.net):**
 - **Source:** https://tanzil.net/res/audio/
@@ -3324,44 +3337,92 @@ All changes from `docs/prd-epics-update-summary.md` are now reflected in archite
 9. `basfar` - Abdullah Basfar (contemporary)
 10. `shateri` - Abu Bakr Al-Shatri (clear pronunciation)
 
-**CSV Format:**
-```csv
-Order,Sura Name,Number,Type,Note
-1,Al-Alaq,96,Meccan,
-2,Al-Qalam,68,Meccan,Except 17-33 and 48-50, from Medina
-5,Al-Faatiha,1,Meccan,
-87,Al-Baqara,2,Medinan,Except 281 from Mina at the time of the Last Hajj
-...
+**XML Format (quran-data.xml):**
+```xml
+<quran type="metadata" version="1.0" copyright="(C) 2008-2009 Tanzil.info" license="cc-by">
+  <suras alias="chapters">
+    <sura index="1" ayas="7" start="0" name="الفاتحة" tname="Al-Faatiha"
+          ename="The Opening" type="Meccan" order="5" rukus="1" />
+    <sura index="2" ayas="286" start="7" name="البقرة" tname="Al-Baqara"
+          ename="The Cow" type="Medinan" order="87" rukus="40" />
+    <!-- ... 114 total Surahs -->
+  </suras>
+  <juzs alias="parts">
+    <juz index="1" sura="1" aya="1" />
+    <juz index="2" sura="2" aya="142" />
+    <!-- ... 30 total Juz boundaries -->
+  </juzs>
+  <hizbs alias="groups">
+    <quarter index="1" sura="1" aya="1" />
+    <!-- ... 240 total quarter boundaries -->
+  </hizbs>
+</quran>
 ```
 
-**Import Implementation - Surah Metadata:**
+**Import Implementation - Quran Metadata:**
 
 ```python
-# apps/quran/management/commands/import_surah_metadata.py
-import csv
+# apps/quran/management/commands/import_quran_metadata.py
+import xml.etree.ElementTree as ET
 from django.core.management.base import BaseCommand
-from apps.quran.models import Surah
+from apps.quran.models import Surah, Juz, HizbQuarter
 
 class Command(BaseCommand):
-    help = 'Import Surah metadata including revelation order from CSV'
+    help = 'Import Quran metadata from Tanzil quran-data.xml'
 
     def add_arguments(self, parser):
         parser.add_argument('--source', type=str, required=True)
 
     def handle(self, *args, **options):
-        with open(options['source'], 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f, delimiter='\t')
-            for row in reader:
-                surah_number = int(row['Number'])
-                Surah.objects.update_or_create(
-                    id=surah_number,
-                    defaults={
-                        'revelation_order': int(row['Order']),
-                        'revelation_type': row['Type'],
-                        'revelation_note': row['Note'].strip(),
-                    }
-                )
-        self.stdout.write(self.success('Successfully imported revelation order data'))
+        tree = ET.parse(options['source'])
+        root = tree.getroot()
+
+        # Import Surah metadata
+        suras_imported = 0
+        for sura in root.find('suras'):
+            Surah.objects.update_or_create(
+                id=int(sura.get('index')),
+                defaults={
+                    'name_arabic': sura.get('name'),
+                    'name_transliterated': sura.get('tname'),
+                    'name_english': sura.get('ename'),
+                    'total_verses': int(sura.get('ayas')),
+                    'revelation_type': sura.get('type'),
+                    'revelation_order': int(sura.get('order')),
+                    'rukus': int(sura.get('rukus')),
+                    'start_index': int(sura.get('start')),
+                }
+            )
+            suras_imported += 1
+
+        # Import Juz boundaries
+        juzs_imported = 0
+        for juz in root.find('juzs'):
+            Juz.objects.update_or_create(
+                number=int(juz.get('index')),
+                defaults={
+                    'start_surah_id': int(juz.get('sura')),
+                    'start_aya': int(juz.get('aya')),
+                }
+            )
+            juzs_imported += 1
+
+        # Import Hizb quarter boundaries
+        quarters_imported = 0
+        for quarter in root.find('hizbs'):
+            HizbQuarter.objects.update_or_create(
+                index=int(quarter.get('index')),
+                defaults={
+                    'start_surah_id': int(quarter.get('sura')),
+                    'start_aya': int(quarter.get('aya')),
+                }
+            )
+            quarters_imported += 1
+
+        self.stdout.write(self.style.SUCCESS(
+            f'Successfully imported: {suras_imported} Surahs, '
+            f'{juzs_imported} Juz boundaries, {quarters_imported} Hizb quarters'
+        ))
 ```
 
 **Import Implementation - Audio Files:**

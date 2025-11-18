@@ -117,7 +117,7 @@ class UserRegistrationView(APIView):
                 ],
             ),
         },
-        tags=["🌐 Public", "Authentication"],
+        tags=["Public", "Authentication"],
         auth=[],
         examples=[
             OpenApiExample(
@@ -244,7 +244,7 @@ class UserLoginView(APIView):
                 ],
             ),
         },
-        tags=["🌐 Public", "Authentication"],
+        tags=["Public", "Authentication"],
         auth=[],
         examples=[
             OpenApiExample(
@@ -392,7 +392,7 @@ class UserLogoutView(APIView):
                 ],
             ),
         },
-        tags=["🔐 User", "Authentication"],
+        tags=["User", "Authentication"],
         examples=[
             OpenApiExample(
                 name="logout_request",
@@ -496,7 +496,7 @@ class PasswordResetRequestView(APIView):
                 ],
             ),
         },
-        tags=["🌐 Public", "Authentication"],
+        tags=["Public", "Authentication"],
         auth=[],
         examples=[
             OpenApiExample(
@@ -631,7 +631,7 @@ class ThrottledTokenRefreshView(TokenRefreshView):
                 ],
             ),
         },
-        tags=["🔐 User", "Authentication"],
+        tags=["User", "Authentication"],
         examples=[
             OpenApiExample(
                 name="valid_refresh_request",
@@ -720,7 +720,7 @@ class PasswordResetConfirmView(APIView):
                 ],
             ),
         },
-        tags=["🌐 Public", "Authentication"],
+        tags=["Public", "Authentication"],
         auth=[],
         examples=[
             OpenApiExample(
@@ -755,12 +755,12 @@ class PasswordResetConfirmView(APIView):
 
 @extend_schema_view(
     retrieve=extend_schema(
-        tags=["🔐 User", "User Profile"],
+        tags=["User", "User Profile"],
         summary="Retrieve User Profile",
         description="Get current authenticated user's profile information.",
     ),
     partial_update=extend_schema(
-        tags=["🔐 User", "User Profile"],
+        tags=["User", "User Profile"],
         summary="Update User Profile",
         description="Update current authenticated user's profile (partial update).",
     ),

@@ -478,21 +478,12 @@ SPECTACULAR_SETTINGS = {
     # Three-Tier Tag System: Audience (Tier 1) + Domain (Tier 2)
     # Every endpoint requires TWO tags: Audience tag + Domain tag
     "TAGS": [
-        # TIER 1 - Audience Tags (always first in tag array)
-        {
-            "name": "🌐 Public",
-            "description": "**Public APIs** - No authentication required. Accessible to all users, monitoring systems, and anonymous clients.",
-        },
-        {
-            "name": "🔐 User",
-            "description": "**User APIs** - Requires valid JWT token. User-facing features for authenticated app users (non-admin).",
-        },
-        {
-            "name": "👤 Admin",
-            "description": "**Admin APIs** - Requires JWT token with staff privileges (is_staff=True). System management and administrative functions.",
-        },
-        # TIER 2 - Domain Tags (grouped by audience)
+        # TIER 1 - Domain Tags (grouped by audience)
         # Public Domains
+        {
+            "name": "Authentication",
+            "description": "User authentication and authorization endpoints (login, register, password reset, token management).",
+        },
         {
             "name": "Health & Monitoring",
             "description": "System health checks and status monitoring endpoints for operations teams and monitoring systems.",
@@ -502,12 +493,21 @@ SPECTACULAR_SETTINGS = {
             "description": "API version, environment information, and system metadata endpoints.",
         },
         {
-            "name": "Authentication",
-            "description": "User authentication and authorization endpoints (login, register, password reset, token management).",
-        },
-        {
             "name": "Legal & Privacy",
             "description": "Privacy policy, terms of service, and legal documentation endpoints.",
+        },
+        # TIER 2 - Audience Tags (always first in tag array)
+        {
+            "name": "Public",
+            "description": "**Public APIs** - No authentication required. Accessible to all users, monitoring systems, and anonymous clients.",
+        },
+        {
+            "name": "User",
+            "description": "**User APIs** - Requires valid JWT token. User-facing features for authenticated app users (non-admin).",
+        },
+        {
+            "name": "Admin",
+            "description": "**Admin APIs** - Requires JWT token with staff privileges (is_staff=True). System management and administrative functions.",
         },
         # User Domains (authenticated non-admin)
         {

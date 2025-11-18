@@ -43,20 +43,20 @@ This enhances API documentation usability and establishes a consistent tagging p
 
 1. **All Existing Endpoints Re-Tagged with Audience + Domain Tags**
    - Every endpoint has exactly TWO tags: Audience tag + Domain tag
-   - Audience tag always appears first in tag array: `🌐 Public`, `🔐 User`, or `👤 Admin`
+   - Audience tag always appears first in tag array: `Public`, `User`, or `Admin`
    - Domain tag reflects business domain within that audience
    - Format examples:
-     - Public: `tags=["🌐 Public", "Health & Monitoring"]`
-     - User: `tags=["🔐 User", "Bookmarks"]`
-     - Admin: `tags=["👤 Admin", "System Analytics"]`
+     - Public: `tags=["Public", "Health & Monitoring"]`
+     - User: `tags=["User", "Bookmarks"]`
+     - Admin: `tags=["Admin", "System Analytics"]`
    - All 18+ existing endpoints updated
 
 2. **SPECTACULAR_SETTINGS Updated with Audience-Centric Tag Definitions**
    - Add `"TAGS"` configuration with tag definitions grouped by audience:
      - **3 Audience tags** (Tier 1):
-       - `🌐 Public` - No authentication, accessible to all
-       - `🔐 User` - Authenticated users, user-facing features
-       - `👤 Admin` - Admin-only, system management
+       - `Public` - No authentication, accessible to all
+       - `User` - Authenticated users, user-facing features
+       - `Admin` - Admin-only, system management
      - **Domain tags** (Tier 2) grouped by audience:
        - Public Domains: Health & Monitoring, System Metadata, Authentication (public), Legal & Privacy
        - User Domains: Authentication (user), Quran Content, Recitation, Translation, Tafseer, Bookmarks, Offline Content, Analytics & Insights (user)
@@ -67,7 +67,7 @@ This enhances API documentation usability and establishes a consistent tagging p
    - Enable tag sorting: `"tagsSorter": "alpha"`
 
 3. **Public Endpoints Have auth=[] in OpenAPI Schema**
-   - All endpoints tagged with `🌐 Public` have `auth=[]` in `@extend_schema`
+   - All endpoints tagged with `Public` have `auth=[]` in `@extend_schema`
    - This explicitly marks them as no authentication required
    - Health check endpoints: /health/check, /health/ready, /health/db, /health/cache, /health/disk
    - Metadata endpoint: /api/meta/
@@ -77,7 +77,7 @@ This enhances API documentation usability and establishes a consistent tagging p
 ### Access Control Indicators (AC #4-6)
 
 4. **Admin Endpoints Have Permission Checks and Warning Banners**
-   - All endpoints tagged with `👤 Admin` use `permission_classes = [IsAdminUser]`
+   - All endpoints tagged with `Admin` use `permission_classes = [IsAdminUser]`
    - Description includes banner: `"⚠️ **Admin Only** - Requires staff privileges (is_staff=True)"`
    - Currently applies to: `/api/v1/analytics/error-rates/` endpoint
    - Security scheme: `security=[{"jwtAuth": []}]` (same JWT, checked for is_staff)
@@ -94,39 +94,39 @@ This enhances API documentation usability and establishes a consistent tagging p
    - Audience tag descriptions explain authentication and target user
    - Domain tag descriptions explain business domain and intended use
    - Examples:
-     - `🌐 Public`: "**Public APIs** - No authentication required. Accessible to all users, monitoring systems, and anonymous clients."
-     - `🔐 User`: "**User APIs** - Requires valid JWT token. User-facing features for authenticated app users (non-admin)."
-     - `👤 Admin`: "**Admin APIs** - Requires JWT token with staff privileges (is_staff=True). System management and administrative functions."
+     - `Public`: "**Public APIs** - No authentication required. Accessible to all users, monitoring systems, and anonymous clients."
+     - `User`: "**User APIs** - Requires valid JWT token. User-facing features for authenticated app users (non-admin)."
+     - `Admin`: "**Admin APIs** - Requires JWT token with staff privileges (is_staff=True). System management and administrative functions."
 
 ### Endpoint-Specific Re-Tagging (AC #7-9)
 
 7. **All Health Check Endpoints Tagged Correctly**
-   - `/health/check` → `["🌐 Public", "Health & Monitoring"]`
-   - `/health/ready` → `["🌐 Public", "Health & Monitoring"]`
-   - `/health/db` → `["🌐 Public", "Health & Monitoring"]`
-   - `/health/cache` → `["🌐 Public", "Health & Monitoring"]`
-   - `/health/disk` → `["🌐 Public", "Health & Monitoring"]`
-   - `/api/v1/health/` (legacy) → `["🌐 Public", "Health & Monitoring"]`
+   - `/health/check` → `["Public", "Health & Monitoring"]`
+   - `/health/ready` → `["Public", "Health & Monitoring"]`
+   - `/health/db` → `["Public", "Health & Monitoring"]`
+   - `/health/cache` → `["Public", "Health & Monitoring"]`
+   - `/health/disk` → `["Public", "Health & Monitoring"]`
+   - `/api/v1/health/` (legacy) → `["Public", "Health & Monitoring"]`
 
 8. **All Analytics Endpoints Tagged by Audience (User vs Admin)**
    - User analytics (personal data):
-     - `/api/v1/analytics/consent/` → `["🔐 User", "Analytics & Insights"]`
-     - `/api/v1/analytics/delete-my-data/` → `["🔐 User", "Analytics & Insights"]`
-     - `/api/v1/analytics/popular-features/` → `["🔐 User", "Analytics & Insights"]`
-     - `/api/v1/analytics/popular-surahs/` → `["🔐 User", "Analytics & Insights"]`
+     - `/api/v1/analytics/consent/` → `["User", "Analytics & Insights"]`
+     - `/api/v1/analytics/delete-my-data/` → `["User", "Analytics & Insights"]`
+     - `/api/v1/analytics/popular-features/` → `["User", "Analytics & Insights"]`
+     - `/api/v1/analytics/popular-surahs/` → `["User", "Analytics & Insights"]`
    - Admin analytics (system-wide):
-     - `/api/v1/analytics/error-rates/` → `["👤 Admin", "System Analytics"]` + IsAdminUser permission
+     - `/api/v1/analytics/error-rates/` → `["Admin", "System Analytics"]` + IsAdminUser permission
 
 9. **Authentication Endpoints Tagged by Audience**
    - Public authentication (no auth required):
-     - `/api/v1/auth/register/` → `["🌐 Public", "Authentication"]`
-     - `/api/v1/auth/login/` → `["🌐 Public", "Authentication"]`
-     - `/api/v1/auth/password/reset/` → `["🌐 Public", "Authentication"]`
-     - `/api/v1/auth/password/reset/confirm/` → `["🌐 Public", "Authentication"]`
+     - `/api/v1/auth/register/` → `["Public", "Authentication"]`
+     - `/api/v1/auth/login/` → `["Public", "Authentication"]`
+     - `/api/v1/auth/password/reset/` → `["Public", "Authentication"]`
+     - `/api/v1/auth/password/reset/confirm/` → `["Public", "Authentication"]`
    - User authentication (requires JWT):
-     - `/api/v1/auth/logout/` → `["🔐 User", "Authentication"]`
-     - `/api/v1/auth/token/refresh/` → `["🔐 User", "Authentication"]`
-     - `/api/v1/users/profile/` → `["🔐 User", "User Profile"]`
+     - `/api/v1/auth/logout/` → `["User", "Authentication"]`
+     - `/api/v1/auth/token/refresh/` → `["User", "Authentication"]`
+     - `/api/v1/users/profile/` → `["User", "User Profile"]`
 
 ### Documentation Quality (AC #10-11)
 
@@ -154,9 +154,9 @@ This enhances API documentation usability and establishes a consistent tagging p
 
 - [x] Add `"TAGS"` array to `config/settings/base.py` SPECTACULAR_SETTINGS
 - [x] Define 3 audience tags (Tier 1) with descriptions:
-  - [x] `🌐 Public` - "**Public APIs** - No authentication required. Accessible to all users, monitoring systems, and anonymous clients."
-  - [x] `🔐 User` - "**User APIs** - Requires valid JWT token. User-facing features for authenticated app users (non-admin)."
-  - [x] `👤 Admin` - "**Admin APIs** - Requires JWT token with staff privileges (is_staff=True). System management and administrative functions."
+  - [x] `Public` - "**Public APIs** - No authentication required. Accessible to all users, monitoring systems, and anonymous clients."
+  - [x] `User` - "**User APIs** - Requires valid JWT token. User-facing features for authenticated app users (non-admin)."
+  - [x] `Admin` - "**Admin APIs** - Requires JWT token with staff privileges (is_staff=True). System management and administrative functions."
 - [x] Define domain tags (Tier 2) grouped by audience:
   - [x] **Public Domains**: Health & Monitoring, System Metadata, Authentication, Legal & Privacy
   - [x] **User Domains**: Authentication, User Profile, Quran Content, Recitation, Translation, Tafseer, Bookmarks, Offline Content, Analytics & Insights
@@ -169,44 +169,44 @@ This enhances API documentation usability and establishes a consistent tagging p
 ### Task 2: Re-Tag Health Check Endpoints (AC #3, #7)
 
 - [x] Update `backend/core/views/main.py` - `health_check` function:
-  - [x] Change `tags=["Health"]` to `tags=["🌐 Public", "Health & Monitoring"]`
+  - [x] Change `tags=["Health"]` to `tags=["Public", "Health & Monitoring"]`
   - [x] Add `auth=[]` to @extend_schema
 - [x] Update `backend/core/views/health.py` - all 5 health check functions:
-  - [x] `liveness_check`: `tags=["🌐 Public", "Health & Monitoring"]` + `auth=[]`
-  - [x] `readiness_check`: `tags=["🌐 Public", "Health & Monitoring"]` + `auth=[]`
-  - [x] `database_health_check`: `tags=["🌐 Public", "Health & Monitoring"]` + `auth=[]`
-  - [x] `cache_health_check`: `tags=["🌐 Public", "Health & Monitoring"]` + `auth=[]`
-  - [x] `disk_health_check`: `tags=["🌐 Public", "Health & Monitoring"]` + `auth=[]`
+  - [x] `liveness_check`: `tags=["Public", "Health & Monitoring"]` + `auth=[]`
+  - [x] `readiness_check`: `tags=["Public", "Health & Monitoring"]` + `auth=[]`
+  - [x] `database_health_check`: `tags=["Public", "Health & Monitoring"]` + `auth=[]`
+  - [x] `cache_health_check`: `tags=["Public", "Health & Monitoring"]` + `auth=[]`
+  - [x] `disk_health_check`: `tags=["Public", "Health & Monitoring"]` + `auth=[]`
 
 ### Task 3: Re-Tag Metadata Endpoint (AC #3)
 
 - [x] Update `backend/core/views/main.py` - `project_metadata` function:
-  - [x] Change `tags=["Metadata"]` to `tags=["🌐 Public", "System Metadata"]`
+  - [x] Change `tags=["Metadata"]` to `tags=["Public", "System Metadata"]`
   - [x] Add `auth=[]` to @extend_schema
 
 ### Task 4: Re-Tag Authentication Endpoints (AC #9)
 
 - [x] Update `backend/users/api/views.py` - all auth views:
   - [x] Public authentication (no auth):
-    - [x] `UserRegistrationView`: `tags=["🌐 Public", "Authentication"]` + `auth=[]`
-    - [x] `UserLoginView`: `tags=["🌐 Public", "Authentication"]` + `auth=[]`
-    - [x] `PasswordResetRequestView`: `tags=["🌐 Public", "Authentication"]` + `auth=[]`
-    - [x] `PasswordResetConfirmView`: `tags=["🌐 Public", "Authentication"]` + `auth=[]`
+    - [x] `UserRegistrationView`: `tags=["Public", "Authentication"]` + `auth=[]`
+    - [x] `UserLoginView`: `tags=["Public", "Authentication"]` + `auth=[]`
+    - [x] `PasswordResetRequestView`: `tags=["Public", "Authentication"]` + `auth=[]`
+    - [x] `PasswordResetConfirmView`: `tags=["Public", "Authentication"]` + `auth=[]`
   - [x] User authentication (requires JWT):
-    - [x] `UserLogoutView`: `tags=["🔐 User", "Authentication"]`
-    - [x] `ThrottledTokenRefreshView`: `tags=["🔐 User", "Authentication"]`
-    - [x] `UserProfileViewSet`: `tags=["🔐 User", "User Profile"]`
+    - [x] `UserLogoutView`: `tags=["User", "Authentication"]`
+    - [x] `ThrottledTokenRefreshView`: `tags=["User", "Authentication"]`
+    - [x] `UserProfileViewSet`: `tags=["User", "User Profile"]`
 
 ### Task 5: Re-Tag Analytics Endpoints by Audience (AC #4, #8)
 
 - [x] Update `backend/analytics/api/views.py` - separate user vs admin analytics:
   - [x] User analytics endpoints (personal data):
-    - [x] `AnalyticsConsentView`: `tags=["🔐 User", "Analytics & Insights"]`
-    - [x] `DeleteMyAnalyticsDataView`: `tags=["🔐 User", "Analytics & Insights"]`
-    - [x] `PopularFeaturesView`: `tags=["🔐 User", "Analytics & Insights"]`
-    - [x] `PopularSurahsView`: `tags=["🔐 User", "Analytics & Insights"]`
+    - [x] `AnalyticsConsentView`: `tags=["User", "Analytics & Insights"]`
+    - [x] `DeleteMyAnalyticsDataView`: `tags=["User", "Analytics & Insights"]`
+    - [x] `PopularFeaturesView`: `tags=["User", "Analytics & Insights"]`
+    - [x] `PopularSurahsView`: `tags=["User", "Analytics & Insights"]`
   - [x] Admin analytics endpoints (system-wide):
-    - [x] `ErrorRatesView`: `tags=["👤 Admin", "System Analytics"]`
+    - [x] `ErrorRatesView`: `tags=["Admin", "System Analytics"]`
 - [x] Verify `ErrorRatesView` has `permission_classes = [IsAdminUser]`
 - [x] Add admin warning to `ErrorRatesView` description:
   - [x] Add `"⚠️ **Admin Only** - Requires staff privileges (is_staff=True)"` to description
@@ -214,7 +214,7 @@ This enhances API documentation usability and establishes a consistent tagging p
 ### Task 6: Re-Tag Legal Endpoints (AC #3)
 
 - [x] Update `backend/legal/api/views.py`:
-  - [x] `PrivacyPolicyView`: `tags=["🌐 Public", "Legal & Privacy"]` + `auth=[]`
+  - [x] `PrivacyPolicyView`: `tags=["Public", "Legal & Privacy"]` + `auth=[]`
 
 ### Task 7: Validate and Test Documentation (AC #10)
 
@@ -240,9 +240,9 @@ This enhances API documentation usability and establishes a consistent tagging p
   # Every endpoint requires TWO tags: Audience tag + Domain tag
   #
   # TIER 1 - Audience Tags (ALWAYS FIRST):
-  #   🌐 Public - No auth required (add auth=[] to schema)
-  #   🔐 User - Authenticated users, user-facing features (IsAuthenticated)
-  #   👤 Admin - Admin-only, requires is_staff=True (IsAdminUser)
+  #   Public - No auth required (add auth=[] to schema)
+  #   User - Authenticated users, user-facing features (IsAuthenticated)
+  #   Admin - Admin-only, requires is_staff=True (IsAdminUser)
   #
   # TIER 2 - Domain Tags (grouped by audience):
   #
@@ -258,13 +258,13 @@ This enhances API documentation usability and establishes a consistent tagging p
   #
   # Examples:
   # @extend_schema(
-  #     tags=["🔐 User", "Bookmarks"],  # User-facing bookmark feature
+  #     tags=["User", "Bookmarks"],  # User-facing bookmark feature
   #     summary="Create bookmark",
   #     ...
   # )
   #
   # @extend_schema(
-  #     tags=["👤 Admin", "System Analytics"],  # Admin-only analytics
+  #     tags=["Admin", "System Analytics"],  # Admin-only analytics
   #     summary="View system error rates",
   #     description="⚠️ **Admin Only** - Requires staff privileges",
   #     ...
@@ -291,9 +291,9 @@ This enhances API documentation usability and establishes a consistent tagging p
 - [x] Swagger UI displays three-tier grouping: Public → User → Admin sections
 - [x] Tag filtering works correctly in Swagger UI
 - [x] No OpenAPI schema validation errors (`python manage.py spectacular --validate` passes)
-- [x] Admin endpoints (e.g., `/api/v1/analytics/error-rates/`) have `IsAdminUser` permission and 👤 Admin tag
-- [x] User endpoints (e.g., bookmarks, profile) have `IsAuthenticated` permission and 🔐 User tag
-- [x] All public endpoints have `AllowAny` permission and `auth=[]` in schema with 🌐 Public tag
+- [x] Admin endpoints (e.g., `/api/v1/analytics/error-rates/`) have `IsAdminUser` permission and Admin tag
+- [x] User endpoints (e.g., bookmarks, profile) have `IsAuthenticated` permission and User tag
+- [x] All public endpoints have `AllowAny` permission and `auth=[]` in schema with Public tag
 - [x] Tag descriptions visible and accurate in Swagger UI
 - [x] Code comment template added documenting three-tier tagging pattern
 - [x] Frontend developer can easily identify user-facing vs admin-only APIs
@@ -326,15 +326,15 @@ This story enhances the API documentation structure established in US-API-008 by
 
 1. **Tag Array Format**:
    ```python
-   tags=["🌐 Public", "Health & Monitoring"]  # Audience first, domain second
-   tags=["🔐 User", "Bookmarks"]             # User-facing authenticated endpoints
-   tags=["👤 Admin", "System Analytics"]     # Admin-only endpoints
+   tags=["Public", "Health & Monitoring"]  # Audience first, domain second
+   tags=["User", "Bookmarks"]             # User-facing authenticated endpoints
+   tags=["Admin", "System Analytics"]     # Admin-only endpoints
    ```
 
 2. **Public Endpoint Pattern**:
    ```python
    @extend_schema(
-       tags=["🌐 Public", "Domain Name"],
+       tags=["Public", "Domain Name"],
        auth=[],  # Explicitly no auth required
        ...
    )
@@ -344,7 +344,7 @@ This story enhances the API documentation structure established in US-API-008 by
 3. **User Endpoint Pattern** (authenticated non-admin):
    ```python
    @extend_schema(
-       tags=["🔐 User", "Domain Name"],
+       tags=["User", "Domain Name"],
        description="User-facing feature for authenticated app users...",
        security=[{"jwtAuth": []}],
        ...
@@ -356,7 +356,7 @@ This story enhances the API documentation structure established in US-API-008 by
 4. **Admin Endpoint Pattern**:
    ```python
    @extend_schema(
-       tags=["👤 Admin", "Domain Name"],
+       tags=["Admin", "Domain Name"],
        description="⚠️ **Admin Only** - Requires staff privileges...",
        security=[{"jwtAuth": []}],
        ...
@@ -369,7 +369,7 @@ This story enhances the API documentation structure established in US-API-008 by
    ```python
    "TAGS": [
        {
-           "name": "🌐 Public",
+           "name": "Public",
            "description": "**Public APIs** - No authentication required..."
        },
        ...
@@ -493,7 +493,7 @@ Successfully implemented domain-driven API tagging with three-tier access level 
 **Code Review Fixes (2025-11-17)**:
 - Fixed tag/permission mismatch in `PopularFeaturesView` - changed from User to Admin tags
 - Fixed tag/permission mismatch in `PopularSurahsView` - changed from User to Admin tags
-- Both analytics endpoints now correctly tagged as `["👤 Admin", "System Analytics"]` matching their `IsAdminUser` permission
+- Both analytics endpoints now correctly tagged as `["Admin", "System Analytics"]` matching their `IsAdminUser` permission
 - Re-ran schema validation: 0 errors confirmed
 
 ### Debug Log References
@@ -548,11 +548,11 @@ The implementation quality is high overall (comprehensive TAGS config, excellent
 - **Severity**: HIGH - Misleading API documentation, security documentation incorrect
 - **Issue**: Two endpoints have conflicting tags and permissions:
   - `PopularFeaturesView` (line 182-240):
-    - Current tags: `["🔐 User", "Analytics & Insights"]` (line 225)
+    - Current tags: `["User", "Analytics & Insights"]` (line 225)
     - Actual permission: `IsAdminUser` (line 191)
     - **Problem**: Swagger UI shows this in "User" section but requires admin access
   - `PopularSurahsView` (line 243-309):
-    - Current tags: `["🔐 User", "Analytics & Insights"]` (line 294)
+    - Current tags: `["User", "Analytics & Insights"]` (line 294)
     - Actual permission: `IsAdminUser` (line 252)
     - **Problem**: Swagger UI shows this in "User" section but requires admin access
 - **Impact**: 
@@ -560,7 +560,7 @@ The implementation quality is high overall (comprehensive TAGS config, excellent
   - API consumers will get 403 errors unexpectedly
   - AC #8 fails - analytics endpoints not correctly tagged by audience
   - Swagger UI categorization is incorrect
-- **Required Fix**: Change both endpoints to `tags=["👤 Admin", "System Analytics"]`
+- **Required Fix**: Change both endpoints to `tags=["Admin", "System Analytics"]`
 
 #### MEDIUM Severity Issues
 
@@ -634,9 +634,9 @@ The implementation quality is high overall (comprehensive TAGS config, excellent
 - No test ensuring all public endpoints have auth=[]
 
 **Recommendation**: Add integration tests that validate:
-1. All endpoints tagged with "🌐 Public" have `permission_classes = [AllowAny]`
-2. All endpoints tagged with "🔐 User" have `permission_classes = [IsAuthenticated]`
-3. All endpoints tagged with "👤 Admin" have `permission_classes = [IsAdminUser]`
+1. All endpoints tagged with "Public" have `permission_classes = [AllowAny]`
+2. All endpoints tagged with "User" have `permission_classes = [IsAuthenticated]`
+3. All endpoints tagged with "Admin" have `permission_classes = [IsAdminUser]`
 
 ### Architectural Alignment
 
@@ -704,11 +704,11 @@ The implementation quality is high overall (comprehensive TAGS config, excellent
 **Code Changes Required:**
 
 - [x] **[High]** Fix tag/permission mismatch in `PopularFeaturesView` (AC #8) [file: muslim_companion/backend/analytics/api/views.py:225]
-  - ✅ Changed `tags=["🔐 User", "Analytics & Insights"]` to `tags=["👤 Admin", "System Analytics"]`
+  - ✅ Changed `tags=["User", "Analytics & Insights"]` to `tags=["Admin", "System Analytics"]`
   - ✅ Verified `permission_classes = [IsAdminUser]` is correct (line 191)
 
 - [x] **[High]** Fix tag/permission mismatch in `PopularSurahsView` (AC #8) [file: muslim_companion/backend/analytics/api/views.py:294]
-  - ✅ Changed `tags=["🔐 User", "Analytics & Insights"]` to `tags=["👤 Admin", "System Analytics"]`
+  - ✅ Changed `tags=["User", "Analytics & Insights"]` to `tags=["Admin", "System Analytics"]`
   - ✅ Verified `permission_classes = [IsAdminUser]` is correct (line 252)
 
 - [x] **[High]** Re-run schema validation after tag fixes [file: N/A]

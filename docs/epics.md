@@ -1156,9 +1156,9 @@ This story implements a mixed icon + text tagging strategy that provides both vi
    - Domain tag reflects business domain alignment
 
 2. **Access Level Tags (Required):**
-   - `🌐 Public` - No authentication required
+   - `Public` - No authentication required
    - `🔐 Authenticated` - Requires valid JWT token (regular users)
-   - `👤 Admin` - Requires JWT token + staff privileges (is_staff=True)
+   - `Admin` - Requires JWT token + staff privileges (is_staff=True)
 
 3. **Domain Tags (Required):**
    - Authentication - Login, registration, password management
@@ -1183,11 +1183,11 @@ This story implements a mixed icon + text tagging strategy that provides both vi
 
 ✅ All existing endpoints re-tagged with dual-tag system (access + domain)
 ✅ `SPECTACULAR_SETTINGS` updated with 11 domain tag definitions and 3 access level tag descriptions
-✅ Public endpoints (`🌐 Public`) have `auth=[]` in OpenAPI schema
-✅ Admin endpoints (`👤 Admin`) have permission checks and warning banners in descriptions
+✅ Public endpoints (`Public`) have `auth=[]` in OpenAPI schema
+✅ Admin endpoints (`Admin`) have permission checks and warning banners in descriptions
 ✅ Swagger UI displays endpoints grouped by tags with filtering enabled
 ✅ Tag descriptions visible in API documentation explain access requirements
-✅ All health check endpoints tagged as `🌐 Public` + `Health & Monitoring`
+✅ All health check endpoints tagged as `Public` + `Health & Monitoring`
 ✅ All analytics endpoints correctly tagged (user vs admin access levels)
 ✅ Authentication endpoints have appropriate public vs authenticated tags
 ✅ Documentation generated successfully with no schema errors
@@ -1232,88 +1232,6 @@ This story implements a mixed icon + text tagging strategy that provides both vi
 - Test Swagger UI rendering after changes
 - Document tagging pattern for future developers (Epic 2-7)
 - Consider creating a tagging helper/decorator for consistency
-
-## EPIC 2: Quran Text & Content Management
-
-###US-QT-001: Retrieve Quran Text by Surah
-
-**As a** Quran app user
-**I want to** view the complete text of any Surah in Othmani script
-**So that** I can read the Quran in its authentic Arabic form
-
-#### User Story Details:
-
-1.  **Health Check Enhancements:**
-
-    - Return detailed status for each monitored component (PostgreSQL, Redis, Celery, disk space)
-    - Include component-specific metrics (response times, connection counts, etc.)
-    - Maintain backward compatibility with existing health check format
-    - Response time must remain under 1 second
-    - Return 200 OK when all components healthy, 503 Service Unavailable otherwise
-
-2.  **Project Metadata Endpoint:**
-
-    - Publicly accessible (no authentication required)
-    - Return project name, version, API version, environment
-    - Include build/deployment timestamp
-    - Cache metadata response for 24 hours
-    - Follow standard JSON:API metadata format
-
-3.  **Monitoring Integration:**
-
-    - Health check compatible with Kubernetes liveness/readiness probes
-    - Structured logging for health check failures
-    - Metrics exported to monitoring systems (Prometheus format)
-
-#### Acceptance Criteria:
-
-✅ Enhanced `/health/` endpoint returns detailed component status
-✅ Health check includes response time metrics for each component
-✅ Backward compatibility maintained for existing monitoring
-✅ New `/api/meta/` endpoint returns project metadata (name, version)
-✅ Metadata endpoint cached for 24 hours
-✅ Health check response time < 1s for all scenarios
-✅ Proper HTTP status codes (200/503) based on health state
-✅ Both endpoints documented in OpenAPI spec
-✅ Integration tests cover both endpoints
-✅ Monitoring alerts configured for health check failures
-
-#### Out of Scope:
-
-- Detailed performance metrics dashboard
-- Historical health data storage
-- Component-level restart/recovery automation
-- Multi-region health aggregation
-
-#### Definition of Done:
-
-- All acceptance criteria tested and passing
-- Health check endpoint enhanced with component details
-- Project metadata endpoint implemented and tested
-- OpenAPI documentation updated
-- Integration tests passing
-- Monitoring configuration validated
-- DevOps team has approved changes
-- Ready for production deployment
-
-#### Test Data Requirements:
-
-- Healthy system state (all components up)
-- Unhealthy system states (Redis down, PostgreSQL slow, etc.)
-- Edge cases (disk almost full, Celery queue backed up)
-
-#### Notes for Development Team:
-
-- Extend existing `HealthCheckView` from US-API-007
-- Use existing health check utilities (PostgreSQL, Redis, Celery checks)
-- Add response time measurements for each component check
-- Create new `ProjectMetadataView` for `/api/meta/` endpoint
-- Read version from `pyproject.toml` or environment variable
-- Use Redis cache for metadata response (24-hour TTL)
-- Update OpenAPI schema in US-API-008 documentation
-- Follow existing error handling patterns from US-API-002
-- Add structured logging for health check failures
-- Ensure health check can run without database dependency (for cold starts)
 
 ## EPIC 2: Quran Text & Content Management
 
@@ -1399,7 +1317,7 @@ sources.
 ✅ Surah API response includes `revelation_note` field for mixed revelation Surahs
 ✅ Surah endpoint supports filtering by revelation_order
 ✅ Surah endpoint supports sorting by revelation_order for chronological reading
-✅ Data source: docs/Data/Suras-Order.csv with authoritative chronological metadata
+✅ Data source: docs/Data/quran-data.xml (Tanzil Project - comprehensive Surah metadata including revelation order)
 ✅ Field is indexed for efficient querying and sorting
 
 #### Out of Scope:
@@ -1443,7 +1361,7 @@ sources.
 - **CRITICAL:** Text authenticity is non-negotiable - zero tolerance for Quran text errors (NFR-037)
 - **Verification Required:** Islamic scholar review and sign-off MUST be completed before production deployment
 - **Data Source:** docs/Data/quran-uthmani.xml (Tanzil Uthmani v1.1 - verified source)
-- **Revelation Order Data:** docs/Data/Suras-Order.csv - import using `import_surah_metadata` management command
+- **Quran Metadata:** docs/Data/quran-data.xml - import using `import_quran_metadata` management command (includes revelation order, Surah names, verse counts, Juz/Hizb boundaries)
 - Consider text encoding to ensure all Arabic characters render properly
 - This is the foundation for all other Quran-related features
 - Tajweed color-coding data should be included but display can be toggled
@@ -1452,7 +1370,7 @@ sources.
 - Schedule sufficient time for scholar review (48-72 hours minimum)
 - Surah model includes `revelation_order` field (indexed), `revelation_note`, and `is_mixed_revelation` property
 - API responses must include revelation_order to support chronological reading mode
-- Reference: Architecture Document v1.3 - Surah Model and Suras-Order.csv data source
+- Reference: Architecture Document v1.3 - Surah Model and quran-data.xml data source
 
 ### US-QT-002: Retrieve Quran Text by Verse Range
 

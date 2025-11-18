@@ -52,7 +52,7 @@ development_status:
   us-api-008-create-comprehensive-api-documentation: done
   us-api-009-enhance-health-check-and-add-project-metadata-endpoint: done
   us-api-010-implement-domain-driven-api-tagging-with-access-level-indicators: done
-  epic-1-retrospective: optional
+  epic-1-retrospective: done
 
   # EPIC 2: Quran Text & Content Management
   epic-2: backlog

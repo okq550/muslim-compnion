@@ -56,7 +56,7 @@ class PrivacyPolicyView(APIView):
                 ],
             ),
         },
-        tags=["🌐 Public", "Legal & Privacy"],
+        tags=["Public", "Legal & Privacy"],
         auth=[],
     )
     def get(self, request):

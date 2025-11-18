@@ -5,6 +5,249 @@ info:
   description: RESTful API for Quran reading, recitation, translation, tafseer, and
     bookmarks
 paths:
+  /api/v1/auth/login/:
+    post:
+      operationId: user_login
+      description: Authenticate user and receive JWT access and refresh tokens.
+      summary: User Login
+      tags:
+      - "Public"
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+            examples:
+              ValidLoginRequest:
+                value:
+                  email: user@example.com
+                  password: SecurePass123
+                summary: Valid Login Request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserLogin'
+              examples:
+                SuccessfulLoginResponse:
+                  value:
+                    tokens:
+                      access_token: eyJ0eXAiOiJKV1QiLCJhbGc...
+                      refresh_token: eyJ0eXAiOiJKV1QiLCJhbGc...
+                  summary: Successful Login Response
+          description: ''
+        '400':
+          description: Invalid Credentials
+        '423':
+          description: Account Locked
+        '429':
+          description: Rate Limit Exceeded
+  /api/v1/auth/logout/:
+    post:
+      operationId: user_logout
+      description: Blacklist refresh token to prevent further token refreshes.
+      summary: User Logout
+      tags:
+      - "User"
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+                  description: JWT refresh token to blacklist
+              required:
+              - refresh_token
+            examples:
+              LogoutRequest:
+                value:
+                  refresh_token: eyJ0eXAiOiJKV1QiLCJhbGc...
+                summary: Logout Request
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      - tokenAuth: []
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: Successful Logout
+        '400':
+          description: Invalid Token
+  /api/v1/auth/password/reset/:
+    post:
+      operationId: password_reset_request
+      description: Send password reset email if account exists. Always returns success
+        for security.
+      summary: Request Password Reset
+      tags:
+      - "Public"
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
+            examples:
+              PasswordResetRequest:
+                value:
+                  email: user@example.com
+                summary: Password Reset Request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequestRequest'
+        required: true
+      responses:
+        '200':
+          description: Success Response
+        '429':
+          description: Rate Limit Exceeded
+  /api/v1/auth/password/reset/confirm/:
+    post:
+      operationId: password_reset_confirm
+      description: Validate reset token and set new password.
+      summary: Confirm Password Reset
+      tags:
+      - "Public"
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+            examples:
+              PasswordResetConfirmation:
+                value:
+                  uid: MQ
+                  token: abc123-def456
+                  new_password: NewSecurePass123
+                  new_password_confirm: NewSecurePass123
+                summary: Password Reset Confirmation
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+        required: true
+      responses:
+        '200':
+          description: Success Response
+        '400':
+          description: Invalid Token or Password
+  /api/v1/auth/register/:
+    post:
+      operationId: user_register
+      description: Create a new user account with email and password. Returns JWT
+        tokens.
+      summary: User Registration
+      tags:
+      - "Public"
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+            examples:
+              ValidRegistrationRequest:
+                value:
+                  email: user@example.com
+                  password: SecurePass123
+                  password_confirm: SecurePass123
+                summary: Valid Registration Request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRegistration'
+              examples:
+                SuccessfulRegistrationResponse:
+                  value:
+                    user:
+                      id: 550e8400-e29b-41d4-a716-446655440000
+                      email: user@example.com
+                      username: user
+                    tokens:
+                      access_token: eyJ0eXAiOiJKV1QiLCJhbGc...
+                      refresh_token: eyJ0eXAiOiJKV1QiLCJhbGc...
+                  summary: Successful Registration Response
+          description: ''
+        '400':
+          description: Validation Error
+  /api/v1/auth/token/refresh/:
+    post:
+      operationId: token_refresh
+      description: Exchange a valid refresh token for a new access token. The refresh
+        token must be valid and not blacklisted. Supports both OAuth 2.0 standard
+        'refresh_token' parameter and SimpleJWT 'refresh' parameter. Rate limited
+        to 5 requests per minute.
+      summary: Refresh Access Token
+      tags:
+      - "User"
+      - Authentication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequestRequest'
+            examples:
+              ValidRefreshRequest:
+                value:
+                  refresh_token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+                summary: Valid Token Refresh Request
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequestRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefreshResponse'
+              examples:
+                SuccessfulRefreshResponse:
+                  value:
+                    access_token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+                    refresh_token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
+                  summary: Successful Token Refresh Response
+          description: ''
+        '400':
+          description: Invalid Token
+        '401':
+          description: Token Blacklisted
+        '429':
+          description: Rate Limit Exceeded
+  
   /api/auth-token/:
     post:
       operationId: api_auth_token_create
@@ -45,7 +288,7 @@ paths:
         required)\n    "
       summary: Project Metadata and API Discovery
       tags:
-      - "\U0001F310 Public"
+      - "Public"
       - System Metadata
       responses:
         '200':
@@ -194,7 +437,7 @@ paths:
       description: Enable or disable analytics tracking for the authenticated user.
       summary: Update Analytics Consent
       tags:
-      - "\U0001F510 User"
+      - "User"
       requestBody:
         content:
           application/json:
@@ -224,7 +467,7 @@ paths:
         to Erasure).
       summary: Delete My Analytics Data
       tags:
-      - "\U0001F510 User"
+      - "User"
       security:
       - jwtAuth: []
       - cookieAuth: []
@@ -244,7 +487,7 @@ paths:
         Retrieve error counts by endpoint (admin-only).
       summary: Get Error Rates
       tags:
-      - "\U0001F464 Admin"
+      - "Admin"
       - System Analytics
       security:
       - jwtAuth: []
@@ -262,7 +505,7 @@ paths:
       description: Retrieve top 10 features by event count (admin-only).
       summary: Get Popular Features
       tags:
-      - "\U0001F464 Admin"
+      - "Admin"
       - System Analytics
       security:
       - jwtAuth: []
@@ -280,7 +523,7 @@ paths:
       description: Retrieve top 10 most viewed Surahs (admin-only).
       summary: Get Popular Surahs
       tags:
-      - "\U0001F464 Admin"
+      - "Admin"
       - System Analytics
       security:
       - jwtAuth: []
@@ -292,255 +535,14 @@ paths:
           description: Popular Surahs
         '500':
           description: Internal Server Error
-  /api/v1/auth/login/:
-    post:
-      operationId: user_login
-      description: Authenticate user and receive JWT access and refresh tokens.
-      summary: User Login
-      tags:
-      - "\U0001F310 Public"
-      - Authentication
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserLoginRequest'
-            examples:
-              ValidLoginRequest:
-                value:
-                  email: user@example.com
-                  password: SecurePass123
-                summary: Valid Login Request
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UserLoginRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UserLoginRequest'
-        required: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserLogin'
-              examples:
-                SuccessfulLoginResponse:
-                  value:
-                    tokens:
-                      access_token: eyJ0eXAiOiJKV1QiLCJhbGc...
-                      refresh_token: eyJ0eXAiOiJKV1QiLCJhbGc...
-                  summary: Successful Login Response
-          description: ''
-        '400':
-          description: Invalid Credentials
-        '423':
-          description: Account Locked
-        '429':
-          description: Rate Limit Exceeded
-  /api/v1/auth/logout/:
-    post:
-      operationId: user_logout
-      description: Blacklist refresh token to prevent further token refreshes.
-      summary: User Logout
-      tags:
-      - "\U0001F510 User"
-      - Authentication
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                refresh_token:
-                  type: string
-                  description: JWT refresh token to blacklist
-              required:
-              - refresh_token
-            examples:
-              LogoutRequest:
-                value:
-                  refresh_token: eyJ0eXAiOiJKV1QiLCJhbGc...
-                summary: Logout Request
-      security:
-      - jwtAuth: []
-      - cookieAuth: []
-      - tokenAuth: []
-      - jwtAuth: []
-      - {}
-      responses:
-        '200':
-          description: Successful Logout
-        '400':
-          description: Invalid Token
-  /api/v1/auth/password/reset/:
-    post:
-      operationId: password_reset_request
-      description: Send password reset email if account exists. Always returns success
-        for security.
-      summary: Request Password Reset
-      tags:
-      - "\U0001F310 Public"
-      - Authentication
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PasswordResetRequestRequest'
-            examples:
-              PasswordResetRequest:
-                value:
-                  email: user@example.com
-                summary: Password Reset Request
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PasswordResetRequestRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PasswordResetRequestRequest'
-        required: true
-      responses:
-        '200':
-          description: Success Response
-        '429':
-          description: Rate Limit Exceeded
-  /api/v1/auth/password/reset/confirm/:
-    post:
-      operationId: password_reset_confirm
-      description: Validate reset token and set new password.
-      summary: Confirm Password Reset
-      tags:
-      - "\U0001F310 Public"
-      - Authentication
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PasswordResetConfirmRequest'
-            examples:
-              PasswordResetConfirmation:
-                value:
-                  uid: MQ
-                  token: abc123-def456
-                  new_password: NewSecurePass123
-                  new_password_confirm: NewSecurePass123
-                summary: Password Reset Confirmation
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PasswordResetConfirmRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PasswordResetConfirmRequest'
-        required: true
-      responses:
-        '200':
-          description: Success Response
-        '400':
-          description: Invalid Token or Password
-  /api/v1/auth/register/:
-    post:
-      operationId: user_register
-      description: Create a new user account with email and password. Returns JWT
-        tokens.
-      summary: User Registration
-      tags:
-      - "\U0001F310 Public"
-      - Authentication
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserRegistrationRequest'
-            examples:
-              ValidRegistrationRequest:
-                value:
-                  email: user@example.com
-                  password: SecurePass123
-                  password_confirm: SecurePass123
-                summary: Valid Registration Request
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UserRegistrationRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UserRegistrationRequest'
-        required: true
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserRegistration'
-              examples:
-                SuccessfulRegistrationResponse:
-                  value:
-                    user:
-                      id: 550e8400-e29b-41d4-a716-446655440000
-                      email: user@example.com
-                      username: user
-                    tokens:
-                      access_token: eyJ0eXAiOiJKV1QiLCJhbGc...
-                      refresh_token: eyJ0eXAiOiJKV1QiLCJhbGc...
-                  summary: Successful Registration Response
-          description: ''
-        '400':
-          description: Validation Error
-  /api/v1/auth/token/refresh/:
-    post:
-      operationId: token_refresh
-      description: Exchange a valid refresh token for a new access token. The refresh
-        token must be valid and not blacklisted. Supports both OAuth 2.0 standard
-        'refresh_token' parameter and SimpleJWT 'refresh' parameter. Rate limited
-        to 5 requests per minute.
-      summary: Refresh Access Token
-      tags:
-      - "\U0001F510 User"
-      - Authentication
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TokenRefreshRequestRequest'
-            examples:
-              ValidRefreshRequest:
-                value:
-                  refresh_token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
-                summary: Valid Token Refresh Request
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TokenRefreshRequestRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/TokenRefreshRequestRequest'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TokenRefreshResponse'
-              examples:
-                SuccessfulRefreshResponse:
-                  value:
-                    access_token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
-                    refresh_token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...
-                  summary: Successful Token Refresh Response
-          description: ''
-        '400':
-          description: Invalid Token
-        '401':
-          description: Token Blacklisted
-        '429':
-          description: Rate Limit Exceeded
+  
   /api/v1/legal/privacy-policy/:
     get:
       operationId: privacy_policy
       description: Retrieve the latest active privacy policy (public endpoint).
       summary: Get Privacy Policy
       tags:
-      - "\U0001F310 Public"
+      - "Public"
       - Legal & Privacy
       responses:
         '200':
@@ -553,7 +555,7 @@ paths:
       description: Get current authenticated user's profile information.
       summary: Retrieve User Profile
       tags:
-      - "\U0001F510 User"
+      - "User"
       - User Profile
       security:
       - jwtAuth: []
@@ -572,7 +574,7 @@ paths:
       description: Update current authenticated user's profile (partial update).
       summary: Update User Profile
       tags:
-      - "\U0001F510 User"
+      - "User"
       - User Profile
       requestBody:
         content:
@@ -606,7 +608,7 @@ paths:
         50ms response time\n    "
       summary: Redis Cache-Specific Health Check
       tags:
-      - "\U0001F310 Public"
+      - "Public"
       - Health & Monitoring
       responses:
         '200':
@@ -636,7 +638,7 @@ paths:
         < 10ms response time (no I/O operations)\n    "
       summary: Liveness Probe - Minimal Server Availability Check
       tags:
-      - "\U0001F310 Public"
+      - "Public"
       - Health & Monitoring
       responses:
         '200':
@@ -656,7 +658,7 @@ paths:
         response time\n    "
       summary: Database-Specific Health Check
       tags:
-      - "\U0001F310 Public"
+      - "Public"
       - Health & Monitoring
       responses:
         '200':
@@ -685,7 +687,7 @@ paths:
         (503 error)\n\n    **Performance:** < 50ms response time\n    "
       summary: Disk Space Health Check
       tags:
-      - "\U0001F310 Public"
+      - "Public"
       - Health & Monitoring
       responses:
         '200':
@@ -716,7 +718,7 @@ paths:
         \   "
       summary: Readiness Probe - Full Resource Health Check
       tags:
-      - "\U0001F310 Public"
+      - "Public"
       - Health & Monitoring
       responses:
         '200':
@@ -1083,13 +1085,13 @@ components:
       name: Authorization
       description: Token-based authentication with required prefix "Token"
 tags:
-- name: "\U0001F310 Public"
+- name: "Public"
   description: '**Public APIs** - No authentication required. Accessible to all users,
     monitoring systems, and anonymous clients.'
-- name: "\U0001F510 User"
+- name: "User"
   description: '**User APIs** - Requires valid JWT token. User-facing features for
     authenticated app users (non-admin).'
-- name: "\U0001F464 Admin"
+- name: "Admin"
   description: '**Admin APIs** - Requires JWT token with staff privileges (is_staff=True).
     System management and administrative functions.'
 - name: Health & Monitoring

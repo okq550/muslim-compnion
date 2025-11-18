@@ -17,9 +17,9 @@ Follows Kubernetes liveness/readiness probe best practices for container orchest
 # Every endpoint requires TWO tags: Audience tag + Domain tag
 #
 # TIER 1 - Audience Tags (ALWAYS FIRST):
-#   🌐 Public - No auth required (add auth=[] to schema)
-#   🔐 User - Authenticated users, user-facing features (IsAuthenticated)
-#   👤 Admin - Admin-only, requires is_staff=True (IsAdminUser)
+#   Public - No auth required (add auth=[] to schema)
+#   User - Authenticated users, user-facing features (IsAuthenticated)
+#   Admin - Admin-only, requires is_staff=True (IsAdminUser)
 #
 # TIER 2 - Domain Tags (grouped by audience):
 #
@@ -35,13 +35,13 @@ Follows Kubernetes liveness/readiness probe best practices for container orchest
 #
 # Examples:
 # @extend_schema(
-#     tags=["🔐 User", "Bookmarks"],  # User-facing bookmark feature
+#     tags=["User", "Bookmarks"],  # User-facing bookmark feature
 #     summary="Create bookmark",
 #     ...
 # )
 #
 # @extend_schema(
-#     tags=["👤 Admin", "System Analytics"],  # Admin-only analytics
+#     tags=["Admin", "System Analytics"],  # Admin-only analytics
 #     summary="View system error rates",
 #     description="⚠️ **Admin Only** - Requires staff privileges",
 #     ...
@@ -50,7 +50,7 @@ Follows Kubernetes liveness/readiness probe best practices for container orchest
 #     permission_classes = [IsAdminUser]
 #
 # @extend_schema(
-#     tags=["🌐 Public", "Health & Monitoring"],  # Public endpoint
+#     tags=["Public", "Health & Monitoring"],  # Public endpoint
 #     auth=[],  # Explicitly no auth required
 #     summary="Health check",
 #     ...
@@ -139,7 +139,7 @@ def _get_app_metadata() -> dict[str, str]:
             },
         ),
     },
-    tags=["🌐 Public", "Health & Monitoring"],
+    tags=["Public", "Health & Monitoring"],
     auth=[],
 )
 @api_view(["GET"])
@@ -203,7 +203,7 @@ def liveness_check(request):
 
     **Performance:** < 1000ms total response time (includes all resource checks)
     """,
-    tags=["🌐 Public", "Health & Monitoring"],
+    tags=["Public", "Health & Monitoring"],
     auth=[],
     responses={
         200: OpenApiExample(
@@ -388,7 +388,7 @@ def readiness_check(request):
 
     **Performance:** < 200ms response time
     """,
-    tags=["🌐 Public", "Health & Monitoring"],
+    tags=["Public", "Health & Monitoring"],
     auth=[],
     responses={
         200: OpenApiExample(
@@ -482,7 +482,7 @@ def database_health_check(request):
 
     **Performance:** < 50ms response time
     """,
-    tags=["🌐 Public", "Health & Monitoring"],
+    tags=["Public", "Health & Monitoring"],
     auth=[],
     responses={
         200: OpenApiExample(
@@ -579,7 +579,7 @@ def cache_health_check(request):
 
     **Performance:** < 50ms response time
     """,
-    tags=["🌐 Public", "Health & Monitoring"],
+    tags=["Public", "Health & Monitoring"],
     auth=[],
     responses={
         200: OpenApiExample(

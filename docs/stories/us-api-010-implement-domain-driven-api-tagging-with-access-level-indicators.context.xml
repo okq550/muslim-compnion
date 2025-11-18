@@ -15,8 +15,8 @@
     <soThat>I can easily identify which APIs are public, authenticated, or admin-only and find endpoints by business domain</soThat>
     <tasks>
       <task n="1">Update SPECTACULAR_SETTINGS Configuration - Add TAGS array with 3 audience tags (Public/User/Admin) and 11 domain tags grouped by audience</task>
-      <task n="2">Re-Tag Health Check Endpoints - Update all 6 health endpoints with ["🌐 Public", "Health &amp; Monitoring"] tags and auth=[]</task>
-      <task n="3">Re-Tag Metadata Endpoint - Update project_metadata with ["🌐 Public", "System Metadata"] and auth=[]</task>
+      <task n="2">Re-Tag Health Check Endpoints - Update all 6 health endpoints with ["Public", "Health &amp; Monitoring"] tags and auth=[]</task>
+      <task n="3">Re-Tag Metadata Endpoint - Update project_metadata with ["Public", "System Metadata"] and auth=[]</task>
       <task n="4">Re-Tag Authentication Endpoints - Separate public auth (register/login) vs user auth (logout/refresh) with appropriate audience tags</task>
       <task n="5">Re-Tag Analytics Endpoints by Audience - Split user analytics (consent, delete, popular features) vs admin analytics (error rates)</task>
       <task n="6">Re-Tag Legal Endpoints - Update privacy policy endpoint with Public tag</task>
@@ -32,7 +32,7 @@
     <criterion id="AC4">Admin endpoints have IsAdminUser permission and warning banner in description</criterion>
     <criterion id="AC5">Swagger UI displays endpoints grouped by tags with filtering enabled and tags sorted alphabetically</criterion>
     <criterion id="AC6">Tag descriptions visible in Swagger UI explaining audience and access requirements</criterion>
-    <criterion id="AC7">All 6 health check endpoints tagged as ["🌐 Public", "Health &amp; Monitoring"]</criterion>
+    <criterion id="AC7">All 6 health check endpoints tagged as ["Public", "Health &amp; Monitoring"]</criterion>
     <criterion id="AC8">Analytics endpoints split by audience - User (consent, delete, popular) vs Admin (error rates with IsAdminUser)</criterion>
     <criterion id="AC9">Authentication endpoints split by audience - Public (register, login, password reset) vs User (logout, token refresh)</criterion>
     <criterion id="AC10">Schema validation passes without errors (python manage.py spectacular --validate)</criterion>
@@ -79,7 +79,7 @@
         <kind>view</kind>
         <symbol>liveness_check, readiness_check, database_health_check, cache_health_check, disk_health_check</symbol>
         <lines>70-569</lines>
-        <reason>5 health check endpoints currently tagged with ["Health"]. Need to update to ["🌐 Public", "Health &amp; Monitoring"] and add auth=[]</reason>
+        <reason>5 health check endpoints currently tagged with ["Health"]. Need to update to ["Public", "Health &amp; Monitoring"] and add auth=[]</reason>
       </artifact>
       <artifact>
         <path>muslim_companion/backend/core/views/main.py</path>
