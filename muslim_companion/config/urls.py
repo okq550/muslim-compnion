@@ -53,6 +53,8 @@ urlpatterns += [
     path("api/", include("config.api_router")),
     # DRF auth token
     path("api/auth-token/", obtain_auth_token, name="obtain_auth_token"),
+    # Quran app API urls
+    path("api/v1/quran/", include("backend.quran.urls", namespace="quran")),
     # API Documentation (US-API-008)
     path("api/schema/", SpectacularAPIView.as_view(), name="api-schema"),
     path(

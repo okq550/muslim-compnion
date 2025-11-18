@@ -1,0 +1,270 @@
+<story-context id="us-qt-001-retrieve-quran-text-by-surah" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>1</storyId>
+    <title>Retrieve Quran Text by Surah</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-18</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/us-qt-001-retrieve-quran-text-by-surah.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>Quran app user</asA>
+    <iWant>view the complete text of any Surah in Othmani script</iWant>
+    <soThat>I can read the Quran in its authentic Arabic form</soThat>
+    <tasks>
+      <task id="1">Create Quran Django App Structure</task>
+      <task id="2">Implement Surah Model with complete metadata</task>
+      <task id="3">Implement Verse Model with full text data</task>
+      <task id="4">Create Import Management Commands</task>
+      <task id="5">Create Data Verification Command</task>
+      <task id="6">Implement Serializers</task>
+      <task id="7">Implement API Views</task>
+      <task id="8">Implement Caching Layer</task>
+      <task id="9">Write Unit and Integration Tests</task>
+      <task id="10">Run Data Import and Verification</task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <ac id="1">Surah Model Implemented with Complete Metadata - includes id, name_arabic, name_english, name_transliteration, revelation_type, revelation_order, revelation_note, total_verses, mushaf_page_start, juz_start with index on revelation_order</ac>
+    <ac id="2">Verse Model Implemented with Full Text Data - includes surah FK, verse_number, text_uthmani, text_simple, juz_number, mushaf_page, hizb_quarter, search_vector with unique constraint and indexes</ac>
+    <ac id="3">Quran Text Import Command Works - parses quran-uthmani.xml, creates 6,236 verses, idempotent, transaction-safe</ac>
+    <ac id="4">Surah Metadata Import Command Works - parses quran-data.xml, creates 114 Surahs, updates Juz/Page/Hizb data</ac>
+    <ac id="5">Data Verification Passes - confirms 114 Surahs, 6,236 verses, correct verse counts, Basmala handling</ac>
+    <ac id="6">GET /api/v1/surahs/ Returns Complete List - paginated, filterable, sortable by revelation_order, cached 7 days</ac>
+    <ac id="7">GET /api/v1/surahs/{id}/ Returns Single Surah - complete metadata, 404 for invalid ID</ac>
+    <ac id="8">GET /api/v1/surahs/{id}/verses/ Returns All Verses - optional verse range support, validation, 200ms p95</ac>
+    <ac id="9">GET /api/v1/verses/{id}/ Returns Single Verse - with Surah context, 404 for invalid ID</ac>
+    <ac id="10">API Responses Follow Standard Format - data wrapper, pagination format, error format, UTF-8 encoding</ac>
+    <ac id="11">Caching Strategy Implemented - Redis 7-day TTL for static content, invalidation on import</ac>
+    <ac id="12">Performance Targets Met - all endpoints under 200ms p95, cached under 100ms</ac>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Data Architecture - Epic 2: Quran Text</section>
+        <snippet>Defines Surah and Verse models with complete field definitions, indexes, and relationships. Specifies PostgreSQL 16 with SearchVectorField and GIN indexes for full-text search capability.</snippet>
+      </doc>
+      <doc>
+        <path>docs/tech-spec-epic-2.md</path>
+        <title>Epic 2 Technical Specification</title>
+        <section>Detailed Design - Data Models and Contracts</section>
+        <snippet>Comprehensive technical specification for Quran text models, API endpoints, caching strategy, and acceptance criteria with traceability mapping.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>FR-001, FR-028</section>
+        <snippet>Complete Quran Text Access requirements specifying authentic Othmani script, zero tolerance for errors (NFR-037), and offline access capability.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>EPIC 2: Quran Text and Content Management - US-QT-001</section>
+        <snippet>Detailed user story with business rules for Quran text requirements, Surah information display, and Quran text verification process including Islamic scholar sign-off.</snippet>
+      </doc>
+      <doc>
+        <path>docs/coding-standards.md</path>
+        <title>Coding Standards</title>
+        <section>Django and DRF Patterns</section>
+        <snippet>Project coding standards for Django models, serializers, and API views including naming conventions and testing requirements.</snippet>
+      </doc>
+      <doc>
+        <path>docs/Data/quran-uthmani.xml</path>
+        <title>Tanzil Uthmani Quran Text</title>
+        <section>Data Source</section>
+        <snippet>Primary data source for Quran verse text in authentic Othmani script with diacritical marks. Tanzil Uthmani v1.1.</snippet>
+      </doc>
+      <doc>
+        <path>docs/Data/quran-data.xml</path>
+        <title>Tanzil Quran Metadata</title>
+        <section>Data Source</section>
+        <snippet>Comprehensive Surah metadata including Arabic/English names, revelation type/order, verse counts, and Juz/Hizb/Page boundary data.</snippet>
+      </doc>
+    </docs>
+
+    <code>
+      <artifact>
+        <path>muslim_companion/backend/core/models.py</path>
+        <kind>model</kind>
+        <symbol>BackupStatus</symbol>
+        <lines>9-110</lines>
+        <reason>Reference pattern for Django models with Meta class, indexes, properties, and class methods</reason>
+      </artifact>
+      <artifact>
+        <path>muslim_companion/backend/users/api/serializers.py</path>
+        <kind>serializer</kind>
+        <symbol>UserRegistrationSerializer</symbol>
+        <lines>37-150</lines>
+        <reason>Reference pattern for DRF serializers with validation, transaction handling, and response formatting</reason>
+      </artifact>
+      <artifact>
+        <path>muslim_companion/backend/core/services/cache_manager.py</path>
+        <kind>service</kind>
+        <symbol>CacheManager</symbol>
+        <lines>24-150</lines>
+        <reason>Cache service with TTL constants (TTL_STATIC_CONTENT = 604800 for 7 days), get/set/delete operations for Quran content caching</reason>
+      </artifact>
+      <artifact>
+        <path>muslim_companion/backend/users/api/views.py</path>
+        <kind>view</kind>
+        <symbol>UserRegistrationView</symbol>
+        <reason>Reference pattern for DRF API views with @extend_schema decorators, permission classes, and response formatting</reason>
+      </artifact>
+      <artifact>
+        <path>muslim_companion/backend/analytics/api/views.py</path>
+        <kind>view</kind>
+        <symbol>PopularSurahsView</symbol>
+        <reason>Reference for API tagging pattern: tags=["User", "Quran Content"] established in US-API-010</reason>
+      </artifact>
+      <artifact>
+        <path>muslim_companion/backend/core/views/health.py</path>
+        <kind>view</kind>
+        <symbol>Module docstring</symbol>
+        <lines>13-57</lines>
+        <reason>Comprehensive tagging pattern documentation for Public/User/Admin endpoint classification</reason>
+      </artifact>
+      <artifact>
+        <path>muslim_companion/config/settings/base.py</path>
+        <kind>config</kind>
+        <symbol>SPECTACULAR_SETTINGS</symbol>
+        <lines>480-562</lines>
+        <reason>OpenAPI tag definitions including "Quran Content" domain tag for Epic 2 endpoints</reason>
+      </artifact>
+      <artifact>
+        <path>muslim_companion/backend/users/tests/test_models.py</path>
+        <kind>test</kind>
+        <symbol>Test patterns</symbol>
+        <reason>Reference test patterns for Django model testing with pytest</reason>
+      </artifact>
+      <artifact>
+        <path>muslim_companion/backend/users/tests/api/test_views.py</path>
+        <kind>test</kind>
+        <symbol>Test patterns</symbol>
+        <reason>Reference test patterns for DRF API view testing</reason>
+      </artifact>
+    </code>
+
+    <dependencies>
+      <python>
+        <package version="5.2.8">django</package>
+        <package version="3.16.1">djangorestframework</package>
+        <package version="6.0.0">django-redis</package>
+        <package version="0.29.0">drf-spectacular</package>
+        <package version="3.2.12">psycopg[c]</package>
+        <package version="7.0.1">redis</package>
+        <package version="5.5.3">celery</package>
+        <package version="2.43.0">sentry-sdk</package>
+      </python>
+      <notes>PostgreSQL 16 for database with SearchVectorField support. Redis for caching with django-redis. No additional packages needed for this story.</notes>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="architecture">
+      <description>Follow Django app structure: apps/quran/ with models.py, serializers.py, views.py, urls.py, tests/, management/commands/</description>
+    </constraint>
+    <constraint type="pattern">
+      <description>Use existing CacheManager service (muslim_companion/backend/core/services/cache_manager.py) with TTL_STATIC_CONTENT (7 days) for all Quran content caching</description>
+    </constraint>
+    <constraint type="pattern">
+      <description>API tagging: All endpoints must use tags=["User", "Quran Content"] per US-API-010 three-tier system</description>
+    </constraint>
+    <constraint type="pattern">
+      <description>Response format: Wrap success data in {"data": ...}, paginate lists with {"pagination": {...}}, errors use {"error": {...}}</description>
+    </constraint>
+    <constraint type="security">
+      <description>NFR-037: Zero tolerance for Quran text errors. All text must be verified against Tanzil Uthmani v1.1 source.</description>
+    </constraint>
+    <constraint type="performance">
+      <description>All endpoints must respond under 200ms (p95). Cached responses under 100ms.</description>
+    </constraint>
+    <constraint type="testing">
+      <description>Minimum 80% code coverage. Use pytest + pytest-django. Create factories in tests/factories.py</description>
+    </constraint>
+    <constraint type="i18n">
+      <description>Arabic as default language (LANGUAGE_CODE='ar'). All Arabic text properly UTF-8 encoded.</description>
+    </constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>GET /api/v1/surahs/</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/surahs/?ordering=revelation_order&amp;revelation_type=Meccan&amp;page=1&amp;page_size=20</signature>
+      <path>muslim_companion/apps/quran/views.py</path>
+    </interface>
+    <interface>
+      <name>GET /api/v1/surahs/{id}/</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/surahs/{id}/ - Returns single Surah with full metadata</signature>
+      <path>muslim_companion/apps/quran/views.py</path>
+    </interface>
+    <interface>
+      <name>GET /api/v1/surahs/{id}/verses/</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/surahs/{id}/verses/?verse_start=1&amp;verse_end=7 - Returns verses with optional range</signature>
+      <path>muslim_companion/apps/quran/views.py</path>
+    </interface>
+    <interface>
+      <name>GET /api/v1/verses/{id}/</name>
+      <kind>REST endpoint</kind>
+      <signature>GET /api/v1/verses/{id}/ - Returns single verse with Surah context</signature>
+      <path>muslim_companion/apps/quran/views.py</path>
+    </interface>
+    <interface>
+      <name>CacheManager</name>
+      <kind>class interface</kind>
+      <signature>get(key), set(key, value, ttl), delete(key), delete_pattern(pattern)</signature>
+      <path>muslim_companion/backend/core/services/cache_manager.py</path>
+    </interface>
+    <interface>
+      <name>import_quran_text</name>
+      <kind>management command</kind>
+      <signature>python manage.py import_quran_text - Imports verse text from quran-uthmani.xml</signature>
+      <path>muslim_companion/apps/quran/management/commands/import_quran_text.py</path>
+    </interface>
+    <interface>
+      <name>import_quran_metadata</name>
+      <kind>management command</kind>
+      <signature>python manage.py import_quran_metadata - Imports Surah metadata from quran-data.xml</signature>
+      <path>muslim_companion/apps/quran/management/commands/import_quran_metadata.py</path>
+    </interface>
+    <interface>
+      <name>verify_quran_data</name>
+      <kind>management command</kind>
+      <signature>python manage.py verify_quran_data - Validates data integrity (114 Surahs, 6236 verses)</signature>
+      <path>muslim_companion/apps/quran/management/commands/verify_quran_data.py</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>Use pytest with pytest-django plugin. Follow existing test patterns in muslim_companion/backend/users/tests/. Create test factories using Factory Boy in tests/factories.py. Tests should be organized as test_models.py, test_views.py, test_serializers.py, test_commands.py. Use @pytest.mark.django_db for database tests. Mock Redis for caching tests.</standards>
+    <locations>
+      <location>muslim_companion/apps/quran/tests/test_models.py</location>
+      <location>muslim_companion/apps/quran/tests/test_views.py</location>
+      <location>muslim_companion/apps/quran/tests/test_serializers.py</location>
+      <location>muslim_companion/apps/quran/tests/test_commands.py</location>
+      <location>muslim_companion/apps/quran/tests/factories.py</location>
+    </locations>
+    <ideas>
+      <idea ac="1">Test Surah model creation with all fields, test is_mixed_revelation property, test revelation_order index performance</idea>
+      <idea ac="2">Test Verse model unique constraint on (surah, verse_number), test search_vector field type, test all indexes exist</idea>
+      <idea ac="3">Test import command with sample XML, test idempotent behavior (run twice), test transaction rollback on error</idea>
+      <idea ac="4">Test metadata import creates 114 Surahs, test Juz/Page data populated correctly</idea>
+      <idea ac="5">Test verification passes with correct data, test fails with missing Surahs/verses, test Basmala check</idea>
+      <idea ac="6">Test Surah list pagination, test revelation_type filter, test ordering by revelation_order, test caching behavior</idea>
+      <idea ac="7">Test valid Surah IDs 1-114, test 404 for invalid IDs (0, 115, -1, "abc"), test all metadata fields returned</idea>
+      <idea ac="8">Test full Surah verses returned, test verse range filtering, test invalid range returns 400, test edge cases (first/last verse)</idea>
+      <idea ac="9">Test verse detail with Surah context, test 404 for invalid verse ID</idea>
+      <idea ac="10">Test response wrapped in data key, test pagination format, test error format matches standard</idea>
+      <idea ac="11">Test cache hit returns cached data, test cache miss queries database, test cache invalidation works</idea>
+      <idea ac="12">Test response times with pytest-benchmark or simple timing assertions</idea>
+    </ideas>
+  </tests>
+</story-context>

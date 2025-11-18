@@ -93,6 +93,7 @@ LOCAL_APPS = [
     "backend.users",
     "backend.analytics",
     "backend.legal",
+    "backend.quran",
     # Your stuff: custom apps go here
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps

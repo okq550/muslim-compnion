@@ -76,17 +76,18 @@ GENERAL ->
   *workflow-status
 
 SM ->
+  *epic-tech-context EPIC 2
   *workflow-status
-  *create-story US-API-010
-  *story-context US-API-010
-  *validate-story-context US-API-010
-  *story-ready-for-dev US-API-010
+  *create-story US-QT-001
+  *story-context US-QT-001
+  *validate-story-context US-QT-001
+  *story-ready-for-dev US-QT-001
 
 DEV ->
   *workflow-status
-  *develop-story US-API-010
-  /bmad:bmm:workflows:code-review US-API-010
-  *story-done US-API-010
+  *develop-story US-QT-001
+  /bmad:bmm:workflows:code-review US-QT-001
+  *story-done US-QT-001
 
 
 
