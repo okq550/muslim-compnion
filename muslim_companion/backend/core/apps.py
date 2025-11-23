@@ -45,8 +45,8 @@ class CoreConfig(AppConfig):
             # Import here to avoid AppRegistryNotReady error
             # pylint: disable=import-outside-toplevel
             import os
-            from datetime import datetime
             from datetime import UTC
+            from datetime import datetime
 
             from django.conf import settings
             from django.core.cache import cache

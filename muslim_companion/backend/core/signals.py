@@ -180,9 +180,7 @@ def connect_quran_cache_signals() -> None:
     """
     try:
         # Import here to avoid circular imports
-        from backend.quran.models import (
-            QuranText,  # type: ignore[import-not-found]
-        )
+        from backend.quran.models import QuranText  # type: ignore[import-not-found]
 
         post_save.connect(invalidate_quran_cache, sender=QuranText)
         post_delete.connect(invalidate_quran_cache, sender=QuranText)
@@ -200,9 +198,7 @@ def connect_reciter_cache_signals() -> None:
     """
     try:
         # Import here to avoid circular imports
-        from backend.recitation.models import (
-            Reciter,  # type: ignore[import-not-found]
-        )
+        from backend.recitation.models import Reciter  # type: ignore[import-not-found]
 
         post_save.connect(invalidate_reciter_cache, sender=Reciter)
         post_delete.connect(invalidate_reciter_cache, sender=Reciter)
@@ -240,9 +236,7 @@ def connect_bookmark_cache_signals() -> None:
     """
     try:
         # Import here to avoid circular imports
-        from backend.bookmark.models import (
-            Bookmark,  # type: ignore[import-not-found]
-        )
+        from backend.bookmark.models import Bookmark  # type: ignore[import-not-found]
 
         post_save.connect(invalidate_user_bookmark_cache, sender=Bookmark)
         post_delete.connect(invalidate_user_bookmark_cache, sender=Bookmark)

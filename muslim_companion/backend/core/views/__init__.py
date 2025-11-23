@@ -6,6 +6,7 @@ Exports:
 - project_metadata: Project metadata endpoint (US-API-009)
 """
 
-from backend.core.views.main import health_check, project_metadata
+from backend.core.views.main import health_check
+from backend.core.views.main import project_metadata
 
 __all__ = ["health_check", "project_metadata"]

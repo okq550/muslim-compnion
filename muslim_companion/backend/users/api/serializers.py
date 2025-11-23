@@ -1,5 +1,6 @@
 import re
 
+from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
@@ -9,8 +10,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from backend.users.models import User
 from backend.users.models import UserProfile
-
-from django.contrib.auth import authenticate
 
 
 class UserSerializer(serializers.ModelSerializer[User]):

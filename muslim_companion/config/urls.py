@@ -4,18 +4,28 @@ from django.contrib import admin
 from django.urls import include
 from django.urls import path
 from django.views import defaults as default_views
+
 # from django.views.generic import TemplateView
 from drf_spectacular.views import SpectacularAPIView
 from drf_spectacular.views import SpectacularRedocView
 from drf_spectacular.views import SpectacularSwaggerView
 from rest_framework.authtoken.views import obtain_auth_token
 
-from backend.core.views import health_check, project_metadata  # US-API-007/009
+from backend.core.views import health_check  # US-API-007/009
+from backend.core.views import project_metadata  # US-API-007/009
 from backend.core.views.health import (  # US-API-009: Granular health check endpoints
     cache_health_check,
+)
+from backend.core.views.health import (  # US-API-009: Granular health check endpoints
     database_health_check,
+)
+from backend.core.views.health import (  # US-API-009: Granular health check endpoints
     disk_health_check,
+)
+from backend.core.views.health import (  # US-API-009: Granular health check endpoints
     liveness_check,
+)
+from backend.core.views.health import (  # US-API-009: Granular health check endpoints
     readiness_check,
 )
 

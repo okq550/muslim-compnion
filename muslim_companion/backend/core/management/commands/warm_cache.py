@@ -133,9 +133,7 @@ class Command(BaseCommand):
         """
         try:
             # Import here to avoid errors if models don't exist yet
-            from backend.quran.models import (
-                QuranText,  # type: ignore[import-not-found]
-            )
+            from backend.quran.models import QuranText  # type: ignore[import-not-found]
             from backend.quran.serializers import (  # type: ignore[import-not-found]
                 QuranSerializer,
             )
